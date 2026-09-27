@@ -897,6 +897,13 @@ function showClear() {
   logEl.textContent = autoSolvedFlag
     ? 'そろった！（自動で揃えました） — 設定から次の盤面を作れます'
     : `そろった！ ${moves} 手 — 設定から次の盤面を作れます`;
+
+  // 自分で揃えた、正方形・カスタムでない盤だけをサイズ別のクリア数に数える。
+  // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
+  if (!autoSolvedFlag && W === H && !forcedAbilities) {
+    clears[W] = (clears[W] || 0) + 1;
+    saveClears();
+  }
 }
 
 // ---- 解説（自動で揃える） ----
@@ -1744,7 +1751,9 @@ pickerEl.addEventListener('click', (e) => {
 });
 customChk.addEventListener('change', () => { pendCustom = customChk.checked; refreshCustom(); });
 
-createBtnEl.addEventListener('click', () => {
+// pend* の内容で盤面を作り直す。「この設定で作成」（カスタム含む）と
+// ホームの「はじめる」の両方から呼ぶ。
+function startFromPending() {
   if (pendCustom && !customReady()) return;
   if (pendW !== W || pendH !== H) {
     W = pendW;
@@ -1761,8 +1770,123 @@ createBtnEl.addEventListener('click', () => {
   }
   const v = parseInt(seedInEl.value, 10);
   newPuzzle(Number.isFinite(v) ? v : undefined);
+}
+
+createBtnEl.addEventListener('click', () => {
+  if (pendCustom && !customReady()) return;
+  startFromPending();
   setPanel('setup', false);
+  show(playEl);
 });
 
+// ---- ホーム ----
+// サイズごとのクリア数。カスタム・長方形は数えない（ホームで選べるのは正方形だけのため）。
+const CLEARS_KEY = 'glyphshift.clears';
+function loadClears() {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLEARS_KEY));
+    return v && typeof v === 'object' ? v : {};
+  } catch (e) { return {}; }
+}
+function saveClears() {
+  try { localStorage.setItem(CLEARS_KEY, JSON.stringify(clears)); }
+  catch (e) { /* 保存できなくても遊べる */ }
+}
+const clears = loadClears();
+
+const titleEl = document.getElementById('title');
+const playEl = document.getElementById('play');
+
+function show(screen) {
+  titleEl.hidden = screen !== titleEl;
+  playEl.hidden = screen !== playEl;
+  setupBtnEl.hidden = screen !== playEl;
+  menuBtnEl.hidden = screen !== playEl;
+  if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+}
+
+function goHome() {
+  stopAutoSolve();
+  closeConfirm();
+  clearHint();
+  setPanel('setup', false);
+  setPanel('panel', false);
+  renderHomeClears();
+  show(titleEl);
+}
+
+const setupBtnEl = document.getElementById('setupBtn');
+const menuBtnEl = document.getElementById('menuBtn');
+document.getElementById('logoBtn').addEventListener('click', goHome);
+
+let homeW = W;
+let homeTypes = types;
+
+const homeSizeSegEl = document.getElementById('homeSizeSeg');
+const homeTypeSegEl = document.getElementById('homeTypeSeg');
+const homeTypeNoteEl = document.getElementById('homeTypeNote');
+const homeClearsEl = document.getElementById('homeClearsNote');
+
+function refreshHomeTypeSeg() {
+  let unavailable = 0;
+  for (const b of homeTypeSegEl.querySelectorAll('button')) {
+    const k = Number(b.dataset.v);
+    const ok = typeAvailable(homeW, homeW, k);
+    b.disabled = !ok;
+    if (!ok) unavailable++;
+  }
+  if (!typeAvailable(homeW, homeW, homeTypes)) {
+    const usable = TYPE_COUNTS.filter((k) => typeAvailable(homeW, homeW, k));
+    homeTypes = usable.reduce((best, k) =>
+      Math.abs(k - homeTypes) < Math.abs(best - homeTypes) ? k : best, usable[0]);
+  }
+  markSeg(homeTypeSegEl, homeTypes);
+  homeTypeNoteEl.textContent = unavailable
+    ? `${homeW}×${homeW} では、この色数で作れる柄がないものを伏せています。`
+    : '';
+}
+
+function renderHomeClears() {
+  const parts = SIZES.filter((s) => clears[s]).map((s) => `${s}×${s} ${clears[s]} 回`);
+  homeClearsEl.textContent = parts.length ? `クリア済み: ${parts.join('・')}` : 'クリア済み: まだありません';
+}
+
+fillSeg(homeSizeSegEl, SIZES, (v) => `${v}×${v}`);
+fillSeg(homeTypeSegEl, TYPE_COUNTS, (v) => `${v} 種`);
+markSeg(homeSizeSegEl, homeW);
+refreshHomeTypeSeg();
+renderHomeClears();
+
+homeSizeSegEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  homeW = Number(b.dataset.v);
+  markSeg(homeSizeSegEl, homeW);
+  refreshHomeTypeSeg();
+});
+homeTypeSegEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  homeTypes = Number(b.dataset.v);
+  markSeg(homeTypeSegEl, homeTypes);
+});
+
+document.getElementById('homeStartBtn').addEventListener('click', () => {
+  pendA = pendB = pendW = pendH = homeW;
+  pendTypes = homeTypes;
+  pendCustom = false;
+  seedInEl.value = '';
+  startFromPending();
+  show(playEl);
+});
+document.getElementById('homeCustomBtn').addEventListener('click', () => setPanel('setup', true));
+document.getElementById('homeHowtoBtn').addEventListener('click', () => {
+  setPanel('panel', true);
+  setPanelTab('rule');
+});
+
+// はじめから 1 問ぶん作っておく。ホーム画面の裏で用意しておけば、
+// 「はじめる」を押した瞬間にも真っさらな盤面（buildDom 直後の空の板）を
+// 見せずに済む。ホームの選択がそのまま初期値（4×4・2 種）と一致する。
 buildDom();
 newPuzzle();

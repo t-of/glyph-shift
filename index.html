@@ -41,7 +41,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 </head>
 <body>
   <header class="rail">
-    <div class="mark">
+    <button id="logoBtn" class="mark" type="button" aria-label="ホームへ戻る" title="ホームへ戻る">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
         <circle cx="6" cy="6" r="1.7" fill="currentColor" stroke="none"/>
         <circle cx="12" cy="6" r="1.7" fill="currentColor" stroke="none"/>
@@ -56,10 +56,10 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <circle cx="12" cy="12" r="2.9" stroke-width="1.5"/>
       </svg>
       <span class="wordmark">ABILITILE</span>
-    </div>
+    </button>
 
     <div class="rail-actions">
-      <button id="setupBtn" class="icon" type="button" aria-expanded="false" aria-controls="setup" aria-label="盤面の設定を開く" title="盤面の設定">
+      <button id="setupBtn" class="icon" type="button" aria-expanded="false" aria-controls="setup" aria-label="盤面の設定を開く" title="盤面の設定" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
           <path d="M3 7h12M19 7h2M3 12h4M11 12h10M3 17h8M15 17h6"/>
           <circle cx="17" cy="7" r="2" fill="currentColor" stroke="none"/>
@@ -67,7 +67,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
           <circle cx="13" cy="17" r="2" fill="currentColor" stroke="none"/>
         </svg>
       </button>
-      <button id="menuBtn" class="icon menu-btn" type="button" aria-expanded="false" aria-controls="panel" aria-label="遊び方と設定を開く" title="遊び方と設定">
+      <button id="menuBtn" class="icon menu-btn" type="button" aria-expanded="false" aria-controls="panel" aria-label="遊び方と設定を開く" title="遊び方と設定" hidden>
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -161,7 +161,56 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </section>
   </aside>
 
-  <main class="stage">
+  <!-- ホーム -->
+  <main class="screen title" id="title">
+    <header class="title-head">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="6" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="12" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="6" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="6" cy="12" r="1.7" fill="currentColor" stroke="none"/>
+          <path d="M12 2 A10 10 0 1 1 2 12" stroke-width="1.4" opacity=".8"/>
+          <polygon points="2,7.8 0.1,12.2 3.9,12.2" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="12" r="2.9" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <h1 class="title-name">ABILITILE</h1>
+      <p class="title-catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
+    </header>
+
+    <section class="home-pick">
+      <div class="field">
+        <span class="label">サイズ</span>
+        <div class="seg" id="homeSizeSeg" role="group" aria-label="盤のサイズ"></div>
+        <p class="note home-clears" id="homeClearsNote"></p>
+      </div>
+      <div class="field">
+        <span class="label">ブロック数</span>
+        <div class="seg" id="homeTypeSeg" role="group" aria-label="ブロック数"></div>
+        <p class="note" id="homeTypeNote"></p>
+      </div>
+      <button id="homeStartBtn" class="primary wide" type="button">はじめる</button>
+      <div class="home-links">
+        <button id="homeCustomBtn" class="ghost-btn" type="button">カスタムで作る</button>
+        <button id="homeHowtoBtn" class="ghost-btn" type="button">遊び方</button>
+      </div>
+    </section>
+
+    <footer class="home-foot">
+      <div class="home-foot-actions">
+        <button class="pill" type="button" data-wak="install" hidden>アプリにする</button>
+        <button class="pill" type="button" data-wak="share">共有</button>
+      </div>
+      <p class="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
+    </footer>
+  </main>
+
+  <main class="stage" id="play" hidden>
     <section class="play">
       <div class="board-frame">
         <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>

@@ -39,6 +39,10 @@
 
 * { box-sizing: border-box; }
 
+/* [hidden] は display:none のはずだが、.stage 等クラスの display 指定と
+   同じ詳細度のため後勝ちで無効化されうる。!important で確実に隠す。 */
+[hidden] { display: none !important; }
+
 /* Safari 26 は上下のバーの色を html から取るので、body と同じ地を塗っておく */
 html { background: var(--ground); }
 
@@ -127,6 +131,42 @@ body {
 .menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(6.8px) rotate(45deg); }
 .menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
 .menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6.8px) rotate(-45deg); }
+
+/* ---- ホーム ---- */
+.title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: center;
+}
+.title-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.title-head .mark { color: var(--accent); }
+.title-head .mark svg { width: 38px; height: 38px; }
+.title-name { margin: 2px 0 0; font-size: 28px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
+.title-catch { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.7; }
+
+.home-pick { align-self: stretch; display: flex; flex-direction: column; gap: 22px; text-align: left; }
+.home-clears { text-align: left; }
+.home-links { display: flex; gap: 10px; margin-top: 12px; }
+.home-links .ghost-btn { flex: 1; }
+
+.home-foot { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.home-foot-actions { display: flex; gap: 8px; }
+.pill {
+  min-height: 38px;
+  padding: 8px 16px;
+  font: 500 12px/1 var(--ui);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--text);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pill:hover { border-color: var(--accent); }
+.pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---- 盤面 ---- */
 .stage {
