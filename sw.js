@@ -9,6 +9,7 @@
 // 上げ忘れると古い一式が配られ続けた（実際に 3 回続けて上げ忘れた）。
 // 更新の合図を人の手に委ねない形にしてある。VERSION は箱の名前を変えて
 // 作り直すためだけのもので、上げ忘れても新しい中身は届く。
+// ブラウザの HTTP キャッシュを通さない（install は reload、fetch は no-cache）。古い main.js と新しい index.html が混ざって動かなくなるのを防ぐ。
 const VERSION = 'v5';
 // 箱の名前は必ずこの接頭辞で始める。t-of.github.io の他のアプリと同じ生地（オリジン）で
 // CacheStorage を分け合っているので、片付けるときは自分の接頭辞のものにしか手を出さない。
@@ -41,7 +42,7 @@ self.addEventListener('install', (e) => {
   // 取りこぼしを黙って見逃さないため addAll を使う（1 つでも落ちれば install ごと失敗し、
   // 古い版が生き残る。中途半端な箱ができるよりそのほうがいい）
   // 入れ終えたらすぐ交代する。待たせると、全部のタブを閉じるまで古い版が居座る。
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(FILES.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -57,7 +58,7 @@ self.addEventListener('activate', (e) => {
 
 // 取れたら箱にも入れておく
 const fetchAndKeep = (cacheName, req) =>
-  fetch(req).then((res) => {
+  fetch(req, { cache: 'no-cache' }).then((res) => {
     if (res && res.ok && res.type === 'basic') {
       const copy = res.clone();
       caches.open(cacheName).then((c) => c.put(req, copy));
