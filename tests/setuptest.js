@@ -23,7 +23,7 @@ const before = { W, H, SIZE, types, board: [...board], tiles: [...tileAbility] }
 ok(W === 4 && types === 2, `初期状態が想定と違う: W=${W} types=${types}`);
 
 // 1. 設定パネルを開いても盤面は変わらない
-document.getElementById('setupBtn').fire('click', {});
+document.getElementById('homeCustomBtn').fire('click', {});
 ok(same(board, before.board), 'パネルを開いただけで盤面が変わった');
 
 // 2. サイズを選んでも盤面は変わらない
@@ -58,15 +58,15 @@ ok(!document.getElementById('setup')._cls.has('open'), '作成後もパネルが
 
 // 7. 同じ SEED なら同じ盤面が出る
 const madeBoard = [...board], madeTiles = [...tileAbility];
-document.getElementById('setupBtn').fire('click', {});
+document.getElementById('homeCustomBtn').fire('click', {});
 document.getElementById('seedIn').value = '4242';
 document.getElementById('createBtn').fire('click', {});
 ok(same(board, madeBoard) && same(tileAbility, madeTiles), '同じ SEED なのに違う盤面になった');
 
 // 8. パネルを開き直すと、選択は今の盤面の設定に戻っている
 document.getElementById('sizeSeg').fire('click', { target: sizeBtns[4] });
-document.getElementById('setupBtn').fire('click', {});  // 閉じる
-document.getElementById('setupBtn').fire('click', {});  // 開き直す
+document.getElementById('homeCustomBtn').fire('click', {});  // 閉じる
+document.getElementById('homeCustomBtn').fire('click', {});  // 開き直す
 ok(sizeBtns[6].getAttribute('aria-pressed') === 'true', '開き直したとき現在のサイズが選択されていない');
 ok(document.getElementById('seedIn').value === '', 'SEED 欄が空に戻っていない');
 

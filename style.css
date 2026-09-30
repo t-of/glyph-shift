@@ -226,6 +226,26 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .pill:hover { border-color: var(--accent); }
 .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* 横長の画面（PC）: 左にタイトル・ボタン、右にステージ一覧。行は横スクロールせず折り返して全部見せる。 */
+@media (min-width: 900px) {
+  .title {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 56px;
+    row-gap: 24px;
+    align-items: start;
+    text-align: left;
+  }
+  .title-head { grid-column: 1; grid-row: 1; align-items: flex-start; }
+  .home-pick { display: contents; }
+  .home-links { grid-column: 1; grid-row: 2; flex-direction: column; margin-top: 0; }
+  .home-foot { grid-column: 1; grid-row: 3; align-items: flex-start; }
+  .stage-list { grid-column: 2; grid-row: 1 / -1; }
+  .stage-row { flex-wrap: wrap; overflow: visible; }
+}
+
 /* ---- 盤面 ---- */
 .stage {
   display: flex;

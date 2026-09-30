@@ -72,14 +72,14 @@ clearHint();
 }
 
 // 逆の順で選んでも同じ盤になる
-el('setupBtn').fire('click', {});
+el('homeCustomBtn').fire('click', {});
 el('sideA').fire('click', { target: aBtns[6] });
 el('sideB').fire('click', { target: bBtns[3] });
 el('createBtn').fire('click', {});
 ok(W === 6 && H === 3, `選ぶ順で盤が変わった: ${W}×${H}`);
 
 // 同じ数を 2 つ選べば正方形
-el('setupBtn').fire('click', {});
+el('homeCustomBtn').fire('click', {});
 el('sideA').fire('click', { target: aBtns[5] });
 el('sideB').fire('click', { target: bBtns[5] });
 ok(el('sizeNote').textContent.includes('正方形'), '同じ数を選んでも正方形と言わない');
@@ -87,7 +87,7 @@ el('createBtn').fire('click', {});
 ok(W === 5 && H === 5, `同じ数を選んでも正方形にならない: ${W}×${H}`);
 
 console.log('\n正方形に戻すと元どおり');
-el('setupBtn').fire('click', {});          // syncSetup が走る
+el('homeCustomBtn').fire('click', {});          // syncSetup が走る
 ok(el('customChk').checked === true, '長方形の盤なのにカスタムが解除されている');
 el('customChk').checked = false;
 el('customChk').fire('change', {});

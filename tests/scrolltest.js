@@ -3,7 +3,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 W = H = 4; SIZE = 16; buildDom(); newPuzzle(1);
 const body = document.body;
 ok(!body._cls.has('no-scroll'), '初期状態でスクロールが止まっている');
-document.getElementById('setupBtn').fire('click', {});
+document.getElementById('homeCustomBtn').fire('click', {});
 ok(body._cls.has('no-scroll'), '設定パネルを開いても背景が固定されない');
 document.getElementById('setupClose').fire('click', {});
 ok(!body._cls.has('no-scroll'), '設定パネルを閉じても背景が固定されたまま');

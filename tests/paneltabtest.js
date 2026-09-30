@@ -86,7 +86,7 @@ Sfx.set(wasOn);
   const html = require('fs').readFileSync(__root + '/index.html', 'utf8');
   const rail = html.slice(html.indexOf('class="rail-actions"'), html.indexOf('</header>'));
   ok(!rail.includes('soundBtn'), '上のバーに効果音のボタンが残っている');
-  ok(rail.includes('setupBtn') && rail.includes('menuBtn'), '上のバーから他のボタンまで消えている');
+  ok(!rail.includes('setupBtn') && rail.includes('menuBtn'), '上のバーに盤面の設定が残っている／遊び方が消えている');
 }
 
 console.log(fail ? `\nパネルの構成: 失敗 ${fail} 件` : '\nパネルの構成: 全チェック通過');

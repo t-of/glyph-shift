@@ -1278,9 +1278,11 @@ function pickGoal(w, h, k, cands, rng, forced, attempt) {
 }
 
 // ---- 生成 ----
-function newPuzzle(useSeed) {
-  seed = Number.isFinite(useSeed) ? useSeed : Math.floor(Math.random() * 1e9);
-  const rng = mulberry32(seed);
+// seed からゴール（tileAbility）と混ぜた盤（board）と保険の手順（solution）を決める。
+// 今の W / H / types / forcedAbilities を使う。newPuzzle と、ホームのプレビュー
+// （stageGoalPreview）が同じここを通るので、プレビューと実際の盤が必ず一致する。
+function generate(seedValue) {
+  const rng = mulberry32(seedValue);
   const K = Math.min(forcedAbilities ? forcedAbilities.length : types, SIZE, ABILITIES.length);
   let steps = scrambleSteps();
 
@@ -1309,6 +1311,11 @@ function newPuzzle(useSeed) {
     }
     if (attempt > 40) steps += SIZE; // まず起きないが、念のため深くして抜ける
   }
+}
+
+function newPuzzle(useSeed) {
+  seed = Number.isFinite(useSeed) ? useSeed : Math.floor(Math.random() * 1e9);
+  generate(seed);
 
   stopAutoSolve();
   autoSolvedFlag = false;
@@ -1551,7 +1558,7 @@ const backdropEl = document.getElementById('panelBackdrop');
 const PANELS = {
   setup: {
     el: document.getElementById('setup'),
-    btn: document.getElementById('setupBtn'),
+    btn: document.getElementById('homeCustomBtn'),
     close: document.getElementById('setupClose'),
     label: '盤面の設定',
     onOpen: syncSetup,
@@ -1829,23 +1836,24 @@ function stageFor(s, k) {
   return st;
 }
 
-// そのステージの seed から、混ぜる前のゴールの並びだけを求める（一覧のプレビュー用）。
-// pickGoal の 1 回目の結果と必ず一致する（引き直しは、混ぜた結果がたまたま完成形の
-// ときだけで極めてまれ）。混ぜないので一覧ぶん呼んでも軽い。
+// そのステージの seed から、実際に遊ぶ盤のゴールを求める（一覧のプレビュー用）。
+// newPuzzle と同じ generate を通すので、引き直し（小さい盤で、どう混ぜても崩れない
+// ゴールを引いたとき）まで含めて実際の盤と一致する。
 function stageGoalPreview(s, k, seed) {
-  const rng = mulberry32(seed);
-  const savedPatternSeed = patternSeed;   // 今の対局の patternSeed を横取りしない
-  patternSeed = Math.floor(rng() * 1e9);
-  const cands = candidatePatterns(s, s, k);
-  const goal = pickGoal(s, s, k, cands, rng, null, 0);
-  patternSeed = savedPatternSeed;
+  // generate は対局の状態を書き換えるので、今の対局を退避して戻す
+  const saved = { W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution };
+  W = H = s; SIZE = s * s; types = k; forcedAbilities = null;
+  generate(seed);
+  const goal = tileAbility;
+  ({ W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution } = saved);
   return goal;
 }
 
-// そのステージで実際に遊んだあとは st.goal に本当のゴールを覚えておく（下の
-// stageListEl の click 参照）。newPuzzle が引き直し（attempt > 0）を挟んだ回だけ
-// stageGoalPreview の 1 回目の結果とずれうるので、覚えているときはそちらを使う。
-const goalForStage = (s, k, st) => (st.goal && st.goal.length === s * s ? st.goal : stageGoalPreview(s, k, st.seed));
+// 求めたゴールは st.goal に覚えておき、次からは混ぜ直さずに使う（seed が変わると消える）。
+function goalForStage(s, k, st) {
+  if (!(st.goal && st.goal.length === s * s)) { st.goal = stageGoalPreview(s, k, st.seed); saveStages(); }
+  return st.goal;
+}
 
 const starsLabel = (n) => (n ? (n <= 8 ? '★'.repeat(n) : `★×${n}`) : '未クリア');
 
@@ -1980,7 +1988,6 @@ const playEl = document.getElementById('play');
 function show(screen) {
   titleEl.hidden = screen !== titleEl;
   playEl.hidden = screen !== playEl;
-  setupBtnEl.hidden = screen !== playEl;
   menuBtnEl.hidden = screen !== playEl;
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 }
@@ -1995,11 +2002,9 @@ function goHome() {
   show(titleEl);
 }
 
-const setupBtnEl = document.getElementById('setupBtn');
 const menuBtnEl = document.getElementById('menuBtn');
 document.getElementById('logoBtn').addEventListener('click', goHome);
 
-document.getElementById('homeCustomBtn').addEventListener('click', () => setPanel('setup', true));
 document.getElementById('homeHowtoBtn').addEventListener('click', () => {
   setPanel('panel', true);
   setPanelTab('rule');
