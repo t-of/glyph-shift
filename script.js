@@ -907,6 +907,7 @@ function showClear() {
     const st = stageFor(W, types);
     st.clears = (st.clears || 0) + 1;
     st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
+    delete st.goal;                              // 上の seed が変わった時点で古いゴールになる
     saveStages();
   }
 }
@@ -1841,12 +1842,67 @@ function stageGoalPreview(s, k, seed) {
   return goal;
 }
 
+// そのステージで実際に遊んだあとは st.goal に本当のゴールを覚えておく（下の
+// stageListEl の click 参照）。newPuzzle が引き直し（attempt > 0）を挟んだ回だけ
+// stageGoalPreview の 1 回目の結果とずれうるので、覚えているときはそちらを使う。
+const goalForStage = (s, k, st) => (st.goal && st.goal.length === s * s ? st.goal : stageGoalPreview(s, k, st.seed));
+
 const starsLabel = (n) => (n ? (n <= 8 ? '★'.repeat(n) : `★×${n}`) : '未クリア');
+
+// ---- ステージのミニ盤（カードの絵柄）----
+// ゲーム画面と同じ .slot/.tile（立体タイル・アイコン）で描く。カードごとに
+// --nx/--ny/--cell/--gap を設定するだけで、見た目は style.css の .stage-mini /
+// .mini .tile 共有ルールに任せる（描き方そのものは新しく作らない）。
+// セルの大きさはサイズが大きいほど小さくするが、360 幅でも読めるよう 14px は下回らない。
+const stageCellPx = (s) => Math.max(14, Math.min(34, Math.round(150 / s)));
+const stageGapPx = (cell) => Math.max(1, Math.round(cell / 10));
+
+function buildStageMini(container, s, goal) {
+  const cell = stageCellPx(s);
+  container.style.setProperty('--nx', s);
+  container.style.setProperty('--ny', s);
+  container.style.setProperty('--cell', `${cell}px`);
+  container.style.setProperty('--gap', `${stageGapPx(cell)}px`);
+  container.replaceChildren();
+  for (const ab of goal) {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    const t = document.createElement('div');
+    t.className = 'tile';
+    t.style.background = bgOf(ab);
+    t.style.color = INK;
+    t.innerHTML = iconSvg(ab);
+    slot.append(t);
+    container.append(slot);
+  }
+}
+
+// 画面に入ったカードだけ描く（約 90 面ぶんを一度に描くと重いため）。
+// IntersectionObserver が無い環境（テストなど）では、その場ですぐ描く。
+const stageMiniPending = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+let stageObserver = null;
+
+function makeStageObserver() {
+  if (typeof IntersectionObserver === 'undefined' || !stageMiniPending) return null;
+  return new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      if (!en.isIntersecting) continue;
+      stageObserver.unobserve(en.target);
+      const req = stageMiniPending.get(en.target);
+      if (!req) continue;
+      stageMiniPending.delete(en.target);
+      buildStageMini(en.target, req.s, goalForStage(req.s, req.k, stageFor(req.s, req.k)));
+    }
+  }, { rootMargin: '640px 240px' }); // 縦スクロールでも横スクロールでも、少し手前から描き始める
+}
 
 const stageListEl = document.getElementById('stageList');
 
 function renderStageList() {
   stageListEl.replaceChildren();
+  if (stageObserver) stageObserver.disconnect();
+  stageObserver = makeStageObserver();
+
   for (const s of SIZES) {
     const ks = TYPE_COUNTS.filter((k) => typeAvailable(s, s, k));
     if (!ks.length) continue;
@@ -1867,7 +1923,6 @@ function renderStageList() {
     row.className = 'stage-row';
     for (const k of ks) {
       const st = stageFor(s, k);
-      const goal = stageGoalPreview(s, k, st.seed);
 
       const item = document.createElement('button');
       item.type = 'button';
@@ -1878,12 +1933,14 @@ function renderStageList() {
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
-      mini.style.gridTemplateColumns = `repeat(${s}, 1fr)`;
-      for (const ab of goal) {
-        const cell = document.createElement('i');
-        cell.style.background = bgOf(ab);
-        mini.append(cell);
-      }
+      // 幅・高さが決まらず行の高さが詰まらないよう、描く前からセルの大きさだけは決めておく
+      const cell = stageCellPx(s);
+      mini.style.setProperty('--nx', s);
+      mini.style.setProperty('--ny', s);
+      mini.style.setProperty('--cell', `${cell}px`);
+      mini.style.setProperty('--gap', `${stageGapPx(cell)}px`);
+      if (stageObserver) { stageMiniPending.set(mini, { s, k }); stageObserver.observe(mini); }
+      else buildStageMini(mini, s, goalForStage(s, k, st));
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
@@ -1912,6 +1969,8 @@ stageListEl.addEventListener('click', (e) => {
   pendCustom = false;
   seedInEl.value = String(st.seed);
   startFromPending();
+  st.goal = Array.from(tileAbility);   // 実際に生成されたゴールを覚えておく（次の一覧でずれないように）
+  saveStages();
   show(playEl);
 });
 

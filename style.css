@@ -154,7 +154,9 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .home-links .ghost-btn { flex: 1; }
 
 /* ---- ステージ一覧 ---- */
-.stage-list { display: flex; flex-direction: column; gap: 20px; max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; margin: -4px; padding: 4px; }
+/* サイズごとに 1 行、行の中は横スクロール（スマホの指で流せるようスナップ付き）。
+   ページ全体は縦にふつうにスクロールする（内側に高さで区切らない）。 */
+.stage-list { display: flex; flex-direction: column; gap: 22px; }
 .stage-size-head {
   margin: 0 0 8px;
   display: flex;
@@ -165,33 +167,47 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   color: var(--text);
 }
 .stage-legacy { font-size: 11px; font-weight: 400; color: var(--dim); }
-.stage-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.stage-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 4px;
+  -webkit-overflow-scrolling: touch;
+  margin: -4px -4px 0;
+  padding: 4px 4px 6px;
+}
 .stage-item {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  width: 74px;
-  padding: 8px 6px 10px;
+  gap: 6px;
+  padding: 8px 8px 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
   touch-action: manipulation;
+  scroll-snap-align: start;
 }
 .stage-item:hover { border-color: var(--accent); }
 .stage-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 実際の盤と同じ .slot/.tile（立体タイル・絵柄）で描く。--nx/--ny/--cell/--gap は
+   カードごとに JS が設定する（.grid クラスは使わない。@media 820px の
+   width:100%/aspect-ratio の上書きに巻き込まれないため。中身の見た目は
+   .mini .slot / .mini .tile と共有する）。 */
 .stage-mini {
   display: grid;
-  width: 44px;
-  height: 44px;
-  gap: 1px;
-  border-radius: 6px;
-  overflow: hidden;
+  gap: var(--gap);
+  grid-template-columns: repeat(var(--nx), var(--cell));
+  grid-template-rows: repeat(var(--ny), var(--cell));
+  padding: 3px;
+  border-radius: 8px;
   background: var(--well);
 }
-.stage-mini i { display: block; }
 .stage-meta { font-size: 10.5px; color: var(--dim); }
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; }
 
@@ -393,9 +409,10 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .card { margin: 0; }
 
 .mini { --cell: var(--mini-cell, 30px); --gap: 4px; }
-.mini .slot { border-radius: 6px; background: none; }
-/* 小さいタイルなので、厚みと影は本盤より弱める（潰れて見えないように） */
-.mini .tile {
+.mini .slot, .stage-mini .slot { border-radius: 6px; background: none; }
+/* 小さいタイルなので、厚みと影は本盤より弱める（潰れて見えないように）。
+   目標の柄（サイドバー）とステージ一覧のカードで共通に使う。 */
+.mini .tile, .stage-mini .tile {
   border-radius: 6px;
   cursor: default;
   box-shadow:
@@ -405,9 +422,9 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     0 2px 0 rgba(0, 0, 0, .45),
     0 2px 4px rgba(0, 0, 0, .3);
 }
-.mini .tile::before { background: linear-gradient(180deg, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .06) 32%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, .14) 100%); }
-.mini .tile svg { translate: 0 -1px; }
-.mini .tile:hover { box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 0 0 1px rgba(0, 0, 0, .18), 0 2px 0 rgba(0, 0, 0, .45), 0 2px 4px rgba(0, 0, 0, .3); }
+.mini .tile::before, .stage-mini .tile::before { background: linear-gradient(180deg, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .06) 32%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, .14) 100%); }
+.mini .tile svg, .stage-mini .tile svg { translate: 0 -1px; }
+.mini .tile:hover, .stage-mini .tile:hover { box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 0 0 1px rgba(0, 0, 0, .18), 0 2px 0 rgba(0, 0, 0, .45), 0 2px 4px rgba(0, 0, 0, .3); }
 
 .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .legend li { display: flex; align-items: center; gap: 10px; font-size: 11.5px; line-height: 1.45; color: var(--dim); }
