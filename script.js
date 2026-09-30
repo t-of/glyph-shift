@@ -1989,6 +1989,7 @@ function show(screen) {
   titleEl.hidden = screen !== titleEl;
   playEl.hidden = screen !== playEl;
   menuBtnEl.hidden = screen !== playEl;
+  homeBtnEl.hidden = screen !== playEl;
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 }
 
@@ -2003,6 +2004,8 @@ function goHome() {
 }
 
 const menuBtnEl = document.getElementById('menuBtn');
+const homeBtnEl = document.getElementById('homeBtn');
+homeBtnEl.addEventListener('click', goHome);
 document.getElementById('logoBtn').addEventListener('click', goHome);
 
 document.getElementById('homeHowtoBtn').addEventListener('click', () => {
