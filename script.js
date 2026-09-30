@@ -1855,6 +1855,11 @@ function goalForStage(s, k, st) {
   return st.goal;
 }
 
+// いま盤に残っている対局が、そのステージの途中か（ホームに戻っても盤は作り直さずに残してある）。
+// 一度でも押していて、まだ揃っていないものだけ。seed が違えば別の盤（再生成・クリア後）。
+const inProgress = (s, k) =>
+  W === s && H === s && types === k && !forcedAbilities && seed === stageFor(s, k).seed && run.i >= 0 && !isSolved();
+
 const starsLabel = (n) => (n ? (n <= 8 ? '★'.repeat(n) : `★×${n}`) : '未クリア');
 
 // ---- ステージのミニ盤（カードの絵柄）----
@@ -1937,7 +1942,9 @@ function renderStageList() {
       item.className = 'stage-item';
       item.dataset.s = String(s);
       item.dataset.k = String(k);
-      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${starsLabel(st.clears)}`);
+      const resume = inProgress(s, k);
+      if (resume) item.classList.add('resume');
+      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${starsLabel(st.clears)}${resume ? '、続きから' : ''}`);
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -1959,6 +1966,12 @@ function renderStageList() {
       stars.textContent = starsLabel(st.clears);
 
       item.append(mini, meta, stars);
+      if (resume) {
+        const tag = document.createElement('span');
+        tag.className = 'stage-resume';
+        tag.textContent = '続きから';
+        item.append(tag);
+      }
       row.append(item);
     }
     sec.append(head, row);
@@ -1972,6 +1985,7 @@ stageListEl.addEventListener('click', (e) => {
   const s = Number(item.dataset.s);
   const k = Number(item.dataset.k);
   const st = stageFor(s, k);
+  if (inProgress(s, k)) { show(playEl); return; }   // 途中の盤をそのまま続ける
   pendA = pendB = pendW = pendH = s;
   pendTypes = k;
   pendCustom = false;

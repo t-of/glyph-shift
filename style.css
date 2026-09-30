@@ -210,6 +210,15 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .stage-meta { font-size: 10.5px; color: var(--dim); }
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; }
+.stage-item.resume { border-color: var(--accent); }
+.stage-resume {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+}
 
 .home-foot { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .home-foot-actions { display: flex; gap: 8px; }
