@@ -184,17 +184,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </header>
 
     <section class="home-pick">
-      <div class="field">
-        <span class="label">サイズ</span>
-        <div class="seg" id="homeSizeSeg" role="group" aria-label="盤のサイズ"></div>
-        <p class="note home-clears" id="homeClearsNote"></p>
-      </div>
-      <div class="field">
-        <span class="label">ブロック数</span>
-        <div class="seg" id="homeTypeSeg" role="group" aria-label="ブロック数"></div>
-        <p class="note" id="homeTypeNote"></p>
-      </div>
-      <button id="homeStartBtn" class="primary wide" type="button">はじめる</button>
+      <div id="stageList" class="stage-list" role="group" aria-label="ステージ"></div>
       <div class="home-links">
         <button id="homeCustomBtn" class="ghost-btn" type="button">カスタムで作る</button>
         <button id="homeHowtoBtn" class="ghost-btn" type="button">遊び方</button>

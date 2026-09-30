@@ -898,11 +898,16 @@ function showClear() {
     ? 'そろった！（自動で揃えました） — 設定から次の盤面を作れます'
     : `そろった！ ${moves} 手 — 設定から次の盤面を作れます`;
 
-  // 自分で揃えた、正方形・カスタムでない盤だけをサイズ別のクリア数に数える。
+  // 自分で揃えた、正方形・カスタムでない盤だけをステージのクリアに数える。
   // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
   if (!autoSolvedFlag && W === H && !forcedAbilities) {
-    clears[W] = (clears[W] || 0) + 1;
-    saveClears();
+    clears[W] = (clears[W] || 0) + 1;   // 旧仕様の記録。消さずに足しておく
+    try { localStorage.setItem(CLEARS_KEY, JSON.stringify(clears)); } catch (e) { /* 保存できなくても遊べる */ }
+
+    const st = stageFor(W, types);
+    st.clears = (st.clears || 0) + 1;
+    st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
+    saveStages();
   }
 }
 
@@ -1238,6 +1243,39 @@ function removeLoops(path, tbl) {
   return out;
 }
 
+// 柄と使うブロックを rng から決めて、混ぜる前のゴールの並びを返す（タイル v の能力 = マス v の色）。
+// newPuzzle 本体と、ホームのステージ一覧のゴールのプレビュー（混ぜない）の両方から呼ぶので、
+// 実際に遊ぶ盤のゴールと必ず一致する。cands は candidatePatterns の結果を先に渡す
+// （newPuzzle は同じ K で何度も呼ぶので、外で 1 回だけ求める）。
+// forced を渡す（カスタム）ときだけ、指定した組をシャッフルして使う。
+function pickGoal(w, h, k, cands, rng, forced, attempt) {
+  const pat = cands[Math.floor(rng() * cands.length)];
+
+  // 使うブロックを k 種類選ぶ。カスタムで指定があればそれを使う。
+  // ただし指定した組ではどの柄も崩せないことがありうるので、
+  // 一定回数を超えたらランダム選びに戻して必ず終わらせる。
+  let picked;
+  if (forced && attempt < 200) {
+    picked = [...forced];
+    for (let a = picked.length - 1; a > 0; a--) {
+      const j = Math.floor(rng() * (a + 1));
+      [picked[a], picked[j]] = [picked[j], picked[a]];
+    }
+  } else {
+    // 「何も起きない」は柄の一色ぶん、つまり盤の 1/k を占める。色数が少ないと
+    // 盤の半分近くが動かないマスになり、打てる手が数えるほどしか残らない。
+    // ランダムに選ぶときは色数が 4 以上のときだけ混ぜる（カスタムでの指定は尊重する）。
+    const pool = ABILITIES.map((_, a) => a).filter((a) => k >= 4 || !isBlank(a));
+    for (let a = pool.length - 1; a > 0; a--) {
+      const j = Math.floor(rng() * (a + 1));
+      [pool[a], pool[j]] = [pool[j], pool[a]];
+    }
+    picked = pool.slice(0, k);
+  }
+
+  return Array.from({ length: w * h }, (_, i) => picked[pat.fn(i % w, Math.floor(i / w), w, h, k)]);
+}
+
 // ---- 生成 ----
 function newPuzzle(useSeed) {
   seed = Number.isFinite(useSeed) ? useSeed : Math.floor(Math.random() * 1e9);
@@ -1249,33 +1287,8 @@ function newPuzzle(useSeed) {
   const cands = candidatePatterns(W, H, K);
 
   for (let attempt = 0; ; attempt++) {
-    const pat = cands[Math.floor(rng() * cands.length)];
-
-    // 使うブロックを K 種類選ぶ。カスタムで指定があればそれを使う。
-    // ただし指定した組ではどの柄も崩せないことがありうるので、
-    // 一定回数を超えたらランダム選びに戻して必ず終わらせる。
-    let picked;
-    if (forcedAbilities && attempt < 200) {
-      picked = [...forcedAbilities];
-      for (let k = picked.length - 1; k > 0; k--) {
-        const j = Math.floor(rng() * (k + 1));
-        [picked[k], picked[j]] = [picked[j], picked[k]];
-      }
-    } else {
-      // 「何も起きない」は柄の一色ぶん、つまり盤の 1/K を占める。色数が少ないと
-      // 盤の半分近くが動かないマスになり、打てる手が数えるほどしか残らない。
-      // ランダムに選ぶときは色数が 4 以上のときだけ混ぜる（カスタムでの指定は尊重する）。
-      const pool = ABILITIES.map((_, k) => k)
-        .filter((k) => K >= 4 || !isBlank(k));
-      for (let k = pool.length - 1; k > 0; k--) {
-        const j = Math.floor(rng() * (k + 1));
-        [pool[k], pool[j]] = [pool[j], pool[k]];
-      }
-      picked = pool.slice(0, K);
-    }
-
-    // 柄を目標配置にする。タイル v の能力 = 完成時にマス v に来る色。
-    tileAbility = Array.from({ length: SIZE }, (_, i) => picked[pat.fn(xOf(i), yOf(i), W, H, K)]);
+    // 柄と使うブロックを rng から決める。タイル v の能力 = 完成時にマス v に来る色。
+    tileAbility = pickGoal(W, H, K, cands, rng, forcedAbilities, attempt);
 
     // 完成状態から混ぜる → 必ず解ける。Metropolis 補正なので定常分布は一様。
     const tbl = buildMoveTable();
@@ -1779,8 +1792,8 @@ createBtnEl.addEventListener('click', () => {
   show(playEl);
 });
 
-// ---- ホーム ----
-// サイズごとのクリア数。カスタム・長方形は数えない（ホームで選べるのは正方形だけのため）。
+// ---- ホーム（ステージ一覧） ----
+// サイズごとのクリア数（旧仕様からの記録。捨てず、見出しに「これまで n 回」として出す）。
 const CLEARS_KEY = 'glyphshift.clears';
 function loadClears() {
   try {
@@ -1788,11 +1801,119 @@ function loadClears() {
     return v && typeof v === 'object' ? v : {};
   } catch (e) { return {}; }
 }
-function saveClears() {
-  try { localStorage.setItem(CLEARS_KEY, JSON.stringify(clears)); }
+const clears = loadClears();
+
+// ステージ（正方形のサイズ×ブロック数の組）ごとに、盤面を決める seed と
+// クリアした回数を持つ。キーは "5x3" のように「サイズx種類数」。
+// 自分でクリアする（解説を使わない）たびに、その組の seed を新しく引き直す
+// ので、次にその項目を選ぶとゴールの柄が変わる。
+const STAGES_KEY = 'glyphshift.stages';
+function loadStages() {
+  try {
+    const v = JSON.parse(localStorage.getItem(STAGES_KEY));
+    return v && typeof v === 'object' ? v : {};
+  } catch (e) { return {}; }
+}
+function saveStages() {
+  try { localStorage.setItem(STAGES_KEY, JSON.stringify(stages)); }
   catch (e) { /* 保存できなくても遊べる */ }
 }
-const clears = loadClears();
+const stages = loadStages();
+
+// そのステージの記録を取り出す。まだ遊んでいなければ、ここで seed を 1 つ引いて覚える。
+function stageFor(s, k) {
+  const key = `${s}x${k}`;
+  let st = stages[key];
+  if (!st) { st = { seed: Math.floor(Math.random() * 1e9), clears: 0 }; stages[key] = st; saveStages(); }
+  return st;
+}
+
+// そのステージの seed から、混ぜる前のゴールの並びだけを求める（一覧のプレビュー用）。
+// pickGoal の 1 回目の結果と必ず一致する（引き直しは、混ぜた結果がたまたま完成形の
+// ときだけで極めてまれ）。混ぜないので一覧ぶん呼んでも軽い。
+function stageGoalPreview(s, k, seed) {
+  const rng = mulberry32(seed);
+  const savedPatternSeed = patternSeed;   // 今の対局の patternSeed を横取りしない
+  patternSeed = Math.floor(rng() * 1e9);
+  const cands = candidatePatterns(s, s, k);
+  const goal = pickGoal(s, s, k, cands, rng, null, 0);
+  patternSeed = savedPatternSeed;
+  return goal;
+}
+
+const starsLabel = (n) => (n ? (n <= 8 ? '★'.repeat(n) : `★×${n}`) : '未クリア');
+
+const stageListEl = document.getElementById('stageList');
+
+function renderStageList() {
+  stageListEl.replaceChildren();
+  for (const s of SIZES) {
+    const ks = TYPE_COUNTS.filter((k) => typeAvailable(s, s, k));
+    if (!ks.length) continue;
+
+    const sec = document.createElement('div');
+    sec.className = 'stage-size';
+    const head = document.createElement('h2');
+    head.className = 'stage-size-head';
+    head.append(`${s}×${s}`);
+    if (clears[s]) {
+      const legacy = document.createElement('span');
+      legacy.className = 'stage-legacy';
+      legacy.textContent = `これまで ${clears[s]} 回`;
+      head.append(legacy);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'stage-row';
+    for (const k of ks) {
+      const st = stageFor(s, k);
+      const goal = stageGoalPreview(s, k, st.seed);
+
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'stage-item';
+      item.dataset.s = String(s);
+      item.dataset.k = String(k);
+      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${starsLabel(st.clears)}`);
+
+      const mini = document.createElement('div');
+      mini.className = 'stage-mini';
+      mini.style.gridTemplateColumns = `repeat(${s}, 1fr)`;
+      for (const ab of goal) {
+        const cell = document.createElement('i');
+        cell.style.background = bgOf(ab);
+        mini.append(cell);
+      }
+
+      const meta = document.createElement('span');
+      meta.className = 'stage-meta';
+      meta.textContent = `${k} 種`;
+
+      const stars = document.createElement('span');
+      stars.className = 'stage-stars';
+      stars.textContent = starsLabel(st.clears);
+
+      item.append(mini, meta, stars);
+      row.append(item);
+    }
+    sec.append(head, row);
+    stageListEl.append(sec);
+  }
+}
+
+stageListEl.addEventListener('click', (e) => {
+  const item = e.target.closest('.stage-item');
+  if (!item) return;
+  const s = Number(item.dataset.s);
+  const k = Number(item.dataset.k);
+  const st = stageFor(s, k);
+  pendA = pendB = pendW = pendH = s;
+  pendTypes = k;
+  pendCustom = false;
+  seedInEl.value = String(st.seed);
+  startFromPending();
+  show(playEl);
+});
 
 const titleEl = document.getElementById('title');
 const playEl = document.getElementById('play');
@@ -1811,7 +1932,7 @@ function goHome() {
   clearHint();
   setPanel('setup', false);
   setPanel('panel', false);
-  renderHomeClears();
+  renderStageList();
   show(titleEl);
 }
 
@@ -1819,66 +1940,6 @@ const setupBtnEl = document.getElementById('setupBtn');
 const menuBtnEl = document.getElementById('menuBtn');
 document.getElementById('logoBtn').addEventListener('click', goHome);
 
-let homeW = W;
-let homeTypes = types;
-
-const homeSizeSegEl = document.getElementById('homeSizeSeg');
-const homeTypeSegEl = document.getElementById('homeTypeSeg');
-const homeTypeNoteEl = document.getElementById('homeTypeNote');
-const homeClearsEl = document.getElementById('homeClearsNote');
-
-function refreshHomeTypeSeg() {
-  let unavailable = 0;
-  for (const b of homeTypeSegEl.querySelectorAll('button')) {
-    const k = Number(b.dataset.v);
-    const ok = typeAvailable(homeW, homeW, k);
-    b.disabled = !ok;
-    if (!ok) unavailable++;
-  }
-  if (!typeAvailable(homeW, homeW, homeTypes)) {
-    const usable = TYPE_COUNTS.filter((k) => typeAvailable(homeW, homeW, k));
-    homeTypes = usable.reduce((best, k) =>
-      Math.abs(k - homeTypes) < Math.abs(best - homeTypes) ? k : best, usable[0]);
-  }
-  markSeg(homeTypeSegEl, homeTypes);
-  homeTypeNoteEl.textContent = unavailable
-    ? `${homeW}×${homeW} では、この色数で作れる柄がないものを伏せています。`
-    : '';
-}
-
-function renderHomeClears() {
-  const parts = SIZES.filter((s) => clears[s]).map((s) => `${s}×${s} ${clears[s]} 回`);
-  homeClearsEl.textContent = parts.length ? `クリア済み: ${parts.join('・')}` : 'クリア済み: まだありません';
-}
-
-fillSeg(homeSizeSegEl, SIZES, (v) => `${v}×${v}`);
-fillSeg(homeTypeSegEl, TYPE_COUNTS, (v) => `${v} 種`);
-markSeg(homeSizeSegEl, homeW);
-refreshHomeTypeSeg();
-renderHomeClears();
-
-homeSizeSegEl.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (!b || b.disabled) return;
-  homeW = Number(b.dataset.v);
-  markSeg(homeSizeSegEl, homeW);
-  refreshHomeTypeSeg();
-});
-homeTypeSegEl.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (!b || b.disabled) return;
-  homeTypes = Number(b.dataset.v);
-  markSeg(homeTypeSegEl, homeTypes);
-});
-
-document.getElementById('homeStartBtn').addEventListener('click', () => {
-  pendA = pendB = pendW = pendH = homeW;
-  pendTypes = homeTypes;
-  pendCustom = false;
-  seedInEl.value = '';
-  startFromPending();
-  show(playEl);
-});
 document.getElementById('homeCustomBtn').addEventListener('click', () => setPanel('setup', true));
 document.getElementById('homeHowtoBtn').addEventListener('click', () => {
   setPanel('panel', true);
@@ -1887,6 +1948,7 @@ document.getElementById('homeHowtoBtn').addEventListener('click', () => {
 
 // はじめから 1 問ぶん作っておく。ホーム画面の裏で用意しておけば、
 // 「はじめる」を押した瞬間にも真っさらな盤面（buildDom 直後の空の板）を
-// 見せずに済む。ホームの選択がそのまま初期値（4×4・2 種）と一致する。
+// 見せずに済む。ホームの一覧も初期値（4×4・2 種）と同じ盤で始まる。
 buildDom();
+renderStageList();
 newPuzzle();

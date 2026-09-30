@@ -150,9 +150,50 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .title-catch { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.7; }
 
 .home-pick { align-self: stretch; display: flex; flex-direction: column; gap: 22px; text-align: left; }
-.home-clears { text-align: left; }
-.home-links { display: flex; gap: 10px; margin-top: 12px; }
+.home-links { display: flex; gap: 10px; margin-top: 4px; }
 .home-links .ghost-btn { flex: 1; }
+
+/* ---- ステージ一覧 ---- */
+.stage-list { display: flex; flex-direction: column; gap: 20px; max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; margin: -4px; padding: 4px; }
+.stage-size-head {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.stage-legacy { font-size: 11px; font-weight: 400; color: var(--dim); }
+.stage-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.stage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 74px;
+  padding: 8px 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.stage-item:hover { border-color: var(--accent); }
+.stage-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage-mini {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  gap: 1px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--well);
+}
+.stage-mini i { display: block; }
+.stage-meta { font-size: 10.5px; color: var(--dim); }
+.stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; }
 
 .home-foot { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .home-foot-actions { display: flex; gap: 8px; }
