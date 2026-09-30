@@ -1521,6 +1521,7 @@ function setGlyphStyle(id) {
   fillPicker();
   refreshPicker();
   renderGlyphLegend();
+  renderDemos();
   markGlyphSeg();
 }
 
@@ -1532,6 +1533,31 @@ glyphSegEl.addEventListener('click', (e) => {
 fillGlyphSeg();
 markGlyphSeg();
 renderGlyphLegend();
+
+// ---- 見本の盤（スタートと遊び方） ----
+// まん中の「上下左右を時計回り」を押す前と後。上下左右の 4 枚が時計回りに 1 つずつ移る。
+const abId = (id) => ABILITIES.findIndex((ab) => ab.id === id);
+const DEMO_BEFORE = ['none', 'swapLR', 'none', 'ringCW', 'crossCW', 'swapUD', 'none', 'diagCW', 'none'].map(abId);
+const DEMO_AFTER = ['none', 'ringCW', 'none', 'diagCW', 'crossCW', 'swapLR', 'none', 'swapUD', 'none'].map(abId);
+
+function renderDemos() {
+  for (const [id, abs] of [['startDemo', DEMO_BEFORE], ['howtoBefore', DEMO_BEFORE], ['howtoAfter', DEMO_AFTER]]) {
+    const el = document.getElementById(id);
+    el.replaceChildren();
+    abs.forEach((ab, i) => {
+      const slot = document.createElement('div');
+      slot.className = i === 4 ? 'slot press' : 'slot';
+      const t = document.createElement('div');
+      t.className = 'tile';
+      t.style.background = bgOf(ab);
+      t.style.color = INK;
+      t.innerHTML = iconSvg(ab);
+      slot.append(t);
+      el.append(slot);
+    });
+  }
+}
+renderDemos();
 
 // ---- 効果音 ----
 // 入切は説明パネルの設定にある。
@@ -1999,7 +2025,10 @@ stageListEl.addEventListener('click', (e) => {
 const titleEl = document.getElementById('title');
 const playEl = document.getElementById('play');
 
+const startEl = document.getElementById('start');
+
 function show(screen) {
+  startEl.hidden = screen !== startEl;
   titleEl.hidden = screen !== titleEl;
   playEl.hidden = screen !== playEl;
   menuBtnEl.hidden = screen !== playEl;
@@ -2022,10 +2051,19 @@ const homeBtnEl = document.getElementById('homeBtn');
 homeBtnEl.addEventListener('click', goHome);
 document.getElementById('logoBtn').addEventListener('click', goHome);
 
-document.getElementById('homeHowtoBtn').addEventListener('click', () => {
-  setPanel('panel', true);
-  setPanelTab('rule');
-});
+document.getElementById('startBtn').addEventListener('click', () => show(titleEl));
+
+// ---- 遊び方（スタートとホーム） ----
+// プレイ中のパネルは設定も兼ねるので、始める前に読むものは別に持つ。
+// <dialog> の showModal で、Esc・フォーカスの閉じ込め・背景の操作止めを任せる。
+const howtoEl = document.getElementById('howto');
+function openHowto() { howtoEl.showModal?.(); }
+function closeHowto() { howtoEl.close?.(); }
+document.getElementById('startHowtoBtn').addEventListener('click', openHowto);
+document.getElementById('homeHowtoBtn').addEventListener('click', openHowto);
+document.getElementById('howtoClose').addEventListener('click', closeHowto);
+document.getElementById('howtoOk').addEventListener('click', closeHowto);
+howtoEl.addEventListener('click', (e) => { if (e.target === howtoEl) closeHowto(); });   // 枠の外を押したら閉じる
 
 // はじめから 1 問ぶん作っておく。ホーム画面の裏で用意しておけば、
 // 「はじめる」を押した瞬間にも真っさらな盤面（buildDom 直後の空の板）を

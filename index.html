@@ -158,8 +158,80 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </section>
   </aside>
 
+  <!-- スタート（起動したとき最初に出る） -->
+  <main class="screen start" id="start">
+    <header class="title-head">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="6" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="6" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="12" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="6" cy="18" r="1.7" fill="currentColor" stroke="none"/>
+          <circle cx="6" cy="12" r="1.7" fill="currentColor" stroke="none"/>
+          <path d="M12 2 A10 10 0 1 1 2 12" stroke-width="1.4" opacity=".8"/>
+          <polygon points="2,7.8 0.1,12.2 3.9,12.2" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="12" r="2.9" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <h1 class="title-name">ABILITILE</h1>
+      <p class="title-catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
+    </header>
+    <div class="stage-mini demo-grid" id="startDemo" aria-hidden="true"></div>
+    <div class="start-actions">
+      <button id="startBtn" class="primary" type="button">はじめる</button>
+      <button id="startHowtoBtn" class="ghost-btn" type="button">遊び方</button>
+    </div>
+    <footer class="home-foot">
+      <div class="home-foot-actions">
+        <button class="pill" type="button" data-wak="install" hidden>アプリにする</button>
+        <button class="pill" type="button" data-wak="share">共有</button>
+      </div>
+      <p class="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
+    </footer>
+  </main>
+
+  <!-- 遊び方（スタートとホームから開く。プレイ中はパネルの「ルール」） -->
+  <dialog class="howto-sheet" id="howto" aria-labelledby="howtoTitle">
+    <div class="panel-head">
+      <h2 id="howtoTitle">遊び方</h2>
+      <button id="howtoClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+    </div>
+    <ol class="howto-steps">
+      <li>
+        <h3>絵柄が能力</h3>
+        <p>タイルを押すと、その絵柄の効果が発動して<strong>まわりのマス</strong>が動く。押したタイル自身は動かない。</p>
+        <div class="howto-demo" aria-hidden="true">
+          <div class="stage-mini demo-grid" id="howtoBefore"></div>
+          <span class="howto-arrow">→</span>
+          <div class="stage-mini demo-grid" id="howtoAfter"></div>
+        </div>
+        <p class="howto-cap">まん中の「上下左右の 4 マスを時計回り」を押したところ</p>
+      </li>
+      <li>
+        <h3>能力はタイルと一緒に動く</h3>
+        <p>動かされたタイルは能力を持ったまま移る。同じ場所を押しても、次は別の効果になる。</p>
+      </li>
+      <li>
+        <h3>長押しで逆回り</h3>
+        <p>回転は<strong>長押し</strong>（右クリックでも可）で逆向き。盤の端はつながっていないので、効果が盤の外に出る位置では使えない。</p>
+      </li>
+      <li>
+        <h3>目標の柄にそろえる</h3>
+        <p>プレイ画面の「目標の柄」と同じ色の並びにすればクリア。同じ絵柄どうしはどれでもよい。</p>
+      </li>
+      <li>
+        <h3>ステージを選ぶ</h3>
+        <p>ホームの一覧は<strong>盤のサイズ × ブロックの種類</strong>。カードを押すと始まり、★はクリアした回数。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
+      </li>
+    </ol>
+    <button id="howtoOk" class="primary wide" type="button">わかった</button>
+  </dialog>
+
   <!-- ホーム -->
-  <main class="screen title" id="title">
+  <main class="screen title" id="title" hidden>
     <header class="title-head">
       <div class="mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">

@@ -153,6 +153,60 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .home-links { display: flex; gap: 10px; margin-top: 4px; }
 .home-links .ghost-btn { flex: 1; }
 
+/* ---- スタート ---- */
+.start {
+  min-height: calc(100dvh - var(--rail-h) - 112px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  max-width: 340px;
+  margin: 0 auto;
+  text-align: center;
+}
+.start .title-head .mark svg { width: 60px; height: 60px; }
+.start .title-name { font-size: 36px; }
+.start-actions { align-self: stretch; display: flex; flex-direction: column; gap: 10px; }
+.start-actions button { padding: 16px; font-size: 14px; }
+
+/* 見本の盤。中身の見た目はステージ一覧の .stage-mini と同じ */
+.demo-grid { --nx: 3; --ny: 3; --cell: 36px; --gap: 4px; }
+.start .demo-grid { --cell: 46px; --gap: 5px; padding: 5px; border-radius: 10px; }
+.demo-grid .slot.press .tile { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ---- 遊び方 ---- */
+.howto-sheet {
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--ui);
+}
+.howto-sheet::backdrop { background: rgba(10, 9, 13, .78); }
+.howto-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 20px; }
+.howto-steps li { counter-increment: step; position: relative; padding-left: 34px; }
+.howto-steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: -1px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--accent-ink);
+  font: 600 11px/1 var(--mono);
+}
+.howto-steps h3 { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; }
+.howto-steps p { margin: 0; font-size: 12.5px; line-height: 1.75; color: var(--dim); }
+.howto-steps strong { color: var(--text); font-weight: 600; }
+.howto-demo { display: flex; align-items: center; gap: 12px; margin: 12px 0 6px; }
+.howto-arrow { color: var(--dim); font-size: 16px; }
+.howto-steps .howto-cap { font-size: 11px; }
+.howto-sheet .wide { margin-top: 24px; }
+
 /* ---- ステージ一覧 ---- */
 /* サイズごとに 1 行、行の中は横スクロール（スマホの指で流せるようスナップ付き）。
    ページ全体は縦にふつうにスクロールする（内側に高さで区切らない）。 */
