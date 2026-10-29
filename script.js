@@ -2486,6 +2486,8 @@ let tutorial = null;   // 練習中は { idx, timer }。そうでなければ nu
 const tutBarEl = document.getElementById('tutBar');
 const tutStepEl = document.getElementById('tutStep');
 const tutTextEl = document.getElementById('tutText');
+const tutGoalWrapEl = document.getElementById('tutGoalWrap');
+const tutGoalEl = document.getElementById('tutGoal');
 const goalCardEl = document.getElementById('goalCard');
 const hintBtnEl = document.getElementById('hintBtn');
 const tutHiddenEls = [document.getElementById('solveBtn'), document.getElementById('newBtn')];
@@ -2506,7 +2508,9 @@ function loadTutorialStage() {
   loadFixedPuzzle(tutorialBoard(def));
   tutStepEl.textContent = `${tutorial.idx + 1} / ${TUTORIAL_STAGES.length}`;
   tutTextEl.textContent = def.text;
+  buildStageMini(tutGoalEl, W, tileAbility);
   goalCardEl.classList.toggle('tut-glow', def.mark === 'goal');
+  tutGoalWrapEl.classList.toggle('tut-glow', def.mark === 'goal');
   hintBtnEl.classList.toggle('tut-glow', def.mark === 'hint');
   tutMark();
 }
@@ -2567,6 +2571,7 @@ function endTutorial() {
   try { localStorage.setItem(TUTORIAL_KEY, 'done'); } catch (e) { /* 覚えられなくても遊べる */ }
   tutBarEl.hidden = true;
   goalCardEl.classList.remove('tut-glow');
+  tutGoalWrapEl.classList.remove('tut-glow');
   hintBtnEl.classList.remove('tut-glow');
   for (const b of tutHiddenEls) b.hidden = false;
   W = H = 4; SIZE = 16; buildDom();
