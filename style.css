@@ -893,3 +893,23 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .picker button:hover { opacity: .75; }
 .picker button[aria-pressed="true"]:hover { opacity: 1; }
 .picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- 無料版の鍵 ---- */
+.stage-item.locked { background: var(--ground); }
+.stage-item.locked .stage-mini, .stage-item.locked .stage-meta { opacity: .45; }
+.stage-lock, .lock-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.lock-tag { margin-left: 8px; }
+.lock-tag[hidden] { display: none; }
+.seg button.locked { opacity: .45; }
+.lock-price { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+.lock-list { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--dim); line-height: 1.85; }
+.howto-sheet .lock-list + .wide { margin-top: 20px; }
+.howto-sheet .wide + .wide { margin-top: 8px; }
+.howto-sheet .wide:disabled { opacity: .5; cursor: default; }

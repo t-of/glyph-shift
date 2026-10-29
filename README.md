@@ -96,9 +96,20 @@ node tools/bench.js 4x8  3 10 3000   # 横4×縦8
 | `tools/runtests.js` | テストの実行台（`tests/` を全部走らせる。`tools/swunit.js` は Service Worker の検証） |
 | `archive/` | 最初に作って没にした試作 |
 
+## 無料と完全版
+
+App Store 版（Capacitor）だけ、無料版と完全版（¥500・買い切り）に分かれる。Web 版は今までどおり全部遊べる。
+鍵は `entitlement.js` の `Entitlement` が判定する（`locksActive()` は iOS アプリの中だけ true。
+localhost では確かめ用に `?locks=1`、完全版にするには `&full=1`）。
+
+- 無料: ブロックは swapLR・swapUD・swapD1・swapD2・crossCW・diagCW・none の 7 種、盤は正方形 3〜6、使う種類は 2〜4
+- 完全版: 13 種すべて、7×7〜10×10、カスタム盤、広告なし
+- 鍵つきのステージは一覧で暗くして「完全版」の札を付け、押すと案内を出す。購入そのもの（StoreKit）はまだ
+- 完全版かどうかの置き場は `readFull()` の 1 か所だけ（仮。購入の実装でネイティブ側に差し替える）
+
 ## データ
 
-localStorage（キーは `glyphshift.` で始まる）。`glyphshift.stages` は `{"5x3": {seed, clears, goal, perfect}}`。
+localStorage（キーは `glyphshift.` で始まる）。`glyphshift.full` は完全版かどうか（`1`。仮。購入の実装で置き換える）。`glyphshift.stages` は `{"5x3": {seed, clears, goal, pool, perfect}}`。`pool` は goal を作ったブロックの範囲（無料なら `free`、無ければ全部）。
 `perfect` は ★★★ を取った回数で、正方形・カスタムでない盤だけ数える（無ければ 0 として読む）。
 
 ## 設計の要点

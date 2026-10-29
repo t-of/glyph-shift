@@ -1321,7 +1321,10 @@ function pickGoal(w, h, k, cands, rng, forced, attempt) {
     // 「何も起きない」は柄の一色ぶん、つまり盤の 1/k を占める。色数が少ないと
     // 盤の半分近くが動かないマスになり、打てる手が数えるほどしか残らない。
     // ランダムに選ぶときは色数が 4 以上のときだけ混ぜる（カスタムでの指定は尊重する）。
-    const pool = ABILITIES.map((_, a) => a).filter((a) => k >= 4 || !isBlank(a));
+    // 無料版（鍵が効いていて完全版でない）は、無料のブロックの中からだけ選ぶ。
+    const pool = ABILITIES.map((_, a) => a)
+      .filter((a) => Entitlement.blockOpen(ABILITIES[a].id))
+      .filter((a) => k >= 4 || !isBlank(a));
     for (let a = pool.length - 1; a > 0; a--) {
       const j = Math.floor(rng() * (a + 1));
       [pool[a], pool[j]] = [pool[j], pool[a]];
@@ -1747,6 +1750,7 @@ function refreshTypeSeg() {
       Math.abs(k - pendTypes) < Math.abs(best - pendTypes) ? k : best, usable[0]);
   }
   markSeg(typeSegEl, pendTypes);
+  syncLocks();
   typeNoteEl.textContent = unavailable
     ? `${pendW}×${pendH} では、この色数で作れる柄がないものを伏せています。`
     : '';
@@ -1828,6 +1832,7 @@ fillPicker();
 sizeSegEl.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
+  if (b.classList.contains('locked')) { openLockSheet(); return; }
   pendA = pendB = pendW = pendH = Number(b.dataset.v);
   markSeg(sizeSegEl, pendW);
   refreshTypeSeg();
@@ -1835,6 +1840,7 @@ sizeSegEl.addEventListener('click', (e) => {
 typeSegEl.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
+  if (b.classList.contains('locked')) { openLockSheet(); return; }
   pendTypes = Number(b.dataset.v);
   markSeg(typeSegEl, pendTypes);
 });
@@ -1854,12 +1860,30 @@ pickerEl.addEventListener('click', (e) => {
   refreshPicker();
   createBtnEl.disabled = !customReady();
 });
-customChk.addEventListener('change', () => { pendCustom = customChk.checked; refreshCustom(); });
+customChk.addEventListener('change', () => {
+  if (customChk.checked && !Entitlement.customOpen()) { customChk.checked = false; openLockSheet(); return; }
+  pendCustom = customChk.checked; refreshCustom();
+});
+
+// 設定パネルの鍵つき（無料の範囲の外）を押せなくして、印を付ける。カスタムの入口には鍵の札を出す。
+function syncLocks() {
+  for (const b of sizeSegEl.querySelectorAll('button')) {
+    const lk = !Entitlement.stageOpen(Number(b.dataset.v), 2);
+    b.classList.toggle('locked', lk);
+    b.setAttribute('aria-disabled', String(lk));
+  }
+  for (const b of typeSegEl.querySelectorAll('button')) {
+    b.classList.toggle('locked', !Entitlement.stageOpen(3, Number(b.dataset.v)));
+  }
+  const tag = document.getElementById('customLock');
+  if (tag) tag.hidden = Entitlement.customOpen();
+}
 
 // pend* の内容で盤面を作り直す。「この設定で作成」（カスタム含む）と
 // ホームの「はじめる」の両方から呼ぶ。
 function startFromPending() {
   if (pendCustom && !customReady()) return;
+  if (pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, pendTypes)) { openLockSheet(); return; }
   if (pendW !== W || pendH !== H) {
     W = pendW;
     H = pendH;
@@ -1935,7 +1959,11 @@ function stageGoalPreview(s, k, seed) {
 
 // 求めたゴールは st.goal に覚えておき、次からは混ぜ直さずに使う（seed が変わると消える）。
 function goalForStage(s, k, st) {
-  if (!(st.goal && st.goal.length === s * s)) { st.goal = stageGoalPreview(s, k, st.seed); saveStages(); }
+  // goal は、使えるブロックの範囲（無料／全部）の印 pool と一緒に覚える。印が違えば作り直す
+  // （無料の範囲で作ったゴールと全ブロックで作ったゴールが混ざらないように。印の無い古い記録は全部）。
+  if (!(st.goal && st.goal.length === s * s && (st.pool || 'all') === Entitlement.poolTag())) {
+    st.goal = stageGoalPreview(s, k, st.seed); st.pool = Entitlement.poolTag(); saveStages();
+  }
   return st.goal;
 }
 
@@ -1997,6 +2025,16 @@ function makeStageObserver() {
 
 const stageListEl = document.getElementById('stageList');
 
+// ---- 完全版の案内（鍵つきを押したとき）----
+const lockSheetEl = document.getElementById('lockSheet');
+function openLockSheet() { lockSheetEl.showModal?.(); }
+function closeLockSheet() { lockSheetEl.close?.(); }
+document.getElementById('lockClose').addEventListener('click', closeLockSheet);
+document.getElementById('lockOk').addEventListener('click', closeLockSheet);
+lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) closeLockSheet(); });
+// 完全版になったら、一覧の鍵をその場で外す（案内も閉じる）
+Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); });
+
 function renderStageList() {
   stageListEl.replaceChildren();
   if (stageObserver) stageObserver.disconnect();
@@ -2028,9 +2066,11 @@ function renderStageList() {
       item.className = 'stage-item';
       item.dataset.s = String(s);
       item.dataset.k = String(k);
-      const resume = inProgress(s, k);
+      const locked = !Entitlement.stageOpen(s, k);
+      const resume = !locked && inProgress(s, k);
       if (resume) item.classList.add('resume');
-      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
+      if (locked) item.classList.add('locked');
+      item.setAttribute('aria-label', locked ? `${s}×${s}、${k} 種、完全版で遊べます` : `${s}×${s}、${k} 種、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -2052,6 +2092,13 @@ function renderStageList() {
       stars.textContent = clearsLabel(st);
 
       item.append(mini, meta, stars);
+      if (locked) {
+        stars.hidden = true;
+        const lock = document.createElement('span');
+        lock.className = 'stage-lock';
+        lock.textContent = '完全版';
+        item.append(lock);
+      }
       if (resume) {
         const tag = document.createElement('span');
         tag.className = 'stage-resume';
@@ -2070,6 +2117,7 @@ stageListEl.addEventListener('click', (e) => {
   if (!item) return;
   const s = Number(item.dataset.s);
   const k = Number(item.dataset.k);
+  if (!Entitlement.stageOpen(s, k)) { openLockSheet(); return; }
   const st = stageFor(s, k);
   if (inProgress(s, k)) { show(playEl); return; }   // 途中の盤をそのまま続ける
   pendA = pendB = pendW = pendH = s;
@@ -2078,6 +2126,7 @@ stageListEl.addEventListener('click', (e) => {
   seedInEl.value = String(st.seed);
   startFromPending();
   st.goal = Array.from(tileAbility);   // 実際に生成されたゴールを覚えておく（次の一覧でずれないように）
+  st.pool = Entitlement.poolTag();
   saveStages();
   show(playEl);
 });

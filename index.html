@@ -80,7 +80,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <div class="setup-body">
       <label class="switch">
         <input type="checkbox" id="customChk">
-        <span>カスタム</span>
+        <span>カスタム<span class="lock-tag" id="customLock" hidden>完全版</span></span>
         <span class="switch-note">盤を長方形にして、使うブロックも自分で選ぶ</span>
       </label>
 
@@ -230,6 +230,24 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <button id="howtoOk" class="primary wide" type="button">わかった</button>
   </dialog>
 
+  <!-- 完全版の案内（無料版で鍵つきを押したとき） -->
+  <dialog class="howto-sheet" id="lockSheet" aria-labelledby="lockTitle">
+    <div class="panel-head">
+      <h2 id="lockTitle">完全版で遊べます</h2>
+      <button id="lockClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+    </div>
+    <p class="lock-price">¥500・1 回の買い切り</p>
+    <ul class="lock-list">
+      <li>ブロック 13 種すべて</li>
+      <li>7×7〜10×10 の盤</li>
+      <li>カスタム盤</li>
+      <li>広告なし</li>
+    </ul>
+    <button class="primary wide" type="button" disabled>購入（準備中）</button>
+    <button class="pill wide" type="button" disabled>購入を復元（準備中）</button>
+    <button id="lockOk" class="pill wide" type="button">閉じる</button>
+  </dialog>
+
   <!-- ホーム -->
   <main class="screen title" id="title" hidden>
     <header class="title-head">
@@ -376,6 +394,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
   <script src="./patterns.js"></script>
   <script src="./glyphs.js"></script>
   <script src="./solver.js"></script>
+  <script src="./entitlement.js"></script>
   <script src="./script.js"></script>
   <script src="./webapp-kit/webapp-kit.js"></script>
   <script>

@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const root = path.join(__dirname, '..');
 const testDir = path.join(root, 'tests');
-const GAME = ['sound.js', 'patterns.js', 'glyphs.js', 'solver.js', 'script.js']; // index.html と同じ順
+const GAME = ['sound.js', 'patterns.js', 'glyphs.js', 'solver.js', 'entitlement.js', 'script.js']; // index.html と同じ順
 
 // AudioContext と Worker はわざと置かない。
 // sound.js は AudioContext が無ければ鳴らさずに進み、workertest は Worker が
