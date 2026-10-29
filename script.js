@@ -466,6 +466,7 @@ function hintAfterSolve() {
 
 function showHint() {
   if (autoSolving || locked || isSolved()) return;
+  hintUsed = true;
   Sfx.hint();
   if (hintPlan) {
     // もう解けた手順がある。それをそのまま見せる。
@@ -689,6 +690,23 @@ let movesWhileSolving = []; // 計算中に打った手。返ってきた手順�
 let solveStart = null;      // 依頼したときの並び。返ってきた手順はここから始まる
 let longSolveTried = false; // 逆手順に落ちた盤で、裏での長い探し直しをもう試したか
 
+// 基準手数（par）。盤が出た直後の裏の探索（初期配置から）の結果をそのまま持つ。
+// ヒントの手順（hintPlan）とは別物で、打った手では変わらない。
+//   undefined = 計算中 / null = 無し（逆手順・失敗・同期処理で先読みしない） / { cost, optimal }
+let par = null;
+let parWanted = false;      // 次に出す依頼が、par 用の先読みか
+let parId = 0;              // par 用の依頼の番号
+let hintUsed = false;       // この盤でヒントを使ったか
+let clearPending = null;    // par を待ったままクリアしたときの { moves, hintUsed }
+
+// ★の判定。par が無ければ null（★を出さない）。ヒントを使った盤は最大 ★★。
+function starRating(moves, parCost, usedHint) {
+  if (!(parCost > 0)) return null;
+  let n = moves <= parCost ? 3 : moves <= Math.ceil(parCost * 1.5) ? 2 : 1;
+  if (usedHint && n > 2) n = 2;
+  return n;
+}
+
 // Worker の中で長めに探索する。同期で動かすときは画面が固まるので短くする。
 // 大きい盤や色数の多い盤は難しいので、Worker では時間を足す（最大 7 秒）。
 const HINT_BUDGET_SYNC = 1200;
@@ -724,6 +742,7 @@ function makeWorker() {
 function fallbackToSync() {
   if (!hintBusy) return;
   hintBusy = false;
+  if (par === undefined) resolvePar(null);
   const pending = solveDones;
   solveDones = [];
   if (!pending.length) return;
@@ -758,6 +777,10 @@ function planReachesGoal(plan, startLay) {
 function finishSolve(id, res, partial = false) {
   if (id !== solveId) return; // 盤面が変わった後の返事
   if (res && res.plan && !planReachesGoal(res.plan, solveStart)) res = null;
+  if (id === parId && !partial && par === undefined) {
+    const real = res && res.plan && res.method !== 'reverse' && res.method !== 'none';
+    resolvePar(real ? { cost: planCost(Solver.planToRuns(problem, res.plan, solveStart)), optimal: !!res.optimal } : null);
+  }
   if (res && res.plan) {
     const plan = { runs: Solver.planToRuns(problem, res.plan, solveStart), optimal: res.optimal, ms: Math.round(res.ms), method: res.method };
     // 計算しているあいだに打った手ぶんだけ手順を進める
@@ -795,6 +818,7 @@ function requestSolve(done, final = false, background = false, budget = 0) {
   if (background && !worker) return;
   hintBusy = true;
   const id = ++solveId;
+  if (parWanted) { parWanted = false; parId = id; par = undefined; }
   movesWhileSolving = [];
   const snap = solveSnapshot();
   solveStart = snap.start;
@@ -878,6 +902,35 @@ function unClear() {
   gridEl.classList.remove('cleared');
   logEl.classList.remove('done');
   logEl.textContent = 'タイルをクリック';
+  clearPending = null;
+}
+
+// クリアの行。par があれば最短（目安）と★を付ける。
+function clearLine(n, used) {
+  let t = `そろった！ ${n} 手`;
+  if (par === undefined) t += '（評価中…）';
+  else if (par) {
+    const r = starRating(n, par.cost, used);
+    t += `（${par.optimal ? '最短' : '目安'} ${par.cost} 手）${'★'.repeat(r)}`;
+    if (n < par.cost) t += ' 目安より短い！';
+  }
+  return `${t} — 設定から次の盤面を作れます`;
+}
+
+// par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
+function resolvePar(p) {
+  par = p;
+  if (!clearPending) return;
+  const c = clearPending;
+  clearPending = null;
+  logEl.textContent = clearLine(c.moves, c.hintUsed);
+  if (p && W === H && !forcedAbilities && starRating(c.moves, p.cost, c.hintUsed) === 3) recordPerfect();
+}
+
+function recordPerfect() {
+  const st = stageFor(W, types);
+  st.perfect = (st.perfect || 0) + 1;
+  saveStages();
 }
 
 function showClear() {
@@ -896,7 +949,8 @@ function showClear() {
   logEl.classList.add('done');
   logEl.textContent = autoSolvedFlag
     ? 'そろった！（自動で揃えました） — 設定から次の盤面を作れます'
-    : `そろった！ ${moves} 手 — 設定から次の盤面を作れます`;
+    : clearLine(moves, hintUsed);
+  clearPending = (!autoSolvedFlag && par === undefined) ? { moves, hintUsed } : null;
 
   // 自分で揃えた、正方形・カスタムでない盤だけをステージのクリアに数える。
   // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
@@ -906,6 +960,7 @@ function showClear() {
 
     const st = stageFor(W, types);
     st.clears = (st.clears || 0) + 1;
+    if (par && starRating(moves, par.cost, hintUsed) === 3) st.perfect = (st.perfect || 0) + 1;
     st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
     delete st.goal;                              // 上の seed が変わった時点で古いゴールになる
     saveStages();
@@ -1326,6 +1381,7 @@ function newPuzzle(useSeed) {
   run = { i: -1, d: 0, order: 1 };
   hintPlan = null;
   longSolveTried = false;
+  par = null; parWanted = false; parId = 0; hintUsed = false; clearPending = null;
   locked = false;
 
   // 解法の準備。計算中の Worker は捨てて作り直す（古い盤面の計算を待たないため）
@@ -1350,7 +1406,9 @@ function newPuzzle(useSeed) {
   logEl.textContent = 'タイルをクリック';
 
   // 先に裏で解いておく。ヒントを押したときに待たせないため。
+  parWanted = true;
   requestSolve(null, false, true);
+  parWanted = false;   // 先読みを見送った（Worker が無い）ときは par 無し
 }
 
 
@@ -1886,7 +1944,9 @@ function goalForStage(s, k, st) {
 const inProgress = (s, k) =>
   W === s && H === s && types === k && !forcedAbilities && seed === stageFor(s, k).seed && run.i >= 0 && !isSolved();
 
-const starsLabel = (n) => (n ? (n <= 8 ? '★'.repeat(n) : `★×${n}`) : '未クリア');
+// 一覧のカードの記録。★は「評価」の意味だけに使い、クリア回数は文字で出す。
+const clearsLabel = (st) =>
+  st.clears ? `クリア ${st.clears} 回${st.perfect ? ` ★★★ ${st.perfect} 回` : ''}` : '未クリア';
 
 // ---- ステージのミニ盤（カードの絵柄）----
 // ゲーム画面と同じ .slot/.tile（立体タイル・アイコン）で描く。カードごとに
@@ -1970,7 +2030,7 @@ function renderStageList() {
       item.dataset.k = String(k);
       const resume = inProgress(s, k);
       if (resume) item.classList.add('resume');
-      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${starsLabel(st.clears)}${resume ? '、続きから' : ''}`);
+      item.setAttribute('aria-label', `${s}×${s}、${k} 種、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -1989,7 +2049,7 @@ function renderStageList() {
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
-      stars.textContent = starsLabel(st.clears);
+      stars.textContent = clearsLabel(st);
 
       item.append(mini, meta, stars);
       if (resume) {
