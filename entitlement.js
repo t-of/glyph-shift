@@ -2,10 +2,12 @@
 // 鍵が効くのは iOS アプリ（Capacitor）の中だけ。Web 版は今までどおり全部遊べる。
 // 開発の確かめ用に、localhost だけ ?locks=1（鍵を効かせる）と ?full=1（完全版にする）を受け付ける。
 //
-// 「買った」かどうかはストアが決める（RULES §13）。いまは仮に localStorage を見ているが、
-// あとで StoreKit の結果に差し替える。差し替えるのは readFull() の 1 か所だけ。
+// 「買った」かどうかはストアが決める（RULES §13）。iOS 版では native.js が attachStore() でストア
+// （StoreKit）をつなぎ、起動時とバックグラウンドから戻ったときに権利を確かめて結果を setFull に入れる。
+// ストアの答えが来たあとは、その答えだけを信じる。localStorage は答えが来る前（起動直後）の表示の控え。
+// Web 版にはストアがなく、鍵も効かない。
 const Entitlement = (() => {
-  const FULL_KEY = 'glyphshift.full';   // 仮。購入の実装が入ったらネイティブ側の値に置き換える
+  const FULL_KEY = 'glyphshift.full';   // 起動直後の表示のための控え。ストアの答えで上書きする
 
   // 無料で遊べる範囲
   const FREE_BLOCKS = ['swapLR', 'swapUD', 'swapD1', 'swapD2', 'crossCW', 'diagCW', 'none'];
@@ -15,6 +17,8 @@ const Entitlement = (() => {
   // テスト用の差し替え。{ locks, full } を入れると環境の判定より優先する。
   let override = null;
   const listeners = [];
+  let store = null;        // attachStore で渡されるストア
+  let storeFull = null;    // ストアが最後に答えた「完全版か」。null は未確認
 
   const query = () => {
     try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(''); }
@@ -30,9 +34,9 @@ const Entitlement = (() => {
     return isLocalhost() && query().get('locks') === '1';
   }
 
-  // 仮の置き場。ここだけ差し替えればよい。
   function readFull() {
     if (isLocalhost() && query().get('full') === '1') return true;
+    if (storeFull !== null) return storeFull;   // ストアの答えが来たら、控えは見ない
     try { return localStorage.getItem(FULL_KEY) === '1'; } catch (e) { return false; }
   }
 
@@ -45,10 +49,37 @@ const Entitlement = (() => {
   const onChange = (fn) => { listeners.push(fn); };
   const notify = () => { for (const fn of listeners) { try { fn(isFull()); } catch (e) { /* 他の受け手を止めない */ } } };
 
-  // 購入・復元の結果を入れる口（あとで StoreKit から呼ぶ。いまは仮の置き場に書く）
+  // 購入・復元・権利の確認の結果を入れる口。控えに書き、変わったときだけ知らせる
   function setFull(v) {
+    const was = isFull();
     try { localStorage.setItem(FULL_KEY, v ? '1' : '0'); } catch (e) { /* 保存できなくても今の画面は変わる */ }
-    notify();
+    if (store) storeFull = !!v;
+    if (isFull() !== was || !store) notify();
+  }
+
+  // ---- ストア（iOS の StoreKit。native.js から渡す）----
+  // store = { price(): Promise<string|null>, check(): Promise<boolean>, purchase(): Promise<'purchased'|'cancelled'|'pending'>, restore(): Promise<boolean> }
+  // 失敗は例外（reject）で返す。
+  function attachStore(s) { store = s; }
+  const hasStore = () => !!store;
+  const storePrice = () => (store ? store.price().catch(() => null) : Promise.resolve(null));
+  // 権利の確認。確認できなかったとき（通信・ストアの不調）は今の表示を変えない
+  async function refreshFromStore() {
+    if (!store) return isFull();
+    try { setFull(await store.check()); } catch (e) { /* 確認できないときは控えのまま */ }
+    return isFull();
+  }
+  async function purchase() {
+    if (!store) throw new Error('no store');
+    const r = await store.purchase();
+    if (r === 'purchased') setFull(true);
+    return r;
+  }
+  async function restore() {
+    if (!store) throw new Error('no store');
+    const full = await store.restore();
+    setFull(full);
+    return full;
   }
 
   const restricted = () => locksActive() && !isFull();
@@ -60,8 +91,10 @@ const Entitlement = (() => {
 
   return {
     FREE_BLOCKS, locksActive, isFull, onChange, setFull,
+    attachStore, hasStore, storePrice, refreshFromStore, purchase, restore,
     blockOpen, stageOpen, customOpen, poolTag,
     _override: (o) => { override = o; },
+    _resetStore: () => { store = null; storeFull = null; },
   };
 })();
 if (typeof window !== 'undefined') window.Entitlement = Entitlement;

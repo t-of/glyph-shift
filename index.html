@@ -243,8 +243,10 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
       <li>カスタム盤</li>
       <li>広告なし</li>
     </ul>
-    <button class="primary wide" type="button" disabled>購入（準備中）</button>
-    <button class="pill wide" type="button" disabled>購入を復元（準備中）</button>
+    <p class="lock-note" id="lockNote">購入すると上の内容がすぐに開きます。支払いは Apple の購入画面で行い、返金は Apple の決まりに従います。</p>
+    <p class="lock-status" id="lockStatus" role="status" aria-live="polite">iPhone のアプリで購入できます。</p>
+    <button class="primary wide" id="lockBuy" type="button" disabled>購入（iPhone のアプリで）</button>
+    <button class="pill wide" id="lockRestore" type="button" disabled>購入を復元（iPhone のアプリで）</button>
     <button id="lockOk" class="pill wide" type="button">閉じる</button>
   </dialog>
 

@@ -77,4 +77,41 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  完全版で全部開く・onChange  OK');
 }
 
-console.log(fail ? `失敗 ${fail} 件` : '全チェック通過');
+// ストア（StoreKit）をつなぐ: 答えが来たらそれだけを信じる。購入・復元・返金
+(async () => {
+  const mk = (state) => ({
+    price: async () => '¥500',
+    check: async () => { if (state.fail) throw new Error('offline'); return state.full; },
+    purchase: async () => state.next,
+    restore: async () => state.full,
+  });
+  const st = { full: false, next: 'cancelled', fail: false };
+  Entitlement._override({ locks: true });          // full は決めない（ストアと控えの経路を通す）
+  Entitlement._resetStore();
+  try { localStorage.setItem('glyphshift.full', '1'); } catch (e) { /* テスト環境に無ければ無視 */ }
+  Entitlement.attachStore(mk(st));
+  ok(Entitlement.hasStore(), 'ストアがつながらない');
+  ok(await Entitlement.storePrice() === '¥500', '値段が取れない');
+  let n = 0; Entitlement.onChange(() => { n++; });
+  // 控えが「完全版」でも、ストアが「違う」と答えたら鍵が戻る
+  await Entitlement.refreshFromStore();
+  ok(!Entitlement.isFull(), 'ストアの答え（未購入）で控えを上書きしない');
+  // 購入: キャンセルでは変わらない、成功で開く
+  ok(await Entitlement.purchase() === 'cancelled' && !Entitlement.isFull(), 'キャンセルで開いた');
+  st.next = 'purchased'; st.full = true;
+  const before = n;
+  ok(await Entitlement.purchase() === 'purchased' && Entitlement.isFull() && n === before + 1, '購入で開かない');
+  // 返金・取り消し: 次の確認で閉じる
+  st.full = false;
+  await Entitlement.refreshFromStore();
+  ok(!Entitlement.isFull(), '返金で鍵が戻らない');
+  // 確認できないとき（通信エラー）は今の表示のまま
+  st.full = true; await Entitlement.restore();
+  ok(Entitlement.isFull(), '復元で開かない');
+  st.fail = true; st.full = false;
+  await Entitlement.refreshFromStore();
+  ok(Entitlement.isFull(), '確認できないのに表示を変えた');
+  Entitlement._resetStore(); Entitlement._override(null);
+  console.log('  ストア（購入・復元・返金・確認失敗）  OK');
+  console.log(fail ? `失敗 ${fail} 件` : '全チェック通過');
+})();
