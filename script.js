@@ -293,6 +293,7 @@ const goalGridEl = document.getElementById('goalGrid');
 const legendEl = document.getElementById('legend');
 const seedOutEl = document.getElementById('seedOut');
 const logEl = document.getElementById('log');
+const shareBtnEl = document.getElementById('shareDailyBtn');
 
 const abilityAt = (i) => tileAbility[board[i]];
 const cyclesAt = (i) => cyclesOf(abilityAt(i), xOf(i), yOf(i));
@@ -461,7 +462,7 @@ const HINT_SEARCHING_NOTE = ' / 短い手順を探しています…';
 function hintAfterSolve() {
   blinkHint();
   // 探し終わっても光らせるものが無かったとき（その間に完成した等）、案内を戻す
-  if (logEl.textContent === HINT_SEARCHING) logEl.textContent = 'タイルをクリック';
+  if (logEl.textContent === HINT_SEARCHING) logEl.textContent = readyLine();
 }
 
 function showHint() {
@@ -699,6 +700,99 @@ let parId = 0;              // par 用の依頼の番号
 let hintUsed = false;       // この盤でヒントを使ったか
 let clearPending = null;    // par を待ったままクリアしたときの { moves, hintUsed }
 
+// 盤の下の案内。タッチの端末では「タップ」と言う。
+function readyLine() {
+  let touch = false;
+  try { touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches; } catch (e) { /* 判定できなければクリック */ }
+  return touch ? 'タイルをタップ' : 'タイルをクリック';
+}
+
+// ---- 今日の 1 問 ----
+// 端末の日付（ローカルの年月日）から seed を決める。同じ日は誰でも同じ盤。5×5・4 種で、
+// ブロックは全 13 種から選ぶ（無料版でも完全版のブロックが出る＝試す場）。
+const DAILY_KEY = 'glyphshift.daily';
+const DAILY_SIZE = 5;
+const DAILY_TYPES = 4;
+const DAILY_KEEP_DAYS = 60;
+const pad2 = (n) => String(n).padStart(2, '0');
+const dateKeyOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+// 日付のキー（YYYY-MM-DD）を days 日ずらす（ローカル暦で数える）
+function shiftDateKey(key, days) {
+  const [y, m, d] = key.split('-').map(Number);
+  return dateKeyOf(new Date(y, m - 1, d + days));
+}
+// 日付 → seed（純粋）。同じ日付なら必ず同じ、日が変われば変わる。0〜1e9 未満。
+function dailySeed(key) {
+  let h = 0x811c9dc5;
+  const str = `abilitile-daily-${key}`;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+  return (h >>> 0) % 1e9;
+}
+// 記録のよいほう。★が多いほう、同じなら手数が少ないほう、それも同じなら今ある記録（a）。
+function betterDaily(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  if (b.stars !== a.stars) return b.stars > a.stars ? b : a;
+  return b.moves < a.moves ? b : a;
+}
+// 直近 DAILY_KEEP_DAYS 日（今日を含む）だけ残す。
+function pruneDaily(map, todayKey) {
+  const cutoff = shiftDateKey(todayKey, -(DAILY_KEEP_DAYS - 1));
+  const out = {};
+  for (const k of Object.keys(map)) if (k >= cutoff) out[k] = map[k];
+  return out;
+}
+// 記録を足した新しい map（元は変えない）。その日の記録はよいほうを残す。
+function addDaily(map, todayKey, entry) {
+  const next = { ...map, [todayKey]: betterDaily(map[todayKey], entry) };
+  return pruneDaily(next, todayKey);
+}
+// 連続日数。今日（まだなら昨日）から遡って、クリアした日が続く数。
+function dailyStreak(map, todayKey) {
+  let k = map[todayKey] ? todayKey : shiftDateKey(todayKey, -1);
+  let n = 0;
+  while (map[k]) { n++; k = shiftDateKey(k, -1); }
+  return n;
+}
+// 共有用の絵文字。ブロックごとに色の近い四角を割り当てる（13 種で重ならない）。
+const SHARE_EMOJI = {
+  swapLR: '🟥', swapUD: '🟧', swapD1: '🟫', swapD2: '🟨', crossCW: '🟩', diagCW: '🟢', ringCW: '🔷',
+  crossHalf: '🔹', diagHalf: '🟦', sqUD: '🔴', sqLR: '🟪', ringHalf: '🟣', none: '⬜',
+};
+// 共有の文（純粋）。答えの手順は入れない。par は { cost, optimal } か null。
+function dailyShareText({ key, moves, stars, par, hint, goal, w }) {
+  const [, m, d] = key.split('-').map(Number);
+  let line = '';
+  if (par && stars) line += `${'★'.repeat(stars)} `;
+  line += `${moves}手`;
+  if (par) line += `（${par.optimal ? '最短' : '目安'} ${par.cost}手）`;
+  if (hint) line += '（ヒントあり）';
+  const rows = [];
+  for (let y = 0; y * w < goal.length; y++) {
+    rows.push(Array.from(goal.slice(y * w, y * w + w), (a) => SHARE_EMOJI[ABILITIES[a].id] || '⬛').join(''));
+  }
+  return [`ABILITILE 今日の1問 ${m}/${d}`, line, ...rows].join('\n');
+}
+function loadDaily() {
+  try {
+    const v = JSON.parse(localStorage.getItem(DAILY_KEY));
+    if (!v || typeof v !== 'object') return {};
+    const out = {};
+    for (const k of Object.keys(v)) {
+      const e = v[k];
+      if (/^\d{4}-\d\d-\d\d$/.test(k) && e && Number.isFinite(e.moves)) out[k] = { moves: e.moves, stars: e.stars | 0, hint: !!e.hint };
+    }
+    return out;
+  } catch (e) { return {}; }
+}
+let daily = loadDaily();
+function saveDaily() {
+  try { localStorage.setItem(DAILY_KEY, JSON.stringify(daily)); }
+  catch (e) { /* 保存できなくても遊べる */ }
+}
+let dailyKey = null;   // いま遊んでいる盤が今日の 1 問なら、その日付。そうでなければ null
+
 // ★の判定。par が無ければ null（★を出さない）。ヒントを使った盤は最大 ★★。
 function starRating(moves, parCost, usedHint) {
   if (!(parCost > 0)) return null;
@@ -901,7 +995,8 @@ function unClear() {
   locked = false;
   gridEl.classList.remove('cleared');
   logEl.classList.remove('done');
-  logEl.textContent = 'タイルをクリック';
+  logEl.textContent = readyLine();
+  shareBtnEl.hidden = true;
   clearPending = null;
 }
 
@@ -924,7 +1019,15 @@ function resolvePar(p) {
   const c = clearPending;
   clearPending = null;
   logEl.textContent = clearLine(c.moves, c.hintUsed);
+  if (dailyKey) { recordDaily(c.moves, c.hintUsed, p); return; }
   if (p && W === H && !forcedAbilities && starRating(c.moves, p.cost, c.hintUsed) === 3) recordPerfect();
+}
+
+// 今日の 1 問のクリアを記録する。par がまだ分からないときは ★ なしで先に残し、届いたら良いほうで上書きする。
+function recordDaily(n, used, p) {
+  const stars = p ? starRating(n, p.cost, used) || 0 : 0;
+  daily = addDaily(daily, dailyKey, { moves: n, stars, hint: !!used });
+  saveDaily();
 }
 
 function recordPerfect() {
@@ -951,6 +1054,10 @@ function showClear() {
     ? 'そろった！（自動で揃えました） — 設定から次の盤面を作れます'
     : clearLine(moves, hintUsed);
   clearPending = (!autoSolvedFlag && par === undefined) ? { moves, hintUsed } : null;
+  shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag);
+
+  // 今日の 1 問は、自分で揃えたときだけ日ごとの記録に残す（ステージの記録には数えない）
+  if (dailyKey && !autoSolvedFlag) { recordDaily(moves, hintUsed, par || null); return; }
 
   // 自分で揃えた、正方形・カスタムでない盤だけをステージのクリアに数える。
   // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
@@ -1371,9 +1478,13 @@ function generate(seedValue) {
   }
 }
 
-function newPuzzle(useSeed) {
+// dailyOn に日付のキーを渡すと今日の 1 問（全ブロックから選ぶ）。
+function newPuzzle(useSeed, dailyOn) {
   seed = Number.isFinite(useSeed) ? useSeed : Math.floor(Math.random() * 1e9);
-  generate(seed);
+  dailyKey = typeof dailyOn === 'string' ? dailyOn : null;
+  previewAllBlocks = !!dailyKey;
+  try { generate(seed); } finally { previewAllBlocks = false; }
+  shareBtnEl.hidden = true;
 
   stopAutoSolve();
   autoSolvedFlag = false;
@@ -1406,7 +1517,7 @@ function newPuzzle(useSeed) {
   dealIn();
   seedOutEl.textContent = String(seed);
   document.getElementById('seedIn').value = String(seed);
-  logEl.textContent = 'タイルをクリック';
+  logEl.textContent = readyLine();
 
   // 先に裏で解いておく。ヒントを押したときに待たせないため。
   parWanted = true;
@@ -2040,10 +2151,98 @@ lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) clo
 // 完全版になったら、一覧の鍵をその場で外す（案内も閉じる）
 Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); });
 
+// ---- 今日の 1 問（ホームのカードと始め方）----
+const todayKey = () => dateKeyOf(new Date());
+const dailyInProgress = () =>
+  !!dailyKey && dailyKey === todayKey() && W === DAILY_SIZE && H === DAILY_SIZE && run.i >= 0 && !isSolved();
+
+function startDaily() {
+  const key = todayKey();
+  if (dailyInProgress()) { show(playEl); return; }   // 途中の盤をそのまま続ける
+  pendA = pendB = pendW = pendH = DAILY_SIZE;
+  pendTypes = DAILY_TYPES;
+  pendCustom = false;
+  if (W !== DAILY_SIZE || H !== DAILY_SIZE) { W = H = DAILY_SIZE; SIZE = W * H; buildDom(); }
+  forcedAbilities = null;
+  types = DAILY_TYPES;
+  newPuzzle(dailySeed(key), key);
+  show(playEl);
+}
+
+// 今日の盤のゴール（カードの絵）。newPuzzle と同じ generate を通すので実際の盤と一致する。
+// 日付ごとに 1 回だけ求めて覚える。
+let dailyGoalCache = null;
+function dailyGoal(key) {
+  if (!dailyGoalCache || dailyGoalCache.key !== key) {
+    dailyGoalCache = { key, goal: stageGoalPreview(DAILY_SIZE, DAILY_TYPES, dailySeed(key), true) };
+  }
+  return dailyGoalCache.goal;
+}
+
+function renderDailyCard() {
+  const key = todayKey();
+  const [, m, d] = key.split('-').map(Number);
+  const rec = daily[key];
+  const resume = dailyInProgress();
+
+  const item = document.createElement('button');
+  item.type = 'button';
+  item.className = 'stage-item daily-item';
+  if (resume) item.classList.add('resume');
+
+  const mini = document.createElement('div');
+  mini.className = 'stage-mini';
+  buildStageMini(mini, DAILY_SIZE, dailyGoal(key));
+
+  const body = document.createElement('span');
+  body.className = 'daily-body';
+  const title = document.createElement('span');
+  title.className = 'daily-title';
+  title.textContent = '今日の 1 問';
+  const date = document.createElement('span');
+  date.className = 'stage-meta';
+  date.textContent = `${m}月${d}日・5×5・4 種（全ブロックから）`;
+  const state = document.createElement('span');
+  state.className = 'stage-stars';
+  state.textContent = rec
+    ? `${rec.stars ? '★'.repeat(rec.stars) + ' ' : ''}${rec.moves} 手${rec.hint ? '（ヒントあり）' : ''}`
+    : resume ? '途中' : '未挑戦';
+  body.append(title, date, state);
+  const streak = dailyStreak(daily, key);
+  if (streak >= 2) {
+    const sk = document.createElement('span');
+    sk.className = 'daily-streak';
+    sk.textContent = `${streak} 日連続`;
+    body.append(sk);
+  }
+  if (resume) {
+    const tag = document.createElement('span');
+    tag.className = 'stage-resume';
+    tag.textContent = '続きから';
+    body.append(tag);
+  }
+  item.append(mini, body);
+  item.setAttribute('aria-label', `今日の 1 問、${m}月${d}日、${state.textContent}${streak >= 2 ? `、${streak} 日連続` : ''}`);
+  item.addEventListener('click', startDaily);
+  return item;
+}
+
+shareBtnEl.addEventListener('click', () => {
+  if (!dailyKey) return;
+  const p = par || null;
+  const stars = p ? starRating(moves, p.cost, hintUsed) || 0 : 0;
+  const text = dailyShareText({ key: dailyKey, moves, stars, par: p, hint: hintUsed, goal: tileAbility, w: W });
+  if (typeof WebAppKit !== 'undefined' && WebAppKit.share) WebAppKit.share({ text });
+});
+
 function renderStageList() {
   stageListEl.replaceChildren();
   if (stageObserver) stageObserver.disconnect();
   stageObserver = makeStageObserver();
+  const dsec = document.createElement('div');
+  dsec.className = 'stage-size daily-sec';
+  dsec.append(renderDailyCard());
+  stageListEl.append(dsec);
 
   for (const s of SIZES) {
     const ks = TYPE_COUNTS.filter((k) => typeAvailable(s, s, k));
@@ -2119,7 +2318,7 @@ function renderStageList() {
 
 stageListEl.addEventListener('click', (e) => {
   const item = e.target.closest('.stage-item');
-  if (!item) return;
+  if (!item || item.classList.contains('daily-item')) return;   // 今日の 1 問は自分のハンドラで始める
   const s = Number(item.dataset.s);
   const k = Number(item.dataset.k);
   if (!Entitlement.stageOpen(s, k)) { openLockSheet(); return; }

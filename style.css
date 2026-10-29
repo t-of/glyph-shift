@@ -265,6 +265,14 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .stage-meta { font-size: 10.5px; color: var(--dim); }
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; }
 .stage-item.resume { border-color: var(--accent); }
+/* 今日の 1 問: 一覧の一番上に 1 枚、横長のカード */
+.daily-item { flex-direction: row; align-items: center; gap: 14px; width: 100%; padding: 10px 12px; text-align: left; }
+.daily-item .stage-mini { flex: none; }
+.daily-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.daily-title { font-size: 14px; font-weight: 600; }
+.daily-streak { font-size: 11px; font-weight: 600; color: var(--accent); }
+.share-daily { margin-top: 4px; }
+.share-daily[hidden] { display: none; }
 .stage-resume {
   padding: 2px 8px;
   border-radius: 999px;
