@@ -481,6 +481,25 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .message.done { color: var(--accent); font-weight: 600; }
 
 .actions { display: flex; gap: 10px; margin-top: 6px; }
+
+/* ---- 最初のチュートリアル ---- */
+.tut-bar {
+  width: 100%;
+  max-width: calc(var(--boardw) + 20px);
+  margin: 0 0 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+}
+.tut-bar[hidden] { display: none; }
+.tut-step { font: 500 12px/1 var(--mono); color: var(--dim); letter-spacing: .06em; }
+.tut-skip { padding: 8px 14px; font-size: 12px; }
+.tut-text { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.5; }
+.action.tut-glow, .card.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); animation: tutGlow 1s ease-in-out infinite; }
+@keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 2.5px rgba(179, 156, 255, .3), 0 0 6px 1px rgba(179, 156, 255, .15); } 50% { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); } }
+#howtoTutorial { margin-top: 12px; }
+#panelTutorial { margin-top: 4px; }
 .action {
   display: inline-flex;
   align-items: center;

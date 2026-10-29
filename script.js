@@ -986,6 +986,7 @@ function fire(i, dir = 1) {
   logEl.textContent = ABILITIES[ab].name + (dir < 0 ? '（逆回り）' : '');
   clearHint(); // 示した手はもう古いので消す
   if (isSolved()) showClear();
+  else if (tutorial) tutMark();
 }
 
 
@@ -1037,6 +1038,7 @@ function recordPerfect() {
 }
 
 function showClear() {
+  if (tutorial) { tutorialCleared(); return; }   // 練習の盤は、★・回数・広告の数のどれにも数えない
   commitRun();
   Sfx.solved();
   locked = true;
@@ -1487,6 +1489,11 @@ function newPuzzle(useSeed, dailyOn) {
   dailyKey = typeof dailyOn === 'string' ? dailyOn : null;
   previewAllBlocks = !!dailyKey;
   try { generate(seed); } finally { previewAllBlocks = false; }
+  beginBoard();
+}
+
+// generate（または固定の盤）で決めた tileAbility・board・solution から、遊ぶ状態を作り直す。
+function beginBoard() {
   shareBtnEl.hidden = true;
 
   stopAutoSolve();
@@ -2390,6 +2397,7 @@ function show(screen) {
 }
 
 function goHome() {
+  endTutorial();
   stopAutoSolve();
   closeConfirm();
   clearHint();
@@ -2405,7 +2413,7 @@ const homeBtnEl = document.getElementById('homeBtn');
 homeBtnEl.addEventListener('click', goHome);
 document.getElementById('logoBtn').addEventListener('click', goHome);
 
-document.getElementById('startBtn').addEventListener('click', () => show(titleEl));
+document.getElementById('startBtn').addEventListener('click', () => { if (shouldShowTutorial()) startTutorial(); else show(titleEl); });
 
 // ---- 遊び方（スタートとホーム） ----
 // プレイ中のパネルは設定も兼ねるので、始める前に読むものは別に持つ。
@@ -2418,6 +2426,166 @@ document.getElementById('homeHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('howtoClose').addEventListener('click', closeHowto);
 document.getElementById('howtoOk').addEventListener('click', closeHowto);
 howtoEl.addEventListener('click', (e) => { if (e.target === howtoEl) closeHowto(); });   // 枠の外を押したら閉じる
+
+// ---- 最初のチュートリアル ----
+// 初めて起動したとき（スタートの「はじめる」）だけ、決まった盤 5 面で遊び方を覚えてもらう。
+// 盤は手で決めた固定のもので、generate を通さない。揃えても★・クリアの回数・今日の 1 問・広告の回数には数えない。
+// 終えた・飛ばしたら localStorage の glyphshift.tutorial に覚え、次からは出さない（メニューの「ルール」から呼べる）。
+// 文字は能力: N 何も起きない / L 左右の入れ替え / U 上下の入れ替え / C 上下左右の回転 / a 左上と右下 / b 右上と左下 / d 斜め 4 マスの回転。
+// すべて無料版のブロック（entitlement.js の FREE_BLOCKS）。a b d は色だけの目印で、盤のへりでは使えない。
+// mark: auto 次に押すマスを光らせる / goal 目標の柄を光らせる / hint ヒントのボタンを光らせる / 無し 印なし
+const TUTORIAL_KEY = 'glyphshift.tutorial';
+const TUT_CHAR = { N: 'none', L: 'swapLR', U: 'swapUD', C: 'crossCW', a: 'swapD1', b: 'swapD2', d: 'diagCW' };
+const TUTORIAL_STAGES = [
+  // 1 押す: 1 手
+  { w: 3, h: 3, text: '光っているタイルを押そう', mark: 'auto', moves: 1,
+    goal: 'NNNaLdNNN', start: 'NNNdLaNNN' },
+  // 2 能力はタイルと一緒に動く: 2 手（上下の入れ替えで左右の入れ替えのタイルが下へ動き、動いた先で使う）
+  { w: 3, h: 3, text: '能力は、タイルと一緒に動く', mark: 'auto', moves: 2,
+    goal: 'NNNNUNaLb', start: 'NLNNUNbNa' },
+  // 3 長押しで逆回し: 押すと 3 回、長押しなら 1 回
+  { w: 3, h: 3, text: '長押しで、逆向きに回る', mark: 'auto', moves: 1,
+    goal: 'NaNdCbNNN', start: 'NdNNCaNbN' },
+  // 4 組み合わせる: 2 種のブロック、3 手
+  { w: 3, h: 3, text: '目標の柄に揃えよう', mark: 'goal', moves: 3,
+    goal: 'aLbNCNNNN', start: 'bNaNCNNLN' },
+  // 5 困ったらヒント: 4×4、2 種のブロック、4 手
+  { w: 4, h: 4, text: '迷ったら、ヒント', mark: 'hint', moves: 4,
+    goal: 'aNNbNCLNNNNNdNNa', start: 'NNabNCNNNLNNdNNa' },
+];
+
+// 能力の文字の並び 2 つから、loadFixedPuzzle に渡す盤を作る。
+// 同じ能力のタイルは目標のマス番号の若い順に値を割り振る（目標は「タイル v がマス v」）。
+function tutorialBoard(def) {
+  const ab = (ch) => abId(TUT_CHAR[ch]);
+  const ta = Array.from(def.goal, ab);
+  const pool = {};
+  ta.forEach((a, v) => { (pool[a] ||= []).push(v); });
+  const bd = Array.from(def.start, (ch) => pool[ab(ch)].shift());
+  return { w: def.w, h: def.h, tileAbility: ta, board: bd };
+}
+
+// 固定の盤を読み込む。generate は通さない。最短の手順は solver で求めて、印とヒントの手順に使う。
+function loadFixedPuzzle({ w, h, tileAbility: ta, board: bd }) {
+  if (w !== W || h !== H) { W = w; H = h; SIZE = w * h; buildDom(); }
+  forcedAbilities = null;
+  types = new Set(ta).size;
+  tileAbility = Array.from(ta);
+  board = Array.from(bd);
+  seed = 0;
+  dailyKey = null;
+  problem = buildProblem();
+  const start = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[board[i]]);
+  const goal = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[i]);
+  const res = Solver.solvePuzzle(problem, start, goal, 1500);
+  solution = res && res.plan ? Solver.planToRuns(problem, res.plan, start) : [];
+  beginBoard();
+}
+
+let tutorial = null;   // 練習中は { idx, timer }。そうでなければ null
+const tutBarEl = document.getElementById('tutBar');
+const tutStepEl = document.getElementById('tutStep');
+const tutTextEl = document.getElementById('tutText');
+const goalCardEl = document.getElementById('goalCard');
+const hintBtnEl = document.getElementById('hintBtn');
+const tutHiddenEls = [document.getElementById('solveBtn'), document.getElementById('newBtn')];
+
+// 遊んだ記録があるか（クリアした・今日の 1 問を解いた）。一覧を描くだけでも stages は書かれるので、中身を見る。
+function hasPlayRecords() {
+  const some = (o, f) => !!o && typeof o === 'object' && Object.values(o).some(f);
+  return some(stages, (st) => st && (st.clears > 0 || st.perfect > 0)) || some(clears, (n) => n > 0) || some(daily, () => true);
+}
+function tutorialDone() {
+  try { return localStorage.getItem(TUTORIAL_KEY) !== null; } catch (e) { return false; }
+}
+// 最初の「はじめる」で出すか。済んでいる人、遊んだ記録がある人には自動では出さない。
+const shouldShowTutorial = () => !tutorialDone() && !hasPlayRecords();
+
+function loadTutorialStage() {
+  const def = TUTORIAL_STAGES[tutorial.idx];
+  loadFixedPuzzle(tutorialBoard(def));
+  tutStepEl.textContent = `${tutorial.idx + 1} / ${TUTORIAL_STAGES.length}`;
+  tutTextEl.textContent = def.text;
+  goalCardEl.classList.toggle('tut-glow', def.mark === 'goal');
+  hintBtnEl.classList.toggle('tut-glow', def.mark === 'hint');
+  tutMark();
+}
+
+// 次に押すマスに印（ヒントの点滅と同じ見た目で、消えずに残す）。
+function tutMark() {
+  clearHint();
+  const def = TUTORIAL_STAGES[tutorial.idx];
+  if (def.mark !== 'auto' || locked || isSolved()) return;
+  const r = activeRuns()[0];
+  if (!r) return;
+  slots[r.i].classList.add('hinted');
+  const back = r.order - r.n;
+  logEl.textContent = r.n <= back
+    ? (r.n === 1 ? '光っているタイルを押す' : `光っているタイルを ${r.n} 回押す`)
+    : (back === 1 ? '光っているタイルを長押し' : `光っているタイルを ${back} 回長押し`);
+}
+
+function startTutorial() {
+  closeHowto();
+  setPanel('setup', false);
+  setPanel('panel', false);
+  if (tutorial) clearTimeout(tutorial.timer);
+  tutorial = { idx: 0, timer: null };
+  tutBarEl.hidden = false;
+  for (const b of tutHiddenEls) b.hidden = true;
+  loadTutorialStage();
+  show(playEl);
+}
+
+// 揃った。短く知らせて、少しあとに次の面へ（最後はホームへ）。数えるものは何も無い。
+function tutorialCleared() {
+  commitRun();
+  Sfx.solved();
+  locked = true;
+  clearHint();
+  gridEl.classList.remove('cleared');
+  void gridEl.offsetWidth;
+  gridEl.classList.add('cleared');
+  logEl.classList.add('done');
+  logEl.textContent = 'できた！';
+  tutorial.timer = setTimeout(tutorialNext, 1100);
+}
+
+function tutorialNext() {
+  if (!tutorial) return;
+  if (tutorial.idx + 1 >= TUTORIAL_STAGES.length) { goHome(); return; }
+  tutorial.idx++;
+  tutorial.timer = null;
+  loadTutorialStage();
+}
+
+// 練習を終える（最後まで・スキップ・ホームへ戻る、どれでも）。済んだ印を残し、盤を通常の初期状態に戻す。
+function endTutorial() {
+  if (!tutorial) return;
+  clearTimeout(tutorial.timer);
+  tutorial = null;
+  try { localStorage.setItem(TUTORIAL_KEY, 'done'); } catch (e) { /* 覚えられなくても遊べる */ }
+  tutBarEl.hidden = true;
+  goalCardEl.classList.remove('tut-glow');
+  hintBtnEl.classList.remove('tut-glow');
+  for (const b of tutHiddenEls) b.hidden = false;
+  W = H = 4; SIZE = 16; buildDom();
+  types = 2;
+  newPuzzle();
+}
+
+// 「もう一度」。途中の盤があれば、先に確認する。
+function replayTutorial() {
+  if (!tutorial && !playEl.hidden && run.i >= 0 && !isSolved()) {
+    setPanel('panel', false);
+    askConfirm('チュートリアルをもう一度', '今の盤は消えます。', 'はじめる', () => { closeConfirm(); startTutorial(); });
+    return;
+  }
+  startTutorial();
+}
+document.getElementById('tutSkip').addEventListener('click', goHome);
+document.getElementById('howtoTutorial').addEventListener('click', replayTutorial);
+document.getElementById('panelTutorial').addEventListener('click', replayTutorial);
 
 // はじめから 1 問ぶん作っておく。ホーム画面の裏で用意しておけば、
 // 「はじめる」を押した瞬間にも真っさらな盤面（buildDom 直後の空の板）を

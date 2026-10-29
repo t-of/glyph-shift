@@ -133,6 +133,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
       </ol>
       <p class="howto-note">手数は差し引きで数える。回転を 3 回押して元に戻れば 0 手、
         逆回りに 1 つぶんなら 1 手。</p>
+      <button id="panelTutorial" class="ghost-btn" type="button">チュートリアルをもう一度</button>
     </section>
 
     <section class="panel-sec" id="secBlock" role="tabpanel" aria-labelledby="tabBlock" tabindex="0" hidden>
@@ -227,6 +228,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <p>ホームの一覧は<strong>盤のサイズ × ブロックの種類</strong>。カードを押すと始まり、★はクリアした回数。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
       </li>
     </ol>
+    <button id="howtoTutorial" class="ghost-btn wide" type="button">チュートリアルをもう一度</button>
     <button id="howtoOk" class="primary wide" type="button">わかった</button>
   </dialog>
 
@@ -293,6 +295,11 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
   <main class="stage" id="play" hidden>
     <section class="play">
+      <div class="tut-bar" id="tutBar" hidden>
+        <span class="tut-step" id="tutStep">1 / 5</span>
+        <button id="tutSkip" class="ghost-btn tut-skip" type="button">スキップ</button>
+        <p class="tut-text" id="tutText"></p>
+      </div>
       <div class="board-frame">
         <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>
         <div class="ruler ruler-y" id="rulerY" aria-hidden="true"></div>
@@ -329,7 +336,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </section>
 
     <aside class="side">
-      <section class="card">
+      <section class="card" id="goalCard">
         <h2 class="label">目標の柄</h2>
         <div class="grid mini" id="goalGrid"></div>
       </section>
