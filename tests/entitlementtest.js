@@ -51,6 +51,21 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(full.length === freeGoal.length, 'ゴールの長さが違う');
   console.log('  ゴールが範囲違いで混ざらない  OK');
 
+  // 鍵つきのステージの絵は全ブロックで作る（買ったあとも同じ絵のまま遊べる）
+  const lockedSt = { seed: 777, clears: 0 };
+  const lockedGoal = goalForStage(7, 6, lockedSt);
+  ok(lockedSt.pool === 'all', '鍵つきのステージが all の印にならない');
+  let paid = false;
+  for (let t = 0; t < 6 && !paid; t++) {
+    const g = goalForStage(7, 6, { seed: 5000 + t, clears: 0 });
+    paid = g.some((a) => !Entitlement.FREE_BLOCKS.includes(ABILITIES[a].id));
+  }
+  ok(paid, '鍵つきのステージの絵に完全版のブロックが出ない');
+  Entitlement._override({ locks: true, full: true });
+  ok(goalForStage(7, 6, lockedSt).join() === lockedGoal.join(), '買ったあとに鍵つきのステージの絵が変わる');
+  Entitlement._override({ locks: true, full: false });
+  console.log('  鍵つきのステージの絵は全ブロック  OK');
+
   // 完全版にすると全部開く
   Entitlement._override({ locks: true, full: true });
   ok(Entitlement.stageOpen(10, 13) && Entitlement.customOpen() && Entitlement.blockOpen('ringCW'), '完全版で開かない');

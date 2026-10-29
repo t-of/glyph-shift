@@ -1323,7 +1323,7 @@ function pickGoal(w, h, k, cands, rng, forced, attempt) {
     // ランダムに選ぶときは色数が 4 以上のときだけ混ぜる（カスタムでの指定は尊重する）。
     // 無料版（鍵が効いていて完全版でない）は、無料のブロックの中からだけ選ぶ。
     const pool = ABILITIES.map((_, a) => a)
-      .filter((a) => Entitlement.blockOpen(ABILITIES[a].id))
+      .filter((a) => previewAllBlocks || Entitlement.blockOpen(ABILITIES[a].id))
       .filter((a) => k >= 4 || !isBlank(a));
     for (let a = pool.length - 1; a > 0; a--) {
       const j = Math.floor(rng() * (a + 1));
@@ -1947,11 +1947,14 @@ function stageFor(s, k) {
 // そのステージの seed から、実際に遊ぶ盤のゴールを求める（一覧のプレビュー用）。
 // newPuzzle と同じ generate を通すので、引き直し（小さい盤で、どう混ぜても崩れない
 // ゴールを引いたとき）まで含めて実際の盤と一致する。
-function stageGoalPreview(s, k, seed) {
+// 鍵つきのステージは、一覧の絵だけ全ブロックで描く（完全版で何が遊べるかを見せる）。
+let previewAllBlocks = false;
+function stageGoalPreview(s, k, seed, allBlocks = false) {
   // generate は対局の状態を書き換えるので、今の対局を退避して戻す
   const saved = { W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution };
   W = H = s; SIZE = s * s; types = k; forcedAbilities = null;
-  generate(seed);
+  previewAllBlocks = allBlocks;
+  try { generate(seed); } finally { previewAllBlocks = false; }
   const goal = tileAbility;
   ({ W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution } = saved);
   return goal;
@@ -1961,8 +1964,10 @@ function stageGoalPreview(s, k, seed) {
 function goalForStage(s, k, st) {
   // goal は、使えるブロックの範囲（無料／全部）の印 pool と一緒に覚える。印が違えば作り直す
   // （無料の範囲で作ったゴールと全ブロックで作ったゴールが混ざらないように。印の無い古い記録は全部）。
-  if (!(st.goal && st.goal.length === s * s && (st.pool || 'all') === Entitlement.poolTag())) {
-    st.goal = stageGoalPreview(s, k, st.seed); st.pool = Entitlement.poolTag(); saveStages();
+  // 鍵つきのステージは全ブロックの印で作る（買ったあと、見ていた絵のまま遊べる）。
+  const tag = Entitlement.stageOpen(s, k) ? Entitlement.poolTag() : 'all';
+  if (!(st.goal && st.goal.length === s * s && (st.pool || 'all') === tag)) {
+    st.goal = stageGoalPreview(s, k, st.seed, tag === 'all'); st.pool = tag; saveStages();
   }
   return st.goal;
 }
