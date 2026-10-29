@@ -34,6 +34,12 @@
 **絵柄**（ブロックの描き方）を 6 通り — 具体的なほうから点図・升目・結線・標識・単形・直線 —
 から選べる。選ぶとその場で切り替わり、盤面は動かない。効果音の入切もここにある。
 
+## 広告の口（iOS 版だけ）
+
+`rewards.js` は広告の判定と、iOS 版（`~/GitHub/tof/ios/abilitile/native/native.js`）とのつなぎ口だけを持つ。広告そのものは Web 版に入らない。
+自分で揃えるたびに回数（`glyphshift.adClears`）を数えて `abilitile:clear`（detail: `{ count, due, daily }`）を送る。`due` は通算 6 回目から 3 回に 1 回。
+ごほうび広告の権利は `Entitlement.grantTicket()`（盤を始めると使い切り、ホームに戻ると消える。`isFull()` は変えない）。
+
 ## アプリとして入れる（PWA）
 
 Chrome のアドレスバーの「アプリをインストール」から、アプリとして入れられる。

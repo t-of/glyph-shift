@@ -27,6 +27,7 @@ const FILES = [
   './glyphs.js',
   './solver.js',
   './entitlement.js',
+  './rewards.js',
   './script.js',
   './webapp-kit/webapp-kit.css',
   './webapp-kit/webapp-kit.js',

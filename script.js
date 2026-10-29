@@ -1056,6 +1056,9 @@ function showClear() {
   clearPending = (!autoSolvedFlag && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag);
 
+  // 自分で揃えた回数を数える（全画面の広告の間隔に使う。iOS 版だけが受け取る）。「解説」で揃えたものは数えない
+  if (!autoSolvedFlag) Rewards.recordClear(!!dailyKey);
+
   // 今日の 1 問は、自分で揃えたときだけ日ごとの記録に残す（ステージの記録には数えない）
   if (dailyKey && !autoSolvedFlag) { recordDaily(moves, hintUsed, par || null); return; }
 
@@ -1992,9 +1995,10 @@ function syncLocks() {
 
 // pend* の内容で盤面を作り直す。「この設定で作成」（カスタム含む）と
 // ホームの「はじめる」の両方から呼ぶ。
+let lastStartPool = 'all';   // 直前に始めた盤が使えるブロックの範囲の印（ごほうびで始めた盤は 'all'）
 function startFromPending() {
   if (pendCustom && !customReady()) return;
-  if (pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, pendTypes)) { openLockSheet(); return; }
+  if (pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, pendTypes)) { openLockSheet(pendCustom ? 'custom' : 'setting'); return; }
   if (pendW !== W || pendH !== H) {
     W = pendW;
     H = pendH;
@@ -2009,7 +2013,9 @@ function startFromPending() {
     types = pendTypes;
   }
   const v = parseInt(seedInEl.value, 10);
+  lastStartPool = Entitlement.poolTag();
   newPuzzle(Number.isFinite(v) ? v : undefined);
+  Entitlement.useTicket();   // ごほうびの権利は、盤を始めたら使い切り
 }
 
 createBtnEl.addEventListener('click', () => {
@@ -2143,13 +2149,43 @@ const stageListEl = document.getElementById('stageList');
 
 // ---- 完全版の案内（鍵つきを押したとき）----
 const lockSheetEl = document.getElementById('lockSheet');
-function openLockSheet() { lockSheetEl.showModal?.(); }
+// what: どこから開いたか。{ s, k }（ステージ）か 'custom' / 'setting'（設定パネル）。ごほうび広告のあとの始め方が変わる
+let lockWhat = 'setting';
+const lockRewardEl = document.getElementById('lockReward');
+const lockRewardNoteEl = document.getElementById('lockRewardNote');
+function openLockSheet(what = 'setting') {
+  lockWhat = what;
+  // ごほうび広告の口は、iOS 版で広告が使えるときだけ（Web 版・完全版・広告が使えない間は出さない）
+  const can = Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
+  lockRewardEl.hidden = lockRewardNoteEl.hidden = !can;
+  document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? 'このステージ' : 'この設定の盤';
+  lockSheetEl.showModal?.();
+}
 function closeLockSheet() { lockSheetEl.close?.(); }
 document.getElementById('lockClose').addEventListener('click', closeLockSheet);
 document.getElementById('lockOk').addEventListener('click', closeLockSheet);
 lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) closeLockSheet(); });
 // 完全版になったら、一覧の鍵をその場で外す（案内も閉じる）
 Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); });
+
+// ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）
+let rewardBusy = false;
+lockRewardEl.addEventListener('click', async () => {
+  if (rewardBusy) return;
+  rewardBusy = true;
+  lockRewardEl.disabled = true;
+  const what = lockWhat;
+  try {
+    const r = await Rewards.watch();
+    if (r === 'earned' && !Entitlement.isFull()) {
+      Entitlement.grantTicket();   // 鍵が開く。onChange でシートも閉じる
+      if (typeof what === 'object') playStage(what.s, what.k);
+    } else {
+      const st = document.getElementById('lockStatus');
+      if (st) st.textContent = r === 'failed' ? '広告を読み込めませんでした。時間をおいてもう一度お試しください。' : '広告を最後まで見ると遊べます。';
+    }
+  } finally { rewardBusy = false; lockRewardEl.disabled = false; }
+});
 
 // ---- 今日の 1 問（ホームのカードと始め方）----
 const todayKey = () => dateKeyOf(new Date());
@@ -2321,7 +2357,11 @@ stageListEl.addEventListener('click', (e) => {
   if (!item || item.classList.contains('daily-item')) return;   // 今日の 1 問は自分のハンドラで始める
   const s = Number(item.dataset.s);
   const k = Number(item.dataset.k);
-  if (!Entitlement.stageOpen(s, k)) { openLockSheet(); return; }
+  if (!Entitlement.stageOpen(s, k)) { openLockSheet({ s, k }); return; }
+  playStage(s, k);
+});
+
+function playStage(s, k) {
   const st = stageFor(s, k);
   if (inProgress(s, k)) { show(playEl); return; }   // 途中の盤をそのまま続ける
   pendA = pendB = pendW = pendH = s;
@@ -2330,10 +2370,10 @@ stageListEl.addEventListener('click', (e) => {
   seedInEl.value = String(st.seed);
   startFromPending();
   st.goal = Array.from(tileAbility);   // 実際に生成されたゴールを覚えておく（次の一覧でずれないように）
-  st.pool = Entitlement.poolTag();
+  st.pool = lastStartPool;
   saveStages();
   show(playEl);
-});
+}
 
 const titleEl = document.getElementById('title');
 const playEl = document.getElementById('play');
@@ -2353,6 +2393,7 @@ function goHome() {
   stopAutoSolve();
   closeConfirm();
   clearHint();
+  Entitlement.dropTicket();   // ごほうびの 1 回は、ホームに戻ると鍵つきに戻る（貯めない）
   setPanel('setup', false);
   setPanel('panel', false);
   renderStageList();

@@ -19,6 +19,7 @@ const Entitlement = (() => {
   const listeners = [];
   let store = null;        // attachStore で渡されるストア
   let storeFull = null;    // ストアが最後に答えた「完全版か」。null は未確認
+  let ticket = false;      // ごほうび広告で得た「鍵つきの盤を 1 回遊べる」権利。貯めない（1 つだけ。使うか、ホームに戻ると消える）
 
   const query = () => {
     try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(''); }
@@ -82,7 +83,14 @@ const Entitlement = (() => {
     return full;
   }
 
-  const restricted = () => locksActive() && !isFull();
+  // ---- ごほうび広告の権利（1 回きり）----
+  // あるあいだだけ鍵が開く（isFull は変わらない）。盤を始めたとき（useTicket）かホームに戻ったとき（dropTicket）に消える。
+  const hasTicket = () => ticket;
+  function grantTicket() { if (isFull() || ticket) return; ticket = true; notify(); }
+  function useTicket() { if (!ticket) return; ticket = false; notify(); }
+  const dropTicket = useTicket;
+
+  const restricted = () => locksActive() && !isFull() && !ticket;
   const blockOpen = (id) => !restricted() || FREE_BLOCKS.includes(id);
   const stageOpen = (s, k) => !restricted() || (s >= 3 && s <= FREE_MAX_SIZE && k >= 2 && k <= FREE_MAX_TYPES);
   const customOpen = () => !restricted();
@@ -91,10 +99,11 @@ const Entitlement = (() => {
 
   return {
     FREE_BLOCKS, locksActive, isFull, onChange, setFull,
+    hasTicket, grantTicket, useTicket, dropTicket,
     attachStore, hasStore, storePrice, refreshFromStore, purchase, restore,
     blockOpen, stageOpen, customOpen, poolTag,
-    _override: (o) => { override = o; },
-    _resetStore: () => { store = null; storeFull = null; },
+    _override: (o) => { override = o; ticket = false; },
+    _resetStore: () => { store = null; storeFull = null; ticket = false; },
   };
 })();
 if (typeof window !== 'undefined') window.Entitlement = Entitlement;
