@@ -4,7 +4,7 @@ let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 const list = document.getElementById('stageList');
 const clickStage = (s, k) => {
-  const item = { dataset: { s: String(s), k: String(k) } };
+  const item = { dataset: { s: String(s), k: String(k) }, classList: { contains: () => false } };
   list.fire('click', { target: { closest: () => item } });
 };
 const findItem = (s, k) => list.querySelectorAll('.stage-item').find((it) => it.dataset.s === String(s) && it.dataset.k === String(k));
