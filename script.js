@@ -282,6 +282,8 @@ const movesEn = (n) => `${n} move${n === 1 ? '' : 's'}`;
 const timesEn = (n) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
 const monthDayEn = (m, d) => `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${d}`;
 const DIFFS = L(['やさしい', 'ふつう', 'むずかしい'], ['Easy', 'Normal', 'Hard']);
+// 画面では難しさを ★ の数で出す（2026-10-30 オーナー。文字を減らす）。名前は読み上げ用に残す
+const diffMark = (d) => '★'.repeat(d + 1);
 const STAGE_TABLE = {
   3: [{ n: 3, k: 2, min: 2 }, { n: 5, k: 3, min: 3 }, { n: 7, k: 4, min: 4 }],
   4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }],
@@ -2261,7 +2263,8 @@ function syncSetup() {
   refreshCustom();
 }
 
-fillSeg(diffSegEl, [0, 1, 2], (v) => DIFFS[v]);
+fillSeg(diffSegEl, [0, 1, 2], (v) => diffMark(v));
+for (const b of diffSegEl.children) b.setAttribute('aria-label', DIFFS[Number(b.dataset.v)]);
 fillSeg(sideAEl, SIZES, (v) => String(v));
 fillSeg(sideBEl, SIZES, (v) => String(v));
 fillPicker();
@@ -2409,9 +2412,9 @@ const inProgress = (s, d) =>
   W === s && H === s && curDiff === d && !forcedAbilities && !dailyKey && !tutorial
   && seed === stageFor(s, d).seed && run.i >= 0 && !isSolved();
 
-// 一覧のカードの記録。クリアの回数を ★ の数で出す（2026-10-30 オーナー。文字を減らす）。
-// 5 回までは ★ を並べ、6 回からは ★×6。未クリアは何も出さない。文字の言い方はカードの読み上げ（aria-label）に残す。
-const clearsMark = (n) => !n ? '' : n <= 5 ? '★'.repeat(n) : `★×${n}`;
+// 一覧のカードの記録。クリアの回数を ✓ の数で出す（2026-10-30 オーナー。文字を減らす。★ は難しさに使う）。
+// 5 回までは ✓ を並べ、6 回からは ✓×6。未クリアは何も出さない。文字の言い方はカードの読み上げ（aria-label）に残す。
+const clearsMark = (n) => !n ? '' : n <= 5 ? '✓'.repeat(n) : `✓×${n}`;
 const clearsLabel = (st) =>
   st.clears
     ? L(`クリア ${st.clears} 回`, `cleared ${timesEn(st.clears)}`)
@@ -2702,7 +2705,8 @@ function renderStageList() {
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
-      meta.textContent = DIFFS[d];
+      meta.textContent = diffMark(d);
+      meta.classList.add('stage-diff');
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
