@@ -264,17 +264,19 @@ const TYPE_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 // 数字は tools/stagebench.js の計測（アプリのヒントと同じ 3 秒の探索で見つかる手数）で決めた。
 const DIFFS = ['やさしい', 'ふつう', 'むずかしい'];
 const STAGE_TABLE = {
-  3: [{ n: 3, k: 2 }, { n: 5, k: 3 }, { n: 7, k: 4 }],
+  3: [{ n: 3, k: 2, min: 2 }, { n: 5, k: 3, min: 3 }, { n: 7, k: 4, min: 4 }],
   4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }],
-  5: [{ n: 6, k: 3 }, { n: 12, k: 4 }, { n: 17, k: 5 }],
+  5: [{ n: 6, k: 3 }, { n: 14, k: 4 }, { n: 17, k: 5 }],
   6: [{ n: 9, k: 3 }, { n: 15, k: 5 }, { n: 20, k: 6 }],
   7: [{ n: 11, k: 4 }, { n: 17, k: 6 }, { n: 24, k: 7 }],
   8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }],
 };
 const STAGE_SIZES = [3, 4, 5, 6, 7, 8];
+// 3×3 は通れる盤面が少なく、混ぜても近道ができて 1 手で揃うことが多い。min は「最短がこの手数以上の盤だけ使う」
+// （小さい盤だけ、盤を作るときに最短を求めて確かめる。generate の minMoves）
 const stageDef = (s, d) => {
   const e = STAGE_TABLE[s] && STAGE_TABLE[s][d];
-  return e ? { s, d, n: e.n, k: e.k, key: `${s}d${d}` } : null;
+  return e ? { s, d, n: e.n, k: e.k, min: e.min || 0, key: `${s}d${d}` } : null;
 };
 // カスタムの盤は、長い辺に近い大きさの表から混ぜる手数だけを借りる
 const movesFor = (w, h, d) => stageDef(Math.min(8, Math.max(3, Math.max(w, h))), d).n;
@@ -1562,6 +1564,11 @@ function generate(seedValue) {
   patternSeed = Math.floor(rng() * 1e9);   // 種つきの柄を盤面ごとに変える
   const cands = candidatePatterns(W, H, K);
 
+  // 3×3 だけ、最短が min 手より短い盤は引き直す（最短は探索ですぐ分かる）。引き直しは 300 回まで
+  const def3 = W === 3 && H === 3 ? stageDef(3, curDiff) : null;
+  const minMoves = def3 ? def3.min : 0;
+  let shortTries = 0, fails = 0;   // fails は「手数ぶん進めなかった」回数（短すぎて引き直した回は数えない）
+
   for (let attempt = 0; ; attempt++) {
     // 柄と使うブロックを rng から決める。タイル v の能力 = 完成時にマス v に来る色。
     tileAbility = pickGoal(W, H, K, cands, rng, forcedAbilities, attempt);
@@ -1570,17 +1577,26 @@ function generate(seedValue) {
     // 3×3 は通れる盤面が少なく、手数ぶん進める組は 1 ～ 3 割しかない（盤が小さいので引き直しは軽い）。
     // 引き直しがかさむ（大きい盤ではまず起きない）ときは、同じマスの連続を許し、
     // それでもだめなら手数を減らしてでも必ず終わらせる。
-    const n = attempt < 200 ? scrambleN : Math.max(1, scrambleN - Math.floor((attempt - 200) / 5));
+    const n = fails < 200 ? scrambleN : Math.max(1, scrambleN - Math.floor((fails - 200) / 5));
     const tbl = buildMoveTable();
     board = Array.from({ length: SIZE }, (_, i) => i);
-    const path = scrambleBoard(board, tbl, n, rng, attempt >= 100);
+    const path = scrambleBoard(board, tbl, n, rng, fails >= 100);
     if (path && path.length && !isSolved()) {
       scrambleMoves = path;
       const back = [];
       for (let q = path.length - 1; q >= 0; q--) back.push([path[q][0], -path[q][1]]);
       solution = movesToRuns(back, board, tbl);
+      if (minMoves && shortTries < 300) {
+        const start = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[board[i]]);
+        const goal = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[i]);
+        const res = Solver.solvePuzzle(buildProblem(), start, goal, 200);
+        if (res && res.optimal && res.plan && Solver.planCost(buildProblem(), res.plan, start) < minMoves) {
+          shortTries++; fails = 0; continue;   // 手数ぶんは進めたので、進めなかった回数は数え直す
+        }
+      }
       break;
     }
+    fails++;
   }
 }
 
@@ -2177,13 +2193,13 @@ function stageFor(s, d) {
 let previewAllBlocks = false;
 function stageGoalPreview(s, d, seed, allBlocks = false) {
   // generate は対局の状態を書き換えるので、今の対局を退避して戻す
-  const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution };
+  const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution, curDiff };
   const def = stageDef(s, d);
-  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null;
+  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null; curDiff = d;
   previewAllBlocks = allBlocks;
   try { generate(seed); } finally { previewAllBlocks = false; }
   const goal = tileAbility;
-  ({ W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution } = saved);
+  ({ W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution, curDiff } = saved);
   return goal;
 }
 
