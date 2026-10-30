@@ -121,7 +121,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  共有の文  OK');
 }
 
-// クリアの流れ: 最初の 1 回だけ記録・ステージに数えない・解説は「解説を見た」・par 後着で★が付く・イベント
+// クリアの流れ: 最初の 1 回だけ記録・ステージに数えない・解説は文字なし・par 後着で★が付く・イベント
 {
   daily = {}; localStorage.removeItem('glyphshift.daily');
   const key = todayKey();
@@ -138,7 +138,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   newPuzzle(dailySeed(key), key);
   par = { cost: 4, optimal: true }; autoSolvedFlag = true; solvedBoard(); moves = 4; showClear();
   ok(daily[key] && daily[key].state === 'revealed' && shareBtnEl.hidden && !fired.length, `解説: ${JSON.stringify(daily[key])}`);
-  ok(logEl.textContent === '解説を見た', logEl.textContent);
+  ok(logEl.textContent === '', logEl.textContent);
   ok(dailyStreak(daily, key) === 0, '解説の日が連続日数に入った');
   daily = {};
 
@@ -177,7 +177,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   // 解説の日も新しく遊べない
   daily = { [key]: { state: 'revealed', ms: 12000, hint: true } };
   startDaily();
-  ok(locked && dailyReview && logEl.textContent === '解説を見た' && shareBtnEl.hidden, `解説の日の画面: ${logEl.textContent}`);
+  ok(locked && dailyReview && logEl.textContent === '' && shareBtnEl.hidden, `解説の日の画面: ${logEl.textContent}`);
   ok(dailyInProgress() === false, '解説の日が途中扱い');
   goHome();
 
@@ -305,12 +305,12 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   // 閉じて開き直す → 新しく遊べない
   goHome(); daily = loadDaily();
   startDaily();
-  ok(locked && dailyReview && logEl.textContent === '解説を見た', `解説の日にまた遊べる: ${logEl.textContent}`);
+  ok(locked && dailyReview && logEl.textContent === '', `解説の日にまた遊べる: ${logEl.textContent}`);
   ok(dailyIsClosed(daily[key]) && !dailyIsCleared(daily[key]), '解説がクリア扱い');
   // カード
   goHome();
   const card = stageListEl.querySelector('.daily-item');
-  ok(/解説を見た/.test(card.children[1].children[1].textContent), `カード: ${card.children[1].children[1].textContent}`);
+  ok(card.children[1].children[1].textContent === '' && /解説を見た/.test(card.getAttribute('aria-label')), `カード: ${card.children[1].children[1].textContent}`);
 
   // 通常の盤ではヒントに確認を出さない
   newPuzzle(); showHint(); ok(confirmEl.hidden, '通常の盤でヒントの確認が出た');
@@ -379,7 +379,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   daily = { [key]: { state: 'playing', ms: 5000, hint: false } }; renderStageList(); ok(stateText() === '' && stageListEl.querySelector('.daily-item').classList.contains('resume') && /途中/.test(stageListEl.querySelector('.daily-item').getAttribute('aria-label')), `途中: ${stateText()}`);
   daily = { [key]: { state: 'cleared', ms: 83000, hint: false, moves: 5, stars: 3, rankable: true } }; renderStageList(); ok(stateText() === 'クリア 1:23', stateText());
   daily = { [key]: { moves: 5, stars: 3, hint: false } }; renderStageList(); ok(stateText() === 'クリア', `古い形: ${stateText()}`);
-  daily = { [key]: { state: 'revealed', ms: 5000, hint: true } }; renderStageList(); ok(stateText() === '解説を見た', stateText());
+  daily = { [key]: { state: 'revealed', ms: 5000, hint: true } }; renderStageList(); ok(stateText() === '', stateText());
   daily = {};
   console.log('  カードの表示  OK');
 }

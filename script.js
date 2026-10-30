@@ -1218,7 +1218,7 @@ function fire(i, dir = 1) {
 
 // クリアの行。手数も★の評価も出さない（2026-10-30 オーナー）。揃ったことは盤の光と音で見せる。
 // 引数は前のまま（呼ぶ側を変えない）。par・★は記録には残るが、画面には出さない。
-const DAILY_REVEALED_LINE = L('解説を見た', 'Solution viewed');
+const DAILY_REVEALED_LINE = '';   // 解説を見た日も文字を出さない（2026-10-30 オーナー）
 const DAILY_ABANDONED_LINE = '';   // 途中でやめた日は文字を出さない（2026-10-30 オーナー）
 function clearLine(n, used) {
   return L('クリア', 'Clear');
@@ -2630,7 +2630,7 @@ function renderDailyCard() {
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
     : rec && rec.state === 'abandoned' ? L('記録なし', 'no record')
     : playing ? L('途中', 'in progress') : L('未挑戦', 'not played');
-  state.textContent = (playing || !rec || rec.state === 'abandoned') ? '' : stateLabel;   // やめた日も文字なし（読み上げには残す）
+  state.textContent = (playing || !rec || rec.state === 'abandoned' || rec.state === 'revealed') ? '' : stateLabel;   // やめた日・解説を見た日も文字なし（読み上げには残す）
   if (playing) item.classList.add('resume');
   body.append(title, state);   // 日付と大きさは出さない（2026-10-30 オーナー。読み上げには残す）
   const streak = dailyStreak(daily, key);
