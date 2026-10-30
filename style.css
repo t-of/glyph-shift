@@ -90,6 +90,8 @@ body {
 .mark { display: flex; align-items: center; gap: 10px; color: var(--accent); }
 button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .mark svg { width: 20px; height: 20px; display: block; }
+/* ロゴはアプリのアイコンそのもの（2026-10-30 オーナー）。角はアイコンと同じ丸み */
+.mark-icon { width: 26px; height: 26px; display: block; border-radius: 22.5%; }
 .wordmark {
   font-family: var(--ui);
   font-size: 13px;
@@ -145,7 +147,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .title-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .title-head .mark { color: var(--accent); }
-.title-head .mark svg { width: 38px; height: 38px; }
+.title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
 .title-name { margin: 2px 0 0; font-size: 28px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
 .title-catch { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.7; }
 
@@ -165,7 +167,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   margin: 0 auto;
   text-align: center;
 }
-.start .title-head .mark svg { width: 60px; height: 60px; }
+.start .title-head .mark-icon { width: 112px; height: 112px; }
 .start .title-name { font-size: 36px; }
 .start-actions { align-self: stretch; display: flex; flex-direction: column; gap: 10px; }
 .start-actions button { padding: 16px; font-size: 14px; }
