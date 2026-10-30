@@ -19,6 +19,7 @@
   --accent-glow: color-mix(in srgb, var(--accent) 45%, transparent);
   --wm-tile: #2a2733;    /* 名前のロゴの、色を持たないタイル */
   --warn: #ffcf5c;
+  --progress: #7fb2ff;   /* 途中の盤のカードの縁（クリアの金色と分ける） */
   --err: #e0707a;
   --slot: #17151d;        /* 盤の空きスロット */
   --chip: #33303d;        /* 小さな地図の空きマス */
@@ -68,6 +69,7 @@
   --wm-tile: #dedbe4;
   --wm-ink: #1b1a20;
   --warn: #a8660a;
+  --progress: #2f6fe0;
   --err: #c0394a;
   --slot: #d3d0da;
   --chip: #d3d0da;
@@ -314,7 +316,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   position: relative;
 }
 /* クリアしたカードは縁を ★ と同じ色にする（クリアの印の代わり。ミニ盤はいつも駒の色） */
-.stage-item.cleared { border-color: var(--warn); box-shadow: inset 0 0 0 1px var(--warn); }
+.stage-item.cleared { border-color: var(--warn); box-shadow: inset 0 0 0 1.5px var(--warn); }
 /* 2 回目からのクリア回数。カードの右上に小さく */
 .stage-count { position: absolute; top: 4px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
   background: var(--warn); color: var(--ground); font: 600 10px/16px var(--mono); text-align: center; }
@@ -336,7 +338,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .stage-meta { font-size: 10.5px; color: var(--dim); }
 .stage-diff { font-size: 12px; letter-spacing: .08em; color: var(--warn); }   /* 難しさの ★（通しの 1〜5） */
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; min-height: 1.4em; }   /* 未クリアで空でも、カードの高さをそろえる */
-.stage-item.resume { border-color: var(--accent); }
+.stage-item.resume { border-color: var(--progress); box-shadow: inset 0 0 0 1.5px var(--progress); }   /* 途中。文字の代わりに太めの縁 */
 /* 今日の 1 問: 一覧の一番上に 1 枚、横長のカード */
 .daily-item { flex-direction: row; align-items: center; gap: 14px; width: 100%; padding: 10px 12px; text-align: left; }
 .daily-item .stage-mini { flex: none; }
