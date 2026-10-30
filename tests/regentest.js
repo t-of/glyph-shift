@@ -13,7 +13,7 @@ W = H = 5; SIZE = 25; buildDom(); types = 4; newPuzzle(9);
 const a = sig();
 
 // 押しただけでは何も変わらない
-el('newBtn').fire('click', {});
+el('panelNew').fire('click', {});
 ok(!el('confirmOverlay').hidden, '確認画面が出ていない');
 ok(el('confirmTitle').textContent.includes('新しい盤面'), `見出し: ${el('confirmTitle').textContent}`);
 ok(el('confirmText').innerHTML.includes('ブロックも目標の柄も'), `本文: ${el('confirmText').innerHTML}`);
@@ -28,7 +28,7 @@ ok(sig().board === a.board && sig().seed === a.seed, 'やめたのに盤面が�
 console.log('  やめると何も起きない');
 
 // 作る → サイズとブロック数は据え置き、盤面・ブロック・柄は変わる
-el('newBtn').fire('click', {});
+el('panelNew').fire('click', {});
 el('confirmYes').fire('click', {});
 const b = sig();
 ok(el('confirmOverlay').hidden, '作成後も確認が開いている');
@@ -45,7 +45,7 @@ console.log(`  作ると盤面も柄も変わる（設定は据え置き）`);
   let changed = 0;
   for (let t = 0; t < 12; t++) {
     const before = [...new Set(tileAbility)].sort((x, y) => x - y).join(',');
-    el('newBtn').fire('click', {}); el('confirmYes').fire('click', {});
+    el('panelNew').fire('click', {}); el('confirmYes').fire('click', {});
     if ([...new Set(tileAbility)].sort((x, y) => x - y).join(',') !== before) changed++;
   }
   ok(changed > 0, '使うブロックの顔ぶれが一度も変わらない');
@@ -62,7 +62,7 @@ console.log(`  作ると盤面も柄も変わる（設定は据え置き）`);
     fire(r.i, r.n <= r.order - r.n ? 1 : -1);
   }
   ok(isSolved() && locked, '完成させられなかった');
-  el('newBtn').fire('click', {});
+  el('panelNew').fire('click', {});
   ok(!el('confirmOverlay').hidden, '完成後に再生成が押せない');
   el('confirmYes').fire('click', {});
   ok(!locked && !isSolved(), '完成後に作り直せていない');

@@ -1968,7 +1968,12 @@ markSound();
 
 
 document.getElementById('solveBtn').addEventListener('click', askAutoSolve);
-document.getElementById('newBtn').addEventListener('click', askRegenerate);
+// 「新しい盤にする」はメニューの遊び方タブにある。確認を出す前にパネルを閉じる（解説中は何もしない）
+document.getElementById('panelNew').addEventListener('click', () => {
+  if (autoSolving) return;
+  setPanel('panel', false);
+  askRegenerate();
+});
 confirmYesEl.addEventListener('click', () => { const a = confirmAction; if (a) a(); });
 document.getElementById('confirmNo').addEventListener('click', closeConfirm);
 document.getElementById('autoStop').addEventListener('click', stopAutoSolve);
@@ -2735,7 +2740,7 @@ const tutGoalWrapEl = document.getElementById('tutGoalWrap');
 const tutGoalEl = document.getElementById('tutGoal');
 const goalCardEl = document.getElementById('goalCard');
 const hintBtnEl = document.getElementById('hintBtn');
-const tutHiddenEls = [document.getElementById('solveBtn'), document.getElementById('newBtn')];
+const tutHiddenEls = [document.getElementById('solveBtn'), document.getElementById('panelNew')];
 
 // 遊んだ記録があるか（クリアした・今日の 1 問を解いた）。一覧を描くだけでも stages は書かれるので、中身を見る。
 function hasPlayRecords() {
@@ -2843,3 +2848,8 @@ document.getElementById('panelTutorial').addEventListener('click', replayTutoria
 buildDom();
 renderStageList();
 newPuzzle();
+
+// 2 回目からはスタートを飛ばしてホームから始める（初めての人だけスタート → 「はじめる」）。
+// 同じ同期の流れの中で切り替えるので、スタートが一瞬映ることはない。
+// iOS 版の記録の控え（native.js）は戻したら 1 回読み直すので、その後のこの判定で正しく分かれる。
+if (!shouldShowTutorial()) show(titleEl);

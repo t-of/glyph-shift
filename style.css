@@ -507,6 +507,8 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 @keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 2.5px rgba(179, 156, 255, .3), 0 0 6px 1px rgba(179, 156, 255, .15); } 50% { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); } }
 #howtoTutorial { margin-top: 12px; }
 #panelTutorial { margin-top: 4px; }
+#panelNew { margin-bottom: 4px; }
+.panel.at-home #panelNew { display: none; }   /* 盤が無いホームでは出さない */
 .action {
   display: inline-flex;
   align-items: center;

@@ -116,6 +116,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <div class="panel-tabs" id="panelTabs" role="tablist" data-i18n-aria="panelTabs" aria-label="表示を切り替える"></div>
 
     <section class="panel-sec" id="secRule" role="tabpanel" aria-labelledby="tabRule" tabindex="0">
+      <button id="panelNew" class="ghost-btn" type="button" data-i18n="newBoardPanel">新しい盤にする</button>
       <button id="panelHowto" class="ghost-btn" type="button" data-i18n="howtoView">遊び方を見る</button>
       <button id="panelTutorial" class="ghost-btn" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>
     </section>
@@ -345,13 +346,6 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
             <path d="M7 5.9v12.2a.9.9 0 0 0 1.4.75l9.1-6.1a.9.9 0 0 0 0-1.5L8.4 5.15A.9.9 0 0 0 7 5.9z" fill="currentColor" stroke="none"/>
           </svg>
           <span data-i18n="solve">解説</span>
-        </button>
-        <button id="newBtn" class="action" type="button" data-i18n-aria="newAria" aria-label="同じ設定で新しい盤面を作る">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 11a8 8 0 1 0-.6 4"/>
-            <path d="M20 5.5V11h-5.5"/>
-          </svg>
-          <span data-i18n="newBoard">再生成</span>
         </button>
       </div>
       <!-- クリアしたら .actions の代わりに出す。次の盤へ 1 タップで進める／ホームへ戻る -->
