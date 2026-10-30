@@ -339,6 +339,8 @@ const tiles = [];
 const gridEl = document.getElementById('grid');
 const goalGridEl = document.getElementById('goalGrid');
 const legendEl = document.getElementById('legend');
+const goalTopEl = document.getElementById('goalTopGrid');
+const legendSheetListEl = document.getElementById('legendSheetList');
 const seedOutEl = document.getElementById('seedOut');
 const logEl = document.getElementById('log');
 const shareBtnEl = document.getElementById('shareDailyBtn');
@@ -367,6 +369,8 @@ function buildDom() {
   root.setProperty('--cell', `${cell}px`);
   // 目標の柄はサイドバー（250px）に収める
   root.setProperty('--mini-cell', `${Math.min(30, Math.floor((228 - 4 * (W - 1)) / W))}px`);
+  // 狭い画面の盤の上の目標（.goal-top）は、長い辺を 104px ほどに収める
+  root.setProperty('--goal-top-cell', `${Math.min(24, Math.floor((104 - 3 * (long - 1)) / long))}px`);
   gridEl.replaceChildren();
   slots.length = 0;
   tiles.length = 0;
@@ -439,32 +443,38 @@ function markUsable() {
 
 function renderGoal() {
   goalGridEl.replaceChildren();
+  goalTopEl.replaceChildren();
   for (let i = 0; i < SIZE; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'slot';
-    const t = document.createElement('div');
-    t.className = 'tile';
-    t.style.background = bgOf(tileAbility[i]);
-    t.style.color = INK;
-    t.innerHTML = iconSvg(tileAbility[i]);
-    slot.append(t);
-    goalGridEl.append(slot);
+    for (const host of [goalGridEl, goalTopEl]) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      const t = document.createElement('div');
+      t.className = 'tile';
+      t.style.background = bgOf(tileAbility[i]);
+      t.style.color = INK;
+      t.innerHTML = iconSvg(tileAbility[i]);
+      slot.append(t);
+      host.append(slot);
+    }
   }
 }
 
 function renderLegend() {
   legendEl.replaceChildren();
+  legendSheetListEl.replaceChildren();
   for (const ab of [...new Set(tileAbility)].sort((a, b) => a - b)) {
-    const li = document.createElement('li');
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.style.background = bgOf(ab);
-    chip.style.color = INK;
-    chip.innerHTML = iconSvg(ab);
-    const txt = document.createElement('span');
-    txt.textContent = ABILITIES[ab].name;
-    li.append(chip, txt);
-    legendEl.append(li);
+    for (const host of [legendEl, legendSheetListEl]) {
+      const li = document.createElement('li');
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.style.background = bgOf(ab);
+      chip.style.color = INK;
+      chip.innerHTML = iconSvg(ab);
+      const txt = document.createElement('span');
+      txt.textContent = ABILITIES[ab].name;
+      li.append(chip, txt);
+      host.append(li);
+    }
   }
 }
 
@@ -2604,6 +2614,12 @@ function closeHowto() { howtoEl.close?.(); }
 document.getElementById('startHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('homeHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('howtoClose').addEventListener('click', closeHowto);
+
+// 狭い画面で、盤の上の「使うブロック」から凡例を開く（広い画面は右の .side にいつも出ている）
+const legendSheetEl = document.getElementById('legendSheet');
+document.getElementById('legendBtn').addEventListener('click', () => legendSheetEl.showModal?.());
+document.getElementById('legendClose').addEventListener('click', () => legendSheetEl.close?.());
+legendSheetEl.addEventListener('click', (e) => { if (e.target === legendSheetEl) legendSheetEl.close?.(); });
 document.getElementById('howtoOk').addEventListener('click', closeHowto);
 howtoEl.addEventListener('click', (e) => { if (e.target === howtoEl) closeHowto(); });   // 枠の外を押したら閉じる
 

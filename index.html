@@ -240,6 +240,14 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
   </dialog>
 
   <!-- 完全版の案内（無料版で鍵つきを押したとき） -->
+  <dialog class="howto-sheet" id="legendSheet" aria-labelledby="legendTitle">
+    <div class="panel-head">
+      <h2 id="legendTitle" data-i18n="useBlocks">使うブロック</h2>
+      <button id="legendClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
+    </div>
+    <ul class="legend" id="legendSheetList"></ul>
+  </dialog>
+
   <dialog class="howto-sheet" id="lockSheet" aria-labelledby="lockTitle">
     <div class="panel-head">
       <h2 id="lockTitle" data-i18n="lockTitle">完全版で遊べます</h2>
@@ -308,6 +316,17 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <button id="tutSkip" class="ghost-btn tut-skip" type="button" data-i18n="skip">スキップ</button>
         <p class="tut-text" id="tutText"></p>
         <div class="tut-goal" id="tutGoalWrap"><span class="tut-goal-label" data-i18n="goal">目標</span><div class="stage-mini" id="tutGoal" data-i18n-aria="goalAria" aria-label="目標の柄"></div></div>
+      </div>
+      <!-- 狭い画面だけ: 目標の柄を盤の上に出し、見比べるのにスクロールしなくてよいようにする。広い画面は右の .side -->
+      <div class="play-head" id="playHead">
+        <div class="grid mini goal-top" id="goalTopGrid" role="img" data-i18n-aria="goalAria" aria-label="目標の柄"></div>
+        <div class="play-head-side">
+          <span class="play-head-label" data-i18n="goalCard">目標の柄</span>
+          <button id="legendBtn" class="ghost-btn legend-btn" type="button" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/></svg>
+            <span data-i18n="useBlocks">使うブロック</span>
+          </button>
+        </div>
       </div>
       <div class="board-frame">
         <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>
