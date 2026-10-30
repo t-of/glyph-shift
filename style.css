@@ -398,30 +398,10 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 
 .play { display: flex; flex-direction: column; align-items: center; }
 
-/* 目盛り付きの枠。ヒントが「3 列目・4 行目」と言うので、目盛りは機能。 */
-.board-frame {
-  display: grid;
-  grid-template-columns: 16px auto;
-  grid-template-rows: 16px auto;
-  gap: 4px;
-}
-.ruler { display: grid; font-family: var(--mono); font-size: 8.5px; color: var(--dim); }
-.ruler span { display: grid; place-items: center; }
-.ruler-x {
-  grid-column: 2; grid-row: 1;
-  grid-template-columns: repeat(var(--nx), 1fr);
-  gap: var(--gap);
-  padding: 0 10px;
-}
-.ruler-y {
-  grid-column: 1; grid-row: 2;
-  grid-template-rows: repeat(var(--ny), 1fr);
-  gap: var(--gap);
-  padding: 10px 0;
-}
+/* 盤の枠。行・列の目盛りは出さない（2026-10-30 オーナー。盤が右に寄り、要らない情報のため） */
+.board-frame { display: grid; }
 
 .well {
-  grid-column: 2; grid-row: 2;
   padding: 10px;
   border-radius: 16px;
   background: var(--well);
@@ -501,13 +481,13 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .tile.blank { cursor: not-allowed; }
 .tile.blank:active { filter: none; }
 
-/* 発動した合図 */
+/* 発動した合図。自分で押したときは出さず、解説の再生でどのマスを押したかを見せるときだけ（2026-10-30） */
 .slot.fired::after {
   content: "";
   position: absolute;
   inset: -5px;
   border-radius: 15px;
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: 0 0 0 2px var(--progress);
   animation: fade .55s ease forwards;
   pointer-events: none;
 }
@@ -610,8 +590,6 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 @keyframes nextIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .clear-bar [hidden] { display: none; }
 /* 押したブロックの絵柄（メッセージの行） */
-.log-chip { width: 30px; height: 30px; border-radius: 8px; display: inline-grid; place-items: center; position: relative; vertical-align: middle; }
-.log-chip svg { width: 74%; height: 74%; display: block; position: relative; translate: 0 -1px; }
 
 /* ---- 右の欄 ---- */
 .play-head { display: none; }   /* 狭い画面だけ出す（下の @media 820px） */
@@ -647,7 +625,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .legend .chip svg { width: 74%; height: 74%; display: block; position: relative; translate: 0 -1px; }
 
 /* 使うブロックの一覧・目標の柄・凡例のミニタイルにも同じ立体感を、小さいぶん弱めて付ける */
-.legend .chip, .blk .chip, .log-chip {
+.legend .chip, .blk .chip {
   box-shadow:
     inset 0 -3px 0 rgba(0, 0, 0, .35),
     inset 0 1px 0 rgba(255, 255, 255, .35),
@@ -655,7 +633,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     0 2px 0 var(--sh-mini),
     0 2px 4px var(--sh-mini-blur);
 }
-.legend .chip::before, .blk .chip::before, .log-chip::before {
+.legend .chip::before, .blk .chip::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -669,6 +647,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 
 /* 制作元（ポータル）へのリンク。盤から離れた欄の末尾に小さく置く */
 .credit { margin: -14px 0 0; font-size: 10.5px; color: var(--dim); letter-spacing: .04em; }
+.panel-sec .credit { margin: 22px 0 0; }   /* 設定タブの一番下（問い合わせはここだけ） */
 .credit a { color: var(--dim); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
 .credit a:hover { color: var(--text); text-decoration-color: var(--dim); }
 .credit a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
@@ -964,7 +943,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     box-shadow: 0 0 0 1px var(--line-soft), inset 0 2px 7px var(--well-in);
   }
   .side .card { display: none; }   /* 目標は盤の上に出す */
-  .board-frame { width: 100%; grid-template-columns: 13px auto; grid-template-rows: 13px auto; }
+  .board-frame { width: 100%; }
   .well { padding: 7px; }
   .grid {
     width: 100%;
@@ -972,8 +951,6 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     grid-template-columns: repeat(var(--nx), 1fr);
     grid-template-rows: repeat(var(--ny), 1fr);
   }
-  .ruler-x { padding: 0 7px; }
-  .ruler-y { padding: 7px 0; }
   .message { max-width: 100%; margin-top: 16px; min-height: 38px; }
 
   .side {

@@ -387,16 +387,6 @@ function buildDom() {
     t.className = 'tile';
     tiles[v] = t;
   }
-
-  // 行・列の目盛り。ヒントが「3 列目・4 行目」と言うので、位置を数えずに済む。
-  for (const [el, n] of [[document.getElementById('rulerX'), W], [document.getElementById('rulerY'), H]]) {
-    el.replaceChildren();
-    for (let k = 1; k <= n; k++) {
-      const s = document.createElement('span');
-      s.textContent = String(k);
-      el.append(s);
-    }
-  }
 }
 
 function paintTiles() {
@@ -1179,29 +1169,13 @@ function fire(i, dir = 1) {
   }
   const ab = abilityAt(i);   // 使ったタイルは動かないので、前後で変わらない
   animatePlacement(() => applyMoveState(i, dir));
-  flashSlot(i, dir);
   Sfx.move(ab, dir);
-  showMoveChip(ab, dir);
+  logEl.textContent = '';   // 押したブロックの表示も、押したマスの縁の合図も出さない（2026-10-30 オーナー）
   clearHint(); // 示した手はもう古いので消す
   if (isSolved()) showClear();
   else if (tutorial) tutMark();
 }
 
-
-// 押したブロックを、文字でなく絵柄のチップで見せる（逆回りは ↺ を添える）。名前は読み上げ用に残す。
-function showMoveChip(ab, dir) {
-  const chip = document.createElement('span');
-  chip.className = 'chip log-chip';
-  chip.style.background = bgOf(ab);
-  chip.style.color = INK;
-  chip.innerHTML = iconSvg(ab);
-  chip.title = ABILITIES[ab].name;
-  chip.setAttribute?.('role', 'img');
-  chip.setAttribute?.('aria-label', ABILITIES[ab].name + (dir < 0 ? L('（逆回り）', ' (reverse)') : ''));
-  logEl.textContent = '';
-  logEl.append(chip);
-  if (dir < 0) logEl.append(document.createTextNode(' ↺'));
-}
 
 // 完成の知らせ。盤面を隠さないよう、全画面では出さない。
 // 揃った表示を解く。解説で揃ったところから戻るときに使う。
