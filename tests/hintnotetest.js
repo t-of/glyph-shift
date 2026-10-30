@@ -22,14 +22,14 @@ console.log('探して見つけた手順のとき');
   hintBusy = false;
   blinkHint();
   ok(!/\d+ 手/.test(note()), `手数を出している: ${note()}`);
-  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数が出ない: ${note()}`);
+  ok(!/(押す|長押し) ×/.test(note()) && slots.some((x) => x.classList.contains('hinted')), `ヒントの光がない／回数の文字が出た: ${note()}`);
   console.log(`  最短が確定: 「${note()}」`);
 
   // 探したが最短とは確定できない場合
   hintPlan = { runs: activeRuns(), optimal: false, ms: 1, method: 'constructive' };
   blinkHint();
   ok(!/\d+ 手/.test(note()), `手数を出している: ${note()}`);
-  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数が出ない: ${note()}`);
+  ok(!/(押す|長押し) ×/.test(note()) && slots.some((x) => x.classList.contains('hinted')), `ヒントの光がない／回数の文字が出た: ${note()}`);
   console.log(`  最短と確定できない: 「${note()}」`);
 }
 
@@ -40,7 +40,7 @@ console.log('\n混ぜた手順の逆だけでも、短いので手数を出す')
   hintBusy = true;
   blinkHint();
   ok(!/\d+ 手/.test(note()) && !note().includes('探し'), `短い手順なのに手数か探索中が出る: ${note()}`);
-  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数の案内が消えている: ${note()}`);
+  ok(!/(押す|長押し) ×/.test(note()) && slots.some((x) => x.classList.contains('hinted')), `ヒントの光がない／回数の文字が出た: ${note()}`);
   console.log(`  探索中でも: 「${note()}」`);
 }
 
@@ -53,14 +53,14 @@ console.log('\n長すぎる保険の手順のときは数字を出さない');
   blinkHint();
   ok(!/残り|最短/.test(note()), `意味のない手数を出している: ${note()}`);
   ok(note().includes('探しています'), `探している旨が出ない: ${note()}`);
-  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数の案内が消えている: ${note()}`);
+  ok(!/(押す|長押し) ×/.test(note()) && slots.some((x) => x.classList.contains('hinted')), `ヒントの光がない／回数の文字が出た: ${note()}`);
   console.log(`  探索中: 「${note()}」`);
 
   // 探し終えても見つからなかった（Worker が無い環境など）
   hintBusy = false;
   blinkHint();
   ok(!/残り|最短/.test(note()), `意味のない手数を出している: ${note()}`);
-  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数が出ない: ${note()}`);
+  ok(!/(押す|長押し) ×/.test(note()) && slots.some((x) => x.classList.contains('hinted')), `ヒントの光がない／回数の文字が出た: ${note()}`);
   console.log(`  見つからず: 「${note()}」`);
 
   // 手順そのものがまだ無いとき
@@ -71,7 +71,7 @@ console.log('\n長すぎる保険の手順のときは数字を出さない');
   console.log(`  手順なし: 「${note()}」`);
 }
 
-console.log('\n探し直しで見つかったら、出したままの案内を新しくする');
+console.log('\n探し直しで見つかったら「探しています…」を消す');
 {
   solution = longRuns.map((r) => ({ ...r }));
   hintPlan = null;
@@ -83,7 +83,7 @@ console.log('\n探し直しで見つかったら、出したままの案内を�
   hintPlan = { runs: shortRuns.map((r) => ({ ...r })), optimal: false, ms: 1, method: 'constructive' };
   finishSolve(solveId, null, false);
   ok(note() !== before, '見つかったのに案内が古いまま');
-  ok(note().includes('短い手順あり'), `知らせが出ない: ${note()}`);
+  ok(note() === '', `見つかったあとに文字が残る（文字は出さない）: ${note()}`);
   console.log(`  見つかった後: 「${note()}」`);
 
   // 光らせる場所は動かさない（押した時点で決めたものを尊重する）

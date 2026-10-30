@@ -32,7 +32,7 @@ ok(el('log')._cls.has('done'), '完成の知らせが出ていない');
 ok(el('log').textContent.includes('自動で揃えました'), `表示: ${el('log').textContent}`);
 ok(gridEl._cls.has('cleared'), '盤面の完成演出が付いていない');
 // 揃っても操作バーは残す（戻って見直せるようにするため）。閉じるのは「やめる」。
-ok(autoSolving && !el('autoBar').hidden, '揃った途端に操作バーが消えている');
+ok(!autoSolving && el('autoBar').hidden, '揃ったのに解説のまま／再生のバーが出ている（バーは出さない。2026-10-30）');
 ok(el('autoBack').disabled === false, '揃ったあとに「戻す」が押せない');
 el('autoStop').fire('click', {});
 ok(!autoSolving && el('autoBar').hidden, '「やめる」で閉じない');

@@ -556,6 +556,8 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   z-index: 3;
 }
 @keyframes hintPulse { 0%, 100% { opacity: .1; } 50% { opacity: 1; } }
+/* 長押し（逆向き）で押すほうが近いマスは、光の色を変えて伝える（文字は出さない） */
+.slot.hinted.hold::before { box-shadow: 0 0 0 2.5px var(--warn), 0 0 22px 5px color-mix(in srgb, var(--warn) 45%, transparent); }
 
 .grid.cleared { animation: clearedGlow .9s ease; }
 /* 揃ったら、タイルが左上から右下へ波のように跳ねて光る（--d は行＋列。マスごとに 32ms ずつ遅らせる） */

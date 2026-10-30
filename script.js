@@ -481,7 +481,7 @@ let hintTimer = null;
 
 function clearHint() {
   if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-  for (const slot of slots) slot.classList.remove('hinted');
+  for (const slot of slots) slot.classList.remove('hinted', 'hold');
 }
 
 function blinkHint() {
@@ -491,25 +491,21 @@ function blinkHint() {
   if (!plan.length) return;
   const r = plan[0];
   slots[r.i].classList.add('hinted');
+  // 押す場所は盤の光で見せ、文字は出さない（2026-10-30 オーナー）。長押しのほうが近いときは光の色を変える
   const back = r.order - r.n;
-  // 押す場所は盤の光で見せるので、文字は回数だけ（画面の文字を減らす）
-  const how = r.n <= back
-    ? L(`押す ×${r.n}`, `Tap ×${r.n}`)
-    : L(`長押し ×${back}`, `Hold ×${back}`);
+  if (r.n > back) slots[r.i].classList.add('hold');
   // 残りの手数は、短い手順のときだけ意味がある。
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
   // 光らせる手自体は正しいので、長すぎるときは数字だけ伏せる。
   // 残りの手数は出さない（手数は画面に書かない）。長い保険の手順で裏で探しているときだけ、そう添える。
   const real = planCost(plan) <= HINT_SHOW_MAX;
-  const quality = !real && hintBusy ? HINT_SEARCHING_NOTE : '';
-  logEl.textContent = how + quality;
+  logEl.textContent = !real && hintBusy ? HINT_SEARCHING : '';
   hintTimer = setTimeout(clearHint, HINT_BLINK_MS);
 }
 
 // 1 回押したら光るのは 1 か所きり。あとから別のマスへ飛ばさない。
 const HINT_SEARCHING = L('探しています…', 'Searching…');
-const HINT_SEARCHING_NOTE = L(' ・ 探しています…', ' · searching…');
 
 function hintAfterSolve() {
   blinkHint();
@@ -1103,11 +1099,9 @@ function finishSolve(id, res, partial = false) {
   if (!partial) {
     hintBusy = false;
     movesWhileSolving = [];
-    // 探し直しで短い手順が見つかったら、出したままの案内を新しくする。
+    // 探し直しで短い手順が見つかったら「探しています…」を消す（文字は出さない）。
     // 光らせる場所は動かさない（押した時点で決めたものを尊重する）。
-    if (hintPlan && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
-      logEl.textContent = L('短い手順あり', 'Shorter way found');
-    }
+    if (hintPlan && logEl.textContent === HINT_SEARCHING) logEl.textContent = '';
     scheduleImprove(res);
   }
   // 待っている人には最初の返事で応える（ヒントの点滅には十分）。最終結果を待つものは残す。
@@ -1290,7 +1284,7 @@ function showClear() {
   locked = true;
   // 解説を見ているあいだは、揃ったあとも操作バーを残す。戻って見直せるようにするため。
   // 閉じるのは「やめる」を押したときだけ。
-  if (autoSolving) pauseAuto(); else stopAutoSolve();
+  stopAutoSolve();   // 解説で揃ったときも、そのままクリアの画面へ（見直しのバーは出さない）
   clearHint();
 
   gridEl.classList.remove('cleared');
@@ -1443,10 +1437,8 @@ function askAutoSolve() {
     return;
   }
   askConfirm(L('解説を見る', 'Show the solution'),
-    L('目標の柄まで盤面が動きます。止めて <strong>1 手ずつ進める・戻す</strong> こともできます。'
-      + '<br>この盤面は自分で解けなくなります。',
-      'The board will move until it matches the goal. You can pause and <strong>step forward or back</strong>.'
-      + '<br>You won\'t be able to solve this board yourself.'),
+    L('目標の柄まで、盤面が<strong>自動で動きます</strong>。<br>この盤面は自分で解けなくなります。',
+      'The board will <strong>move by itself</strong> until it matches the goal.<br>You won\'t be able to solve this board yourself.'),
     L('見る', 'Show'), startAutoSolve);
 }
 
@@ -1470,7 +1462,7 @@ function startAutoSolve() {
   autoPlaying = false;
   autoHist.length = 0;
   autoMoves0 = moves;
-  autoBarEl.hidden = false;
+  // 再生・一時停止・1 手ずつのバーは出さない。最後まで自動で動かす（2026-10-30 オーナー）。Esc で止まる
   autoBarEl.classList.add('paused');
   autoBackEl.disabled = true;
   autoNextEl.disabled = true;
