@@ -42,9 +42,9 @@ const idOf = (a) => ABILITIES[a].id;
   const reset = () => { localStorage.clear(); for (const k of Object.keys(stages)) delete stages[k]; for (const k of Object.keys(clears)) delete clears[k]; for (const k of Object.keys(daily)) delete daily[k]; };
   reset();
   ok(shouldShowTutorial(), '空の状態で出ない');
-  stageFor(4, 2);   // 一覧を描くだけでも stages は書かれる
+  stageFor(4, 1);   // 一覧を描くだけでも stages は書かれる
   ok(shouldShowTutorial(), '一覧を描いただけで出なくなる');
-  stages['4x2'].clears = 1;
+  stages['4d1'].clears = 1;
   ok(!shouldShowTutorial(), 'ステージの記録があるのに出る');
   reset();
   clears[4] = 3;

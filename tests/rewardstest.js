@@ -58,18 +58,18 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 {
   Entitlement._override({ locks: true, full: false });
   let changes = 0; Entitlement.onChange(() => { changes++; });
-  ok(!Entitlement.stageOpen(8, 5) && !Entitlement.customOpen() && !Entitlement.hasTicket(), '無料版で最初から開いている');
+  ok(!Entitlement.stageOpen(8, 2) && !Entitlement.customOpen() && !Entitlement.hasTicket(), '無料版で最初から開いている');
   Entitlement.grantTicket();
-  ok(Entitlement.hasTicket() && Entitlement.stageOpen(8, 5) && Entitlement.customOpen() && Entitlement.blockOpen('swapAll8') !== false, '権利で開かない');
+  ok(Entitlement.hasTicket() && Entitlement.stageOpen(8, 2) && Entitlement.customOpen() && Entitlement.blockOpen('swapAll8') !== false, '権利で開かない');
   ok(!Entitlement.isFull(), '権利で完全版になった（広告が止まる）');
   ok(Entitlement.poolTag() === 'all', '権利のあいだ印が all でない');
   Entitlement.grantTicket();   // 貯めない
   Entitlement.useTicket();
-  ok(!Entitlement.hasTicket() && !Entitlement.stageOpen(8, 5), '使ったあとも開いている');
+  ok(!Entitlement.hasTicket() && !Entitlement.stageOpen(8, 2), '使ったあとも開いている');
   Entitlement.useTicket();     // 2 回使っても何も起きない
   ok(changes === 2, `知らせの回数が違う: ${changes}`);
   Entitlement.grantTicket(); Entitlement.dropTicket();
-  ok(!Entitlement.hasTicket() && !Entitlement.stageOpen(10, 13), 'ホームに戻っても残る');
+  ok(!Entitlement.hasTicket() && !Entitlement.stageOpen(7, 1), 'ホームに戻っても残る');
   // 完全版には要らない
   Entitlement._override({ locks: true, full: true });
   Entitlement.grantTicket();

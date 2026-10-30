@@ -9,3 +9,10 @@ const runsToPlan = (runs) => __S.runsToPlan(runs);
 const HINT_BUDGET = hintBudgetWorker();  // ゲームが実際に使う予算に合わせる
 // solver.js 内に移った補助関数。script.js の同等物を使う
 const orderOfCycles = (cyc) => orderOf(cyc);
+// ステージ（大きさ s × 難しさ d）の設定にする。startFromPending を通さずに盤を直接作るテスト用。
+const useStageSetup = (s, d) => {
+  const def = stageDef(s, d);
+  W = H = s; SIZE = s * s; buildDom();
+  forcedAbilities = null; types = def.k; scrambleN = def.n; curDiff = d;
+  return def;
+};

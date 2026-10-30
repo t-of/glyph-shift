@@ -19,7 +19,7 @@ const tick = () => { const p = pending; pending = null; if (p) p.fn(); };
 const playing = () => !el('autoBar')._cls.has('paused');
 
 // 一手ずつの検証には、数手では終わらない盤面が要る
-W = H = 5; SIZE = 25; buildDom(); types = 3;
+useStageSetup(5, 2);
 let useSeed = 3;
 for (; useSeed < 60; useSeed++) { newPuzzle(useSeed); if (planCost(activeRuns()) >= 8) break; }
 ok(planCost(activeRuns()) >= 8, `検証に使える盤面が見つからない（残り ${planCost(activeRuns())} 手）`);

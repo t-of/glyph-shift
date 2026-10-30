@@ -6,14 +6,13 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // プレビューは混ぜる前のゴールだけを求める。実際に newPuzzle(同じ seed) した
 // 盤のゴール（tileAbility）と、絵柄の並びが一致していなければ食い違って見える。
 {
-  for (const [s, k] of [[5, 3], [4, 2], [8, 5]]) {
-    W = H = s; SIZE = s * s; buildDom();
-    forcedAbilities = null; types = k;
+  for (const [s, k] of [[5, 0], [4, 1], [8, 2]]) {
+    useStageSetup(s, k);
     const st = stageFor(s, k);
     const preview = stageGoalPreview(s, k, st.seed);
     newPuzzle(st.seed);
     ok(preview.join(',') === tileAbility.join(','),
-      `${s}×${s} / ${k} 種: プレビューのゴールが実際の盤（seed ${st.seed}）と一致しない`);
+      `${s}×${s} / 難しさ ${k}: プレビューのゴールが実際の盤（seed ${st.seed}）と一致しない`);
   }
   console.log('  プレビューのゴールが実際の盤と一致  OK');
 }
@@ -21,9 +20,8 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // 自分でクリアすると、そのステージの星が 1 つ増え、次に出す seed が変わる。
 // board を identity（board[i] = i）にすると必ず目標の柄になる（snapToGoal と同じ理屈）。
 {
-  const s = 5, k = 3;
-  W = H = s; SIZE = s * s; buildDom();
-  forcedAbilities = null; types = k;
+  const s = 5, k = 0;
+  useStageSetup(s, k);
   const st = stageFor(s, k);
   newPuzzle(st.seed);
   const seedBefore = st.seed;
@@ -44,9 +42,8 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // タイルの背景色は bgOf(能力) で決まるので、i 番目のスロットの中の .tile の
 // background が goal[i] の色と一致していれば、絵柄の並びも一致している。
 {
-  for (const [s, k] of [[5, 3], [4, 2], [8, 5]]) {
-    W = H = s; SIZE = s * s; buildDom();
-    forcedAbilities = null; types = k;
+  for (const [s, k] of [[5, 0], [4, 1], [8, 2]]) {
+    useStageSetup(s, k);
     const st = stageFor(s, k);
     const goal = goalForStage(s, k, st);
 
@@ -58,7 +55,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
       const tile = mini.children[i].children[0];
       if (tile.style.background !== bgOf(goal[i])) mismatch++;
     }
-    ok(mismatch === 0, `${s}×${s} / ${k} 種: 描いた盤の色がゴールと ${mismatch} マスずれている`);
+    ok(mismatch === 0, `${s}×${s} / 難しさ ${k}: 描いた盤の色がゴールと ${mismatch} マスずれている`);
   }
   console.log('  カードに描く盤が実際のゴールと同じ並び  OK');
 }
@@ -66,9 +63,8 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // 実際にそのステージで遊ぶと（st.goal を覚えると）、あとの一覧はその実際のゴールを使う。
 // newPuzzle が引き直し（attempt > 0）を挟んでいても、覚えた実際のゴールとは必ず一致する。
 {
-  const s = 5, k = 3;
-  W = H = s; SIZE = s * s; buildDom();
-  forcedAbilities = null; types = k;
+  const s = 5, k = 0;
+  useStageSetup(s, k);
   const st = stageFor(s, k);
   newPuzzle(st.seed);
   st.goal = Array.from(tileAbility);   // stageListEl の click ハンドラと同じことをする
@@ -87,9 +83,8 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 
 // 解説（自動）で揃えたときはステージのクリアに数えない（既存の clears[W] と同じ条件）
 {
-  const s = 5, k = 3;
-  W = H = s; SIZE = s * s; buildDom();
-  forcedAbilities = null; types = k;
+  const s = 5, k = 0;
+  useStageSetup(s, k);
   const st = stageFor(s, k);
   newPuzzle(st.seed);
   const clearsBefore = st.clears || 0;

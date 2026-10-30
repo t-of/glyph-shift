@@ -7,12 +7,12 @@ const el = (id) => document.getElementById(id);
 
 // 1) Worker が無い環境（同期で解く）
 {
-  W = H = 5; SIZE = 25; buildDom(); types = 3; newPuzzle(4);
+  useStageSetup(5, 1); newPuzzle(4);
   ok(!worker, 'この環境では Worker は作られないはず');
   let called = false;
   requestSolve(() => { called = true; });
   ok(called, '同期のとき、待ち手が呼ばれていない');
-  ok(hintPlan !== null, '同期のとき、手順が入っていない');
+  ok(activeRuns().length > 0, '同期のとき、手順が無い');
   console.log('  Worker が無い環境: 同期で解いて応答する');
 }
 
@@ -29,14 +29,14 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
   };
   // newPuzzle の末尾に先読みの解決が入っているので、生成した時点で
   // Worker に投げられ、そこで落ちる。落ちたあとの状態を見る。
-  W = H = 5; SIZE = 25; buildDom(); types = 3; newPuzzle(5);
+  useStageSetup(5, 1); newPuzzle(5);
   ok(posted >= 1, `Worker へ投げた回数 ${posted}`);
   ok(!worker, '壊れた Worker を持ったまま');
   ok(!hintBusy, '計算中のまま止まっている');
   let called = false;
   requestSolve(() => { called = true; });
   ok(called, 'Worker が落ちたあとの依頼に応答していない');
-  ok(hintPlan !== null, '同期へ切り替えた結果が入っていない');
+  ok(activeRuns().length > 0, '同期へ切り替えたあと、手順が無い');
   console.log('  Worker が落ちた場合: 同期に切り替えて応答する');
 }
 
@@ -48,7 +48,7 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
     this.postMessage = () => {};
     this.terminate = () => { terminated = true; };
   };
-  W = H = 5; SIZE = 25; buildDom(); types = 3; newPuzzle(6);
+  useStageSetup(5, 1); newPuzzle(6);
   ok(!!worker, 'Worker が作られていない');
   let called = false;
   requestSolve(() => { called = true; });          // 先読み中なので待ち手として積まれる
@@ -58,14 +58,14 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
   ok(terminated, '黙り込んだ Worker を打ち切っていない');
   ok(called, '黙り込んだのに待ち手が呼ばれていない');
   ok(!hintBusy, '計算中のまま止まっている');
-  ok(hintPlan !== null, '同期へ切り替えた結果が入っていない');
+  ok(activeRuns().length > 0, '同期へ切り替えたあと、手順が無い');
   console.log('  Worker が黙り込んだ場合: 打ち切って同期に切り替える');
 }
 
 // 4) その状態でヒントと「揃える」が実際に動くか
 {
   workerBroken = false;
-  W = H = 4; SIZE = 16; buildDom(); types = 3; newPuzzle(7);
+  useStageSetup(4, 1); newPuzzle(7);
   flushTimers();                                  // 先読みぶんの見張りを片付ける
   el('hintBtn').fire('click', {});
   const lit = slots.filter((s) => s._cls.has('hinted')).length;
@@ -80,7 +80,7 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
 {
   delete globalThis.Worker;
   workerBroken = false;
-  W = H = 8; SIZE = 64; buildDom(); types = 4;
+  useStageSetup(8, 0);
   const t0 = process.hrtime.bigint();
   newPuzzle(11);
   const ms = Number(process.hrtime.bigint() - t0) / 1e6;
@@ -91,9 +91,10 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
 
   // ヒントを押したときだけ解く
   let called = false;
+  const id0 = solveId;
   requestSolve(() => { called = true; });
   ok(called, '押したときの依頼に応答していない');
-  ok(hintPlan !== null, '押したときに解けていない');
+  ok(solveId > id0 && !hintBusy, '押したときに解けていない');
   console.log('  押したときは同期で解いて応答する');
 }
 console.log(fail === 0 ? '\nWorker が使えないときの動き: 全チェック通過' : `\n失敗 ${fail} 件`);

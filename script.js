@@ -253,21 +253,44 @@ function candidatePatterns(w, h, k) {
   return out;
 }
 
-// 選べる盤のサイズとブロック数
+// 選べる盤のサイズとブロック数（カスタムの辺は 3〜10、使うブロックは 13 種まで）
 const SIZES = [3, 4, 5, 6, 7, 8, 9, 10];
 const TYPE_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+// ---- ステージの表（大きさ × 難しさ）----
+// 難しさは「完成形から混ぜる手数 n」と「使うブロックの種類数 k」をまとめて上げる。
+// 手数を決めて混ぜるので、答えの手数はおよそ n（大きさによらない）。
+// 大きさ 3 は練習（一覧では 1 行）。9×9・10×10 はカスタムだけで選べる。
+// 数字は tools/stagebench.js の計測（アプリのヒントと同じ 3 秒の探索で見つかる手数）で決めた。
+const DIFFS = ['やさしい', 'ふつう', 'むずかしい'];
+const STAGE_TABLE = {
+  3: [{ n: 3, k: 2 }, { n: 5, k: 3 }, { n: 7, k: 4 }],
+  4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }],
+  5: [{ n: 6, k: 3 }, { n: 12, k: 4 }, { n: 17, k: 5 }],
+  6: [{ n: 9, k: 3 }, { n: 15, k: 5 }, { n: 20, k: 6 }],
+  7: [{ n: 11, k: 4 }, { n: 17, k: 6 }, { n: 24, k: 7 }],
+  8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }],
+};
+const STAGE_SIZES = [3, 4, 5, 6, 7, 8];
+const stageDef = (s, d) => {
+  const e = STAGE_TABLE[s] && STAGE_TABLE[s][d];
+  return e ? { s, d, n: e.n, k: e.k, key: `${s}d${d}` } : null;
+};
+// カスタムの盤は、長い辺に近い大きさの表から混ぜる手数だけを借りる
+const movesFor = (w, h, d) => stageDef(Math.min(8, Math.max(3, Math.max(w, h))), d).n;
 
 // そのサイズで、そのブロック数の柄が作れるか
 const typeAvailable = (w, h, k) => k <= ABILITIES.length && k <= w * h && candidatePatterns(w, h, k).length > 0;
 
 // ---- 状態 ----
-// 完成状態から混ぜる手数。
-// 一様分布に十分近づくまで混ぜる。厳密に測った混合時間の最大はマス数あたり 82 手
-// （4×4 3 色、到達状態 36,450）だったので、2 倍以上の余裕を見て 200 倍とする。
-// 1 手は配列の置換だけなので、10×10 の 20,000 手でも数ミリ秒で終わる。
+// 一様に混ぜ切るときの手数（mixBoard 用。今の盤の作り方は scrambleBoard で、手数は scrambleN）。
+// 厳密に測った混合時間の最大はマス数あたり 82 手だったので、2 倍以上の余裕を見て 200 倍。
 const scrambleSteps = () => 200 * SIZE;
 
 let types = 2;          // 使うブロック数
+let scrambleN = 4;      // 完成形から動かす手数（盤を作るとき）
+let curDiff = 0;        // いま遊んでいる盤の難しさ（0〜2）。ステージの記録に使う
+let scrambleMoves = []; // 直近に作った盤を混ぜた手の並び [[マス, 向き], ...]
 let seed = 0;
 let tileAbility = [];  // tileAbility[v] = タイル v の能力インデックス
 let board = [];        // board[i] = マス i にあるタイルの値
@@ -441,13 +464,13 @@ function blinkHint() {
   const how = r.n <= back
     ? `光っているマスを ${r.n} 回押す`
     : `光っているマスを ${back} 回長押し（逆回り）`;
-  // 残りの手数は、実際に探して見つけた手順のときだけ意味がある。
-  // 保険の手順（シャッフルをそのまま逆再生するもの）は 1 万手を超えることがあり、
-  // それを「残り 18317 手」と出しても遊ぶ人には何の情報でもなく、
-  // 詰んだように見えるだけ。光らせる手自体は正しいので、数字だけ伏せる。
-  const real = hintPlan && hintPlan.method !== 'reverse';
+  // 残りの手数は、短い手順のときだけ意味がある。
+  // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
+  // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
+  // 光らせる手自体は正しいので、長すぎるときは数字だけ伏せる。
+  const real = planCost(plan) <= HINT_SHOW_MAX;
   const quality = real
-    ? (hintPlan.optimal
+    ? (hintPlan && hintPlan.optimal && planCost(hintPlan.runs) <= planCost(plan)   // 探索が最短と保証した長さと同じ
       ? ` / ここから最短 ${planCost(plan)} 手`
       : ` / 残り ${planCost(plan)} 手（最短とはかぎりません）`)
     : hintBusy ? HINT_SEARCHING_NOTE : ' / まだ短い手順が見つかっていません';
@@ -469,15 +492,15 @@ function showHint() {
   if (autoSolving || locked || isSolved()) return;
   hintUsed = true;
   Sfx.hint();
-  if (hintPlan) {
-    // もう解けた手順がある。それをそのまま見せる。
+  if (hintPlan || (activeRuns().length && planCost(activeRuns()) <= HINT_SHOW_MAX)) {
+    // もう使える手順がある（混ぜた手順の逆、または探して見つけたもの）。それをそのまま見せる。
     // 計算し直しはこれまでどおり毎回やるが、受け取っても点滅は動かさない
     // （光らせる場所は押した時点で決める。あとから別のマスへ飛ばさない）。
     blinkHint();
     requestSolve(null);
     return;
   }
-  // まだ手順が無い。ここで保険の手順（シャッフルの逆再生）を見せると
+  // 使える手順がまだ無い（手数を決めずに混ぜた盤の保険の手順しか無い）。ここで見せると
   // 数千手の遠回りの 1 手目を指すことになり、探索が終わった途端に
   // 別のマスへ飛ぶ。見せずに、探し終わってから一度だけ光らせる。
   clearHint();
@@ -689,11 +712,18 @@ let solveId = 0;        // 進行中の依頼の番号。盤面が変わった�
 let solveDones = [];    // 返事が来たら呼ぶもの
 let movesWhileSolving = []; // 計算中に打った手。返ってきた手順に追いつかせる
 let solveStart = null;      // 依頼したときの並び。返ってきた手順はここから始まる
-let longSolveTried = false; // 逆手順に落ちた盤で、裏での長い探し直しをもう試したか
+// 盤が出ているあいだ、裏で探し続ける（より短い手順が見つかるたびに差し替える）。
+// 続けるたびに予算を倍にする。打った手で盤が変わったら（数手ごとに）やり直す。
+let improveRound = 0;       // 何回続けたか
+let improveTimer = null;
+let movesSinceImprove = 0;  // 最後に探し始めてから打った手
+const IMPROVE_BUDGETS = [6000, 12000, 24000, 48000];
+const HINT_SHOW_MAX = 100;  // これを超える手順は、手数を出さない
 
-// 基準手数（par）。盤が出た直後の裏の探索（初期配置から）の結果をそのまま持つ。
-// ヒントの手順（hintPlan）とは別物で、打った手では変わらない。
-//   undefined = 計算中 / null = 無し（逆手順・失敗・同期処理で先読みしない） / { cost, optimal }
+// 基準手数（par）。盤が出た時点で分かっている最短の手順の長さ。
+// 混ぜた手順の逆の長さで始まり、盤が出た直後の裏の探索（初期配置から）で
+// もっと短い手順が見つかれば、それに変わる。ヒントの手順（hintPlan）とは別物で、打った手では変わらない。
+//   undefined = 計算中（答えの手順が無い盤だけ） / null = 無し / { cost, optimal }
 let par = null;
 let parWanted = false;      // 次に出す依頼が、par 用の先読みか
 let parId = 0;              // par 用の依頼の番号
@@ -708,11 +738,14 @@ function readyLine() {
 }
 
 // ---- 今日の 1 問 ----
-// 端末の日付（ローカルの年月日）から seed を決める。同じ日は誰でも同じ盤。5×5・4 種で、
+// 端末の日付（ローカルの年月日）から seed を決める。同じ日は誰でも同じ盤。5×5・ふつう（10 手・4 種）で、
 // ブロックは全 13 種から選ぶ（無料版でも完全版のブロックが出る＝試す場）。
 const DAILY_KEY = 'glyphshift.daily';
+// 今日の 1 問は 5×5 の「ふつう」と同じ手数・種類数
 const DAILY_SIZE = 5;
-const DAILY_TYPES = 4;
+const DAILY_DIFF = 1;
+const DAILY_TYPES = STAGE_TABLE[DAILY_SIZE][DAILY_DIFF].k;
+const DAILY_MOVES = STAGE_TABLE[DAILY_SIZE][DAILY_DIFF].n;
 const DAILY_KEEP_DAYS = 60;
 const pad2 = (n) => String(n).padStart(2, '0');
 const dateKeyOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -849,7 +882,7 @@ function solveSnapshot() {
   return {
     start: Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[board[i]]),
     goal: Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[i]),
-    fallback: Solver.runsToPlan(solution),
+    fallback: Solver.runsToPlan(activeRuns()),   // いま分かっている最短の手順。探索の結果がこれより悪いことは無い
   };
 }
 
@@ -871,36 +904,56 @@ function planReachesGoal(plan, startLay) {
 function finishSolve(id, res, partial = false) {
   if (id !== solveId) return; // 盤面が変わった後の返事
   if (res && res.plan && !planReachesGoal(res.plan, solveStart)) res = null;
-  if (id === parId && !partial && par === undefined) {
-    const real = res && res.plan && res.method !== 'reverse' && res.method !== 'none';
-    resolvePar(real ? { cost: planCost(Solver.planToRuns(problem, res.plan, solveStart)), optimal: !!res.optimal } : null);
+  if (id === parId && !partial && (!locked || clearPending)) {
+    // 盤が出た時点の par を、探索で見つかった手順で更新する（短くなったときだけ）
+    parId = 0;
+    const c = res && res.plan ? planCost(Solver.planToRuns(problem, res.plan, solveStart)) : Infinity;
+    const cur = par || null;
+    if (!cur || c < cur.cost) resolvePar(c < Infinity ? { cost: c, optimal: !!res.optimal } : null);
+    else if (c === cur.cost && res.optimal && !cur.optimal) resolvePar({ cost: c, optimal: true });
+    else resolvePar(cur);
   }
   if (res && res.plan) {
     const plan = { runs: Solver.planToRuns(problem, res.plan, solveStart), optimal: res.optimal, ms: Math.round(res.ms), method: res.method };
     // 計算しているあいだに打った手ぶんだけ手順を進める
     for (const [i, dir, order] of movesWhileSolving) followPlan(plan, i, dir, order);
-    if (!hintPlan || planCost(plan.runs) <= planCost(hintPlan.runs) || !partial) hintPlan = plan;
+    // 今わかっている最短の手順（activeRuns）より短いときだけ差し替える。
+    // 同じ長さで、探索のほうが「最短」と保証できるときも差し替える（表示のため）。
+    const cost = planCost(plan.runs);
+    const known = planCost(activeRuns());
+    const sameButProven = cost === known && plan.optimal && !(hintPlan && hintPlan.optimal && activeRuns() === hintPlan.runs);
+    if (cost < known || sameButProven || (!hintPlan && !solution.length)) hintPlan = plan;
   }
   if (!partial) {
     hintBusy = false;
     movesWhileSolving = [];
-    // 逆手順しか出せなかった盤は、そのままだと 1 万手を超える使えないヒントになる。
-    // いま出ている手順でも遊べるので、裏でもっと長く探し直す。途中でよりよい手順が
-    // 見つかれば差し替わる（見つからなければ、いまの手順のまま）。1 盤につき 1 回だけ。
-    if (res && res.method === 'reverse' && !longSolveTried && worker) {
-      longSolveTried = true;
-      requestSolve(null, false, true, HINT_BUDGET_LONG);
-    }
     // 探し直しで短い手順が見つかったら、出したままの案内を新しくする。
     // 光らせる場所は動かさない（押した時点で決めたものを尊重する）。
-    if (hintPlan && hintPlan.method !== 'reverse' && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
+    if (hintPlan && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
       logEl.textContent = `短い手順が見つかりました（残り ${planCost(activeRuns())} 手）。もう一度ヒントを押してください`;
     }
+    scheduleImprove(res);
   }
   // 待っている人には最初の返事で応える（ヒントの点滅には十分）。最終結果を待つものは残す。
   const dones = solveDones;
   solveDones = partial ? dones.filter((d) => d.final) : [];
   for (const d of dones) if (!partial || !d.final) d.f();
+}
+
+// 盤が出ているあいだ、予算を倍にしながら今の盤から探し直し続ける。
+// 最短と分かった・手順が十分短い・解説や完成で盤を動かさなくなった、のどれかで止める。
+function scheduleImprove(res) {
+  if (improveTimer) { clearTimeout(improveTimer); improveTimer = null; }
+  if (!worker || tutorial || locked || autoSolving || isSolved()) return;
+  if (res && res.optimal) return;                         // 最短と分かった
+  if (planCost(activeRuns()) <= 2) return;                // これ以上縮めようがない
+  if (improveRound >= IMPROVE_BUDGETS.length) return;
+  const budget = IMPROVE_BUDGETS[improveRound++];
+  movesSinceImprove = 0;
+  improveTimer = setTimeout(() => {
+    improveTimer = null;
+    if (!hintBusy && worker && !locked && !autoSolving && !isSolved()) requestSolve(null, false, true, budget);
+  }, 250);
 }
 
 // done は最初の返事（途中経過でもよい）で呼ぶ。final を付けると最終結果まで待つ。
@@ -912,7 +965,7 @@ function requestSolve(done, final = false, background = false, budget = 0) {
   if (background && !worker) return;
   hintBusy = true;
   const id = ++solveId;
-  if (parWanted) { parWanted = false; parId = id; par = undefined; }
+  if (parWanted) { parWanted = false; parId = id; if (!par) par = undefined; }
   movesWhileSolving = [];
   const snap = solveSnapshot();
   solveStart = snap.start;
@@ -941,7 +994,9 @@ function followPlan(plan, i, dir, order) {
   if (planCost(plan.runs) >= before) plan.optimal = false;
 }
 
-const activeRuns = () => (hintPlan ? hintPlan.runs : solution);
+// いま分かっている最短の手順。混ぜた手順の逆（solution）と、探索で見つけた手順（hintPlan）のうち、
+// 短いほう（同じ長さなら solution）。どちらも打った手に追従させてあるので、いつでも今の盤から使える。
+const activeRuns = () => (hintPlan && (!solution.length || planCost(hintPlan.runs) < planCost(solution)) ? hintPlan.runs : solution);
 
 // 手順の長さは「まとまりの数」ではなく手数で数える。
 // 1 つのまとまりは押す向きを選べるので、少ない側の回数がその手数になる。
@@ -966,6 +1021,11 @@ function applyMoveState(i, dir) {
   if (hintBusy) movesWhileSolving.push([i, dir, run.order]);
 
   applyTo(board, cycles, dir);
+  // 盤が変わったので、探し直しの連鎖が止まっていたら数手ごとに仕切り直す
+  if (!autoSolving && ++movesSinceImprove >= 4 && !hintBusy && !improveTimer && worker && !tutorial) {
+    improveRound = 0;
+    scheduleImprove(null);
+  }
   return true;
 }
 
@@ -1032,7 +1092,8 @@ function recordDaily(n, used, p) {
 }
 
 function recordPerfect() {
-  const st = stageFor(W, types);
+  if (!stageDef(W, curDiff)) return;
+  const st = stageFor(W, curDiff);
   st.perfect = (st.perfect || 0) + 1;
   saveStages();
 }
@@ -1070,7 +1131,8 @@ function showClear() {
     clears[W] = (clears[W] || 0) + 1;   // 旧仕様の記録。消さずに足しておく
     try { localStorage.setItem(CLEARS_KEY, JSON.stringify(clears)); } catch (e) { /* 保存できなくても遊べる */ }
 
-    const st = stageFor(W, types);
+    if (!stageDef(W, curDiff)) return;
+    const st = stageFor(W, curDiff);
     st.clears = (st.clears || 0) + 1;
     if (par && starRating(moves, par.cost, hintUsed) === 3) st.perfect = (st.perfect || 0) + 1;
     st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
@@ -1146,7 +1208,7 @@ function askAutoSolve() {
 function askRegenerate() {
   if (autoSolving) return;
   askConfirm('新しい盤面を作る',
-    'サイズとブロック数はそのままで、'
+    'サイズと難しさはそのままで、'
     + '<strong>使うブロックも目標の柄も</strong>選び直します。<br>今の盤面は元に戻せません。',
     '作る', () => { closeConfirm(); newPuzzle(); });
 }
@@ -1164,8 +1226,7 @@ function startAutoSolve() {
   autoBackEl.disabled = true;
   autoNextEl.disabled = true;
   autoPlayEl.disabled = true;
-  autoTextEl.textContent = '手順を計算しています…';
-  requestSolve(() => {
+  const go = () => {
     if (!autoSolving) return;              // 計算中に「やめる」を押した
     if (locked || isSolved()) { stopAutoSolve(); return; }
     // 手順がまったく無いときだけは、そのまま完成形へ動かす
@@ -1173,7 +1234,11 @@ function startAutoSolve() {
     autoStep = autoPace(planCost(activeRuns()));
     autoPlayEl.disabled = false;
     playAuto();
-  }, true);
+  };
+  // 使える短い手順がもうあれば、探索の終わりを待たずにそれで始める（裏の探索はそのまま続く）
+  if (activeRuns().length && planCost(activeRuns()) <= HINT_SHOW_MAX) { go(); return; }
+  autoTextEl.textContent = '手順を計算しています…';
+  requestSolve(go, true);
 }
 
 // 手順どおりに count 手すすめる。戻せるように、進めた手は控えておく。
@@ -1430,13 +1495,11 @@ function pickGoal(w, h, k, cands, rng, forced, attempt) {
       [picked[a], picked[j]] = [picked[j], picked[a]];
     }
   } else {
-    // 「何も起きない」は柄の一色ぶん、つまり盤の 1/k を占める。色数が少ないと
-    // 盤の半分近くが動かないマスになり、打てる手が数えるほどしか残らない。
-    // ランダムに選ぶときは色数が 4 以上のときだけ混ぜる（カスタムでの指定は尊重する）。
+    // 「何も起きない」も、色数によらず混ぜる。手数を決めて混ぜるので（scrambleBoard）、
+    // 動かないマスが多くても決めた手数ぶんは必ず動かせる。動かせない組は generate が引き直す。
     // 無料版（鍵が効いていて完全版でない）は、無料のブロックの中からだけ選ぶ。
     const pool = ABILITIES.map((_, a) => a)
-      .filter((a) => previewAllBlocks || Entitlement.blockOpen(ABILITIES[a].id))
-      .filter((a) => k >= 4 || !isBlank(a));
+      .filter((a) => previewAllBlocks || Entitlement.blockOpen(ABILITIES[a].id));
     for (let a = pool.length - 1; a > 0; a--) {
       const j = Math.floor(rng() * (a + 1));
       [pool[a], pool[j]] = [pool[j], pool[a]];
@@ -1448,13 +1511,53 @@ function pickGoal(w, h, k, cands, rng, forced, attempt) {
 }
 
 // ---- 生成 ----
-// seed からゴール（tileAbility）と混ぜた盤（board）と保険の手順（solution）を決める。
-// 今の W / H / types / forcedAbilities を使う。newPuzzle と、ホームのプレビュー
+// 完成状態から、ちょうど n 手だけ動かして盤を作る（手数を決めて混ぜる）。
+// 直前の手を打ち消すだけの手と、これまでに通った盤面（絵柄の並び）に戻る手は選ばない。
+// そのため答えまでの手数はほぼ n になり、混ぜた手順の逆がそのまま「n 手の答え」になる。
+// 同じマスを続けて押す手も選ばない（続けて押すと 1 手に数えられて、手数が n より減るため）。
+// relax を付けると、同じマスの連続を許す（動かせるマスが少ない組で、どうしても進まないときの保険）。
+// n 手ぶん進めなかったら null（盤は途中のまま。呼び出し側が組を引き直す）。
+// b は完成状態（b[i] = i）から始める。結果は b にそのまま入り、動かした手の並びを返す。
+function scrambleBoard(b, tbl, n, rng, relax = false) {
+  const keyNow = () => String.fromCharCode.apply(null, b.map((v) => tileAbility[v]));
+  const seen = new Set([keyNow()]);
+  const path = [];
+  for (let t = 0; t < n; t++) {
+    const prev = path[path.length - 1];
+    const cand = [];
+    for (let i = 0; i < SIZE; i++) {
+      const a = tileAbility[b[i]];
+      if (!tbl.cyc[a][i]) continue;
+      const two = tbl.cnt[a][i] === 1;   // 位数 2 は順逆が同じ
+      for (const dir of two ? [1] : [1, -1]) {
+        if (prev && prev[0] === i && (!relax || two || dir === -prev[1])) continue;
+        cand.push([i, dir]);
+      }
+    }
+    let moved = false;
+    while (cand.length) {
+      const j = Math.floor(rng() * cand.length);
+      const [i, dir] = cand[j];
+      const cyc = tbl.cyc[tileAbility[b[i]]][i];
+      applyTo(b, cyc, dir);
+      const k = keyNow();
+      if (!seen.has(k)) { seen.add(k); path.push([i, dir]); moved = true; break; }
+      applyTo(b, cyc, -dir);             // 通った盤面に戻るので取り消す
+      cand[j] = cand[cand.length - 1];
+      cand.pop();
+    }
+    if (!moved) return null;
+  }
+  return path;
+}
+
+// seed からゴール（tileAbility）と混ぜた盤（board）と答えの手順（solution）を決める。
+// 今の W / H / types / scrambleN / forcedAbilities を使う。newPuzzle と、ホームのプレビュー
 // （stageGoalPreview）が同じここを通るので、プレビューと実際の盤が必ず一致する。
+// 答え（solution）は混ぜた手順の逆。盤が出たあとの探索で、これより短いものが見つかれば差し替わる。
 function generate(seedValue) {
   const rng = mulberry32(seedValue);
   const K = Math.min(forcedAbilities ? forcedAbilities.length : types, SIZE, ABILITIES.length);
-  let steps = scrambleSteps();
 
   patternSeed = Math.floor(rng() * 1e9);   // 種つきの柄を盤面ごとに変える
   const cands = candidatePatterns(W, H, K);
@@ -1463,23 +1566,21 @@ function generate(seedValue) {
     // 柄と使うブロックを rng から決める。タイル v の能力 = 完成時にマス v に来る色。
     tileAbility = pickGoal(W, H, K, cands, rng, forcedAbilities, attempt);
 
-    // 完成状態から混ぜる → 必ず解ける。Metropolis 補正なので定常分布は一様。
+    // 動かせるマスが無い・決めた手数ぶん進めない組（指定の組や小さい盤）は引き直す。
+    // 3×3 は通れる盤面が少なく、手数ぶん進める組は 1 ～ 3 割しかない（盤が小さいので引き直しは軽い）。
+    // 引き直しがかさむ（大きい盤ではまず起きない）ときは、同じマスの連続を許し、
+    // それでもだめなら手数を減らしてでも必ず終わらせる。
+    const n = attempt < 200 ? scrambleN : Math.max(1, scrambleN - Math.floor((attempt - 200) / 5));
     const tbl = buildMoveTable();
     board = Array.from({ length: SIZE }, (_, i) => i);
-    const path = [];
-    mixBoard(board, tbl, steps, rng, path);
-
-    // 混ぜた結果がたまたま完成形なら引き直す
-    // （到達できる状態が極端に少ない組み合わせでは起こりうる）
-    if (!isSolved()) {
-      // 保険の手順は、混ぜた道筋を逆にたどったもの
-      const trimmed = removeLoops(path, tbl);
+    const path = scrambleBoard(board, tbl, n, rng, attempt >= 100);
+    if (path && path.length && !isSolved()) {
+      scrambleMoves = path;
       const back = [];
-      for (let k = trimmed.length - 1; k >= 0; k--) back.push([trimmed[k][0], -trimmed[k][1]]);
+      for (let q = path.length - 1; q >= 0; q--) back.push([path[q][0], -path[q][1]]);
       solution = movesToRuns(back, board, tbl);
       break;
     }
-    if (attempt > 40) steps += SIZE; // まず起きないが、念のため深くして抜ける
   }
 }
 
@@ -1504,8 +1605,11 @@ function beginBoard() {
   moves = 0;
   run = { i: -1, d: 0, order: 1 };
   hintPlan = null;
-  longSolveTried = false;
-  par = null; parWanted = false; parId = 0; hintUsed = false; clearPending = null;
+  if (improveTimer) { clearTimeout(improveTimer); improveTimer = null; }
+  improveRound = 0; movesSinceImprove = 0;
+  // par は、混ぜた手順の逆（答えの手順）の長さから始める。探索でもっと短いものが見つかれば変わる
+  par = solution.length ? { cost: planCost(solution), optimal: false } : null;
+  parWanted = false; parId = 0; hintUsed = false; clearPending = null;
   locked = false;
 
   // 解法の準備。計算中の Worker は捨てて作り直す（古い盤面の計算を待たないため）
@@ -1821,14 +1925,14 @@ let pendA = W;
 let pendB = H;
 let pendW = W;
 let pendH = H;
-let pendTypes = types;
+let pendDiff = curDiff;       // 難しさ（0〜2）。手数（と、カスタムでなければ種類数）が決まる
 let pendCustom = false;
 let pendPicked = new Set();   // カスタムで選んだブロック
 
 const seedInEl = document.getElementById('seedIn');
 const sizeSegEl = document.getElementById('sizeSeg');
-const typeSegEl = document.getElementById('typeSeg');
-const typeNoteEl = document.getElementById('typeNote');
+const diffSegEl = document.getElementById('diffSeg');
+const diffNoteEl = document.getElementById('diffNote');
 const createBtnEl = document.getElementById('createBtn');
 const customChk = document.getElementById('customChk');
 const sideAEl = document.getElementById('sideA');
@@ -1855,26 +1959,16 @@ function fillSeg(el, values, label) {
   }
 }
 
-// 選んだサイズで作れないブロック数は押せなくする
-function refreshTypeSeg() {
-  let unavailable = 0;
-  for (const b of typeSegEl.querySelectorAll('button')) {
-    const k = Number(b.dataset.v);
-    const okK = typeAvailable(pendW, pendH, k);
-    b.disabled = !okK;
-    if (!okK) unavailable++;
-  }
-  // 選択中の数が使えなくなったら、使える範囲でいちばん近い数に寄せる
-  if (!typeAvailable(pendW, pendH, pendTypes)) {
-    const usable = TYPE_COUNTS.filter((k) => typeAvailable(pendW, pendH, k));
-    pendTypes = usable.reduce((best, k) =>
-      Math.abs(k - pendTypes) < Math.abs(best - pendTypes) ? k : best, usable[0]);
-  }
-  markSeg(typeSegEl, pendTypes);
+// 難しさの説明（手数・種類数）。カスタムでは種類数は自分で選ぶので、手数だけ
+function refreshDiffSeg() {
+  markSeg(diffSegEl, pendDiff);
   syncLocks();
-  typeNoteEl.textContent = unavailable
-    ? `${pendW}×${pendH} では、この色数で作れる柄がないものを伏せています。`
-    : '';
+  if (pendCustom) {
+    diffNoteEl.textContent = `${movesFor(pendW, pendH, pendDiff)} 手ほど混ぜます。`;
+  } else {
+    const def = stageDef(pendW, pendDiff);
+    diffNoteEl.textContent = def ? `${def.n} 手ほど混ぜます。ブロックは ${def.k} 種類です。` : '';
+  }
 }
 
 // カスタムのブロック選び
@@ -1909,12 +2003,12 @@ function refreshPicker() {
 // カスタムの表示を切り替える
 function refreshCustom() {
   document.getElementById('plainSize').hidden = pendCustom;
-  document.getElementById('plainTypes').hidden = pendCustom;
   document.getElementById('customSize').hidden = !pendCustom;
   document.getElementById('customBlocks').hidden = !pendCustom;
   customChk.checked = pendCustom;
   if (pendCustom) { applySides(); refreshPicker(); }
-  else { markSeg(sizeSegEl, pendW); refreshTypeSeg(); }
+  else markSeg(sizeSegEl, pendW);
+  refreshDiffSeg();
   createBtnEl.disabled = pendCustom && !customReady();
 }
 
@@ -1937,15 +2031,15 @@ function syncSetup() {
   pendB = H;
   pendW = W;
   pendH = H;
-  pendTypes = types;
-  pendCustom = W !== H || forcedAbilities !== null;
+  pendDiff = curDiff;
+  pendCustom = W !== H || forcedAbilities !== null || !STAGE_SIZES.includes(W);
   pendPicked = new Set(forcedAbilities || [...new Set(tileAbility)]);
   seedInEl.value = '';
   refreshCustom();
 }
 
-fillSeg(sizeSegEl, SIZES, (v) => `${v}×${v}`);
-fillSeg(typeSegEl, TYPE_COUNTS, (v) => `${v} 種`);
+fillSeg(sizeSegEl, STAGE_SIZES, (v) => `${v}×${v}`);
+fillSeg(diffSegEl, [0, 1, 2], (v) => DIFFS[v]);
 fillSeg(sideAEl, SIZES, (v) => String(v));
 fillSeg(sideBEl, SIZES, (v) => String(v));
 fillPicker();
@@ -1956,14 +2050,14 @@ sizeSegEl.addEventListener('click', (e) => {
   if (b.classList.contains('locked')) { openLockSheet(); return; }
   pendA = pendB = pendW = pendH = Number(b.dataset.v);
   markSeg(sizeSegEl, pendW);
-  refreshTypeSeg();
+  refreshDiffSeg();
 });
-typeSegEl.addEventListener('click', (e) => {
+diffSegEl.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
   if (b.classList.contains('locked')) { openLockSheet(); return; }
-  pendTypes = Number(b.dataset.v);
-  markSeg(typeSegEl, pendTypes);
+  pendDiff = Number(b.dataset.v);
+  refreshDiffSeg();
 });
 for (const [el, set] of [[sideAEl, (v) => { pendA = v; }], [sideBEl, (v) => { pendB = v; }]]) {
   el.addEventListener('click', (e) => {
@@ -1988,13 +2082,16 @@ customChk.addEventListener('change', () => {
 
 // 設定パネルの鍵つき（無料の範囲の外）を押せなくして、印を付ける。カスタムの入口には鍵の札を出す。
 function syncLocks() {
+  // 大きさは、その大きさに無料で遊べる難しさが 1 つも無いときだけ鍵つき。難しさは、選んでいる大きさで判定する
   for (const b of sizeSegEl.querySelectorAll('button')) {
-    const lk = !Entitlement.stageOpen(Number(b.dataset.v), 2);
+    const lk = !Entitlement.stageOpen(Number(b.dataset.v), 0);
     b.classList.toggle('locked', lk);
     b.setAttribute('aria-disabled', String(lk));
   }
-  for (const b of typeSegEl.querySelectorAll('button')) {
-    b.classList.toggle('locked', !Entitlement.stageOpen(3, Number(b.dataset.v)));
+  for (const b of diffSegEl.querySelectorAll('button')) {
+    const lk = pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, Number(b.dataset.v));
+    b.classList.toggle('locked', lk);
+    b.setAttribute('aria-disabled', String(lk));
   }
   const tag = document.getElementById('customLock');
   if (tag) tag.hidden = Entitlement.customOpen();
@@ -2005,7 +2102,7 @@ function syncLocks() {
 let lastStartPool = 'all';   // 直前に始めた盤が使えるブロックの範囲の印（ごほうびで始めた盤は 'all'）
 function startFromPending() {
   if (pendCustom && !customReady()) return;
-  if (pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, pendTypes)) { openLockSheet(pendCustom ? 'custom' : 'setting'); return; }
+  if (pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, pendDiff)) { openLockSheet(pendCustom ? 'custom' : 'setting'); return; }
   if (pendW !== W || pendH !== H) {
     W = pendW;
     H = pendH;
@@ -2015,10 +2112,14 @@ function startFromPending() {
   if (pendCustom) {
     forcedAbilities = [...pendPicked].sort((a, b) => a - b);
     types = forcedAbilities.length;
+    scrambleN = movesFor(pendW, pendH, pendDiff);
   } else {
     forcedAbilities = null;
-    types = pendTypes;
+    const def = stageDef(pendW, pendDiff);
+    types = def.k;
+    scrambleN = def.n;
   }
+  curDiff = pendDiff;
   const v = parseInt(seedInEl.value, 10);
   lastStartPool = Entitlement.poolTag();
   newPuzzle(Number.isFinite(v) ? v : undefined);
@@ -2043,10 +2144,11 @@ function loadClears() {
 }
 const clears = loadClears();
 
-// ステージ（正方形のサイズ×ブロック数の組）ごとに、盤面を決める seed と
-// クリアした回数を持つ。キーは "5x3" のように「サイズx種類数」。
+// ステージ（正方形のサイズ×難しさの組）ごとに、盤面を決める seed と
+// クリアした回数を持つ。キーは "5d1" のように「サイズd難しさ（0〜2）」。
 // 自分でクリアする（解説を使わない）たびに、その組の seed を新しく引き直す
 // ので、次にその項目を選ぶとゴールの柄が変わる。
+// 旧仕様（サイズ×種類数）のキー "5x3" は読まずに残すだけ（どこからも参照しない）。
 const STAGES_KEY = 'glyphshift.stages';
 function loadStages() {
   try {
@@ -2061,10 +2163,10 @@ function saveStages() {
 const stages = loadStages();
 
 // そのステージの記録を取り出す。まだ遊んでいなければ、ここで seed を 1 つ引いて覚える。
-function stageFor(s, k) {
-  const key = `${s}x${k}`;
+function stageFor(s, d) {
+  const key = `${s}d${d}`;
   let st = stages[key];
-  if (!st) { st = { seed: Math.floor(Math.random() * 1e9), clears: 0 }; stages[key] = st; saveStages(); }
+  if (!st || typeof st !== 'object') { st = { seed: Math.floor(Math.random() * 1e9), clears: 0 }; stages[key] = st; saveStages(); }
   return st;
 }
 
@@ -2073,33 +2175,35 @@ function stageFor(s, k) {
 // ゴールを引いたとき）まで含めて実際の盤と一致する。
 // 鍵つきのステージは、一覧の絵だけ全ブロックで描く（完全版で何が遊べるかを見せる）。
 let previewAllBlocks = false;
-function stageGoalPreview(s, k, seed, allBlocks = false) {
+function stageGoalPreview(s, d, seed, allBlocks = false) {
   // generate は対局の状態を書き換えるので、今の対局を退避して戻す
-  const saved = { W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution };
-  W = H = s; SIZE = s * s; types = k; forcedAbilities = null;
+  const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution };
+  const def = stageDef(s, d);
+  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null;
   previewAllBlocks = allBlocks;
   try { generate(seed); } finally { previewAllBlocks = false; }
   const goal = tileAbility;
-  ({ W, H, SIZE, types, forcedAbilities, patternSeed, tileAbility, board, solution } = saved);
+  ({ W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution } = saved);
   return goal;
 }
 
 // 求めたゴールは st.goal に覚えておき、次からは混ぜ直さずに使う（seed が変わると消える）。
-function goalForStage(s, k, st) {
+function goalForStage(s, d, st) {
   // goal は、使えるブロックの範囲（無料／全部）の印 pool と一緒に覚える。印が違えば作り直す
   // （無料の範囲で作ったゴールと全ブロックで作ったゴールが混ざらないように。印の無い古い記録は全部）。
   // 鍵つきのステージは全ブロックの印で作る（買ったあと、見ていた絵のまま遊べる）。
-  const tag = Entitlement.stageOpen(s, k) ? Entitlement.poolTag() : 'all';
-  if (!(st.goal && st.goal.length === s * s && (st.pool || 'all') === tag)) {
-    st.goal = stageGoalPreview(s, k, st.seed, tag === 'all'); st.pool = tag; saveStages();
+  const tag = Entitlement.stageOpen(s, d) ? Entitlement.poolTag() : 'all';
+  if (!(Array.isArray(st.goal) && st.goal.length === s * s && (st.pool || 'all') === tag)) {
+    st.goal = stageGoalPreview(s, d, st.seed, tag === 'all'); st.pool = tag; saveStages();
   }
   return st.goal;
 }
 
 // いま盤に残っている対局が、そのステージの途中か（ホームに戻っても盤は作り直さずに残してある）。
 // 一度でも押していて、まだ揃っていないものだけ。seed が違えば別の盤（再生成・クリア後）。
-const inProgress = (s, k) =>
-  W === s && H === s && types === k && !forcedAbilities && seed === stageFor(s, k).seed && run.i >= 0 && !isSolved();
+const inProgress = (s, d) =>
+  W === s && H === s && curDiff === d && !forcedAbilities && !dailyKey && !tutorial
+  && seed === stageFor(s, d).seed && run.i >= 0 && !isSolved();
 
 // 一覧のカードの記録。★は「評価」の意味だけに使い、クリア回数は文字で出す。
 const clearsLabel = (st) =>
@@ -2147,7 +2251,7 @@ function makeStageObserver() {
       const req = stageMiniPending.get(en.target);
       if (!req) continue;
       stageMiniPending.delete(en.target);
-      buildStageMini(en.target, req.s, goalForStage(req.s, req.k, stageFor(req.s, req.k)));
+      buildStageMini(en.target, req.s, goalForStage(req.s, req.d, stageFor(req.s, req.d)));
     }
   }, { rootMargin: '640px 240px' }); // 縦スクロールでも横スクロールでも、少し手前から描き始める
 }
@@ -2156,7 +2260,7 @@ const stageListEl = document.getElementById('stageList');
 
 // ---- 完全版の案内（鍵つきを押したとき）----
 const lockSheetEl = document.getElementById('lockSheet');
-// what: どこから開いたか。{ s, k }（ステージ）か 'custom' / 'setting'（設定パネル）。ごほうび広告のあとの始め方が変わる
+// what: どこから開いたか。{ s, d }（ステージ）か 'custom' / 'setting'（設定パネル）。ごほうび広告のあとの始め方が変わる
 let lockWhat = 'setting';
 const lockRewardEl = document.getElementById('lockReward');
 const lockRewardNoteEl = document.getElementById('lockRewardNote');
@@ -2186,7 +2290,7 @@ lockRewardEl.addEventListener('click', async () => {
     const r = await Rewards.watch();
     if (r === 'earned' && !Entitlement.isFull()) {
       Entitlement.grantTicket();   // 鍵が開く。onChange でシートも閉じる
-      if (typeof what === 'object') playStage(what.s, what.k);
+      if (typeof what === 'object') playStage(what.s, what.d);
     } else {
       const st = document.getElementById('lockStatus');
       if (st) st.textContent = r === 'failed' ? '広告を読み込めませんでした。時間をおいてもう一度お試しください。' : '広告を最後まで見ると遊べます。';
@@ -2203,11 +2307,13 @@ function startDaily() {
   const key = todayKey();
   if (dailyInProgress()) { show(playEl); return; }   // 途中の盤をそのまま続ける
   pendA = pendB = pendW = pendH = DAILY_SIZE;
-  pendTypes = DAILY_TYPES;
+  pendDiff = DAILY_DIFF;
   pendCustom = false;
   if (W !== DAILY_SIZE || H !== DAILY_SIZE) { W = H = DAILY_SIZE; SIZE = W * H; buildDom(); }
   forcedAbilities = null;
   types = DAILY_TYPES;
+  scrambleN = DAILY_MOVES;
+  curDiff = DAILY_DIFF;
   newPuzzle(dailySeed(key), key);
   show(playEl);
 }
@@ -2217,7 +2323,7 @@ function startDaily() {
 let dailyGoalCache = null;
 function dailyGoal(key) {
   if (!dailyGoalCache || dailyGoalCache.key !== key) {
-    dailyGoalCache = { key, goal: stageGoalPreview(DAILY_SIZE, DAILY_TYPES, dailySeed(key), true) };
+    dailyGoalCache = { key, goal: stageGoalPreview(DAILY_SIZE, DAILY_DIFF, dailySeed(key), true) };
   }
   return dailyGoalCache.goal;
 }
@@ -2244,7 +2350,7 @@ function renderDailyCard() {
   title.textContent = '今日の 1 問';
   const date = document.createElement('span');
   date.className = 'stage-meta';
-  date.textContent = `${m}月${d}日・5×5・4 種（全ブロックから）`;
+  date.textContent = `${m}月${d}日・5×5・${DAILY_MOVES} 手・${DAILY_TYPES} 種（全ブロックから）`;
   const state = document.createElement('span');
   state.className = 'stage-stars';
   state.textContent = rec
@@ -2287,15 +2393,18 @@ function renderStageList() {
   dsec.append(renderDailyCard());
   stageListEl.append(dsec);
 
-  for (const s of SIZES) {
-    const ks = TYPE_COUNTS.filter((k) => typeAvailable(s, s, k));
-    if (!ks.length) continue;
-
+  for (const s of STAGE_SIZES) {
     const sec = document.createElement('div');
     sec.className = 'stage-size';
     const head = document.createElement('h2');
     head.className = 'stage-size-head';
     head.append(`${s}×${s}`);
+    if (s === 3) {
+      const tag = document.createElement('span');
+      tag.className = 'stage-legacy';
+      tag.textContent = 'れんしゅう';
+      head.append(tag);
+    }
     if (clears[s]) {
       const legacy = document.createElement('span');
       legacy.className = 'stage-legacy';
@@ -2305,19 +2414,21 @@ function renderStageList() {
 
     const row = document.createElement('div');
     row.className = 'stage-row';
-    for (const k of ks) {
-      const st = stageFor(s, k);
+    for (let d = 0; d < DIFFS.length; d++) {
+      const def = stageDef(s, d);
+      const st = stageFor(s, d);
 
       const item = document.createElement('button');
       item.type = 'button';
       item.className = 'stage-item';
       item.dataset.s = String(s);
-      item.dataset.k = String(k);
-      const locked = !Entitlement.stageOpen(s, k);
-      const resume = !locked && inProgress(s, k);
+      item.dataset.d = String(d);
+      const locked = !Entitlement.stageOpen(s, d);
+      const resume = !locked && inProgress(s, d);
       if (resume) item.classList.add('resume');
       if (locked) item.classList.add('locked');
-      item.setAttribute('aria-label', locked ? `${s}×${s}、${k} 種、完全版で遊べます` : `${s}×${s}、${k} 種、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
+      const name = `${s}×${s}、${DIFFS[d]}（${def.n} 手・${def.k} 種）`;
+      item.setAttribute('aria-label', locked ? `${name}、完全版で遊べます` : `${name}、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -2327,12 +2438,12 @@ function renderStageList() {
       mini.style.setProperty('--ny', s);
       mini.style.setProperty('--cell', `${cell}px`);
       mini.style.setProperty('--gap', `${stageGapPx(cell)}px`);
-      if (stageObserver) { stageMiniPending.set(mini, { s, k }); stageObserver.observe(mini); }
-      else buildStageMini(mini, s, goalForStage(s, k, st));
+      if (stageObserver) { stageMiniPending.set(mini, { s, d }); stageObserver.observe(mini); }
+      else buildStageMini(mini, s, goalForStage(s, d, st));
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
-      meta.textContent = `${k} 種`;
+      meta.textContent = `${DIFFS[d]}・${def.n} 手`;
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
@@ -2363,16 +2474,17 @@ stageListEl.addEventListener('click', (e) => {
   const item = e.target.closest('.stage-item');
   if (!item || item.classList.contains('daily-item')) return;   // 今日の 1 問は自分のハンドラで始める
   const s = Number(item.dataset.s);
-  const k = Number(item.dataset.k);
-  if (!Entitlement.stageOpen(s, k)) { openLockSheet({ s, k }); return; }
-  playStage(s, k);
+  const d = Number(item.dataset.d);
+  if (!stageDef(s, d)) return;
+  if (!Entitlement.stageOpen(s, d)) { openLockSheet({ s, d }); return; }
+  playStage(s, d);
 });
 
-function playStage(s, k) {
-  const st = stageFor(s, k);
-  if (inProgress(s, k)) { show(playEl); return; }   // 途中の盤をそのまま続ける
+function playStage(s, d) {
+  const st = stageFor(s, d);
+  if (inProgress(s, d)) { show(playEl); return; }   // 途中の盤をそのまま続ける
   pendA = pendB = pendW = pendH = s;
-  pendTypes = k;
+  pendDiff = d;
   pendCustom = false;
   seedInEl.value = String(st.seed);
   startFromPending();
@@ -2575,7 +2687,7 @@ function endTutorial() {
   hintBtnEl.classList.remove('tut-glow');
   for (const b of tutHiddenEls) b.hidden = false;
   W = H = 4; SIZE = 16; buildDom();
-  types = 2;
+  types = STAGE_TABLE[4][0].k; scrambleN = STAGE_TABLE[4][0].n; curDiff = 0;
   newPuzzle();
 }
 

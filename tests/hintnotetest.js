@@ -1,7 +1,7 @@
 // ヒントに添える「残り何手か」の出し方の検証。
 //
-// 残りの手数は、実際に探して見つけた手順のときだけ意味がある。
-// 保険の手順（シャッフルをそのまま逆再生するもの）は 1 万手を超えることがあり、
+// 残りの手数は、短い手順のときだけ意味がある（HINT_SHOW_MAX 以下）。
+// 手数を決めて混ぜた盤の答えは短いので手数を出す。そうでない盤の保険の手順は 1 万手を超えることがあり、
 // それを「残り 18317 手」と出しても遊ぶ人には何の情報でもない。
 const __root = require('path').join(__dirname, '..');
 let fail = 0;
@@ -9,8 +9,11 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 const note = () => logEl.textContent;
 const bigNumber = (s) => (s.match(/\d+/g) || []).map(Number).find((n) => n >= 1000);
 
-W = H = 5; SIZE = 25; buildDom(); types = 3; newPuzzle(2);
+useStageSetup(5, 1); newPuzzle(2);
 requestSolve();
+const shortRuns = activeRuns().map((r) => ({ ...r }));   // 混ぜた手順の逆（短い）
+// 手数を決めずに混ぜた盤の保険の手順を模した、長すぎる手順（中身は文言の確認にしか使わない）
+const longRuns = Array.from({ length: 400 }, (_, q) => ({ i: q % 2, n: 1, order: 2 }));
 
 console.log('探して見つけた手順のとき');
 {
@@ -30,11 +33,22 @@ console.log('探して見つけた手順のとき');
   console.log(`  最短と確定できない: 「${note()}」`);
 }
 
-console.log('\n保険の手順しか無いとき（数字を出さない）');
+console.log('\n混ぜた手順の逆だけでも、短いので手数を出す');
 {
-  const runs = activeRuns();
+  solution = shortRuns.map((r) => ({ ...r }));
+  hintPlan = null;
+  hintBusy = true;
+  blinkHint();
+  ok(/残り \d+ 手/.test(note()) && note().includes('最短とはかぎりません'), `混ぜた手順の逆で手数が出ない: ${note()}`);
+  ok(note().includes('光っているマス'), `押す場所の案内が消えている: ${note()}`);
+  console.log(`  探索中でも: 「${note()}」`);
+}
+
+console.log('\n長すぎる保険の手順のときは数字を出さない');
+{
+  solution = longRuns.map((r) => ({ ...r }));
+  hintPlan = null;
   // まだ裏で探している
-  hintPlan = { runs, optimal: false, ms: 1, method: 'reverse' };
   hintBusy = true;
   blinkHint();
   ok(!/残り|最短/.test(note()), `意味のない手数を出している: ${note()}`);
@@ -50,6 +64,7 @@ console.log('\n保険の手順しか無いとき（数字を出さない）');
   console.log(`  見つからず: 「${note()}」`);
 
   // 手順そのものがまだ無いとき
+  solution = [];
   hintPlan = null;
   blinkHint();
   ok(!/残り|最短/.test(note()), `手順が無いのに手数を出している: ${note()}`);
@@ -58,13 +73,14 @@ console.log('\n保険の手順しか無いとき（数字を出さない）');
 
 console.log('\n探し直しで見つかったら、出したままの案内を新しくする');
 {
-  hintPlan = { runs: activeRuns(), optimal: false, ms: 1, method: 'reverse' };
+  solution = longRuns.map((r) => ({ ...r }));
+  hintPlan = null;
   hintBusy = true;
   blinkHint();
   const before = note();
   ok(before.includes('探しています'), '前提が崩れている');
   // 裏の探索が短い手順を持って返ってきた場面を作る
-  hintPlan = { runs: activeRuns(), optimal: false, ms: 1, method: 'constructive' };
+  hintPlan = { runs: shortRuns.map((r) => ({ ...r })), optimal: false, ms: 1, method: 'constructive' };
   finishSolve(solveId, null, false);
   ok(note() !== before, '見つかったのに案内が古いまま');
   ok(note().includes('見つかりました'), `知らせが出ない: ${note()}`);
@@ -74,14 +90,15 @@ console.log('\n探し直しで見つかったら、出したままの案内を�
   ok(slots.filter((s) => s._cls.has('hinted')).length <= 1, '点滅が増えている');
 }
 
-console.log('\n実際の難しい盤で、1000 を超える数字を出さない');
-for (const [w, h, k, s] of [[8, 8, 7, 5], [10, 10, 8, 3], [10, 10, 10, 1]]) {
-  W = w; H = h; SIZE = w * h; buildDom(); types = k; newPuzzle(s);
+console.log('\n大きい盤でも、手数を決めて混ぜた盤は短い手数を出す');
+for (const [w, d, s] of [[8, 2, 5], [7, 2, 3], [8, 1, 1]]) {
+  useStageSetup(w, d); newPuzzle(s);
   hintPlan = null;
   showHint();
   const n = bigNumber(note());
-  ok(n === undefined, `${w}×${h} ${k} 色: ${n} という数字を出している → ${note()}`);
-  console.log(`  ${w}×${h} ${k} 色: 「${note()}」`);
+  ok(n === undefined, `${w}×${w} ${DIFFS[d]}: ${n} という数字を出している → ${note()}`);
+  ok(/残り \d+ 手/.test(note()), `${w}×${w} ${DIFFS[d]}: 手数が出ない → ${note()}`);
+  console.log(`  ${w}×${w} ${DIFFS[d]}: 「${note()}」`);
 }
 
 console.log(fail === 0 ? '\nヒントの案内: 全チェック通過' : `\n失敗 ${fail} 件`);

@@ -7,7 +7,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   Entitlement._override(null);
   ok(!Entitlement.locksActive(), 'テスト環境で鍵が効いている');
   ok(Entitlement.isFull(), '鍵が効かない場所が完全版でない');
-  ok(Entitlement.stageOpen(10, 13) && Entitlement.stageOpen(3, 2) && Entitlement.customOpen(), '鍵が効かない場所に閉じたものがある');
+  ok(Entitlement.stageOpen(8, 2) && Entitlement.stageOpen(3, 0) && Entitlement.customOpen(), '鍵が効かない場所に閉じたものがある');
   ok(ABILITIES.every((ab) => Entitlement.blockOpen(ab.id)), '鍵が効かない場所でブロックが閉じている');
   ok(Entitlement.poolTag() === 'all', '印が all でない');
   console.log('  鍵が効かない場所では全部開いている  OK');
@@ -17,9 +17,16 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 {
   Entitlement._override({ locks: true, full: false });
   ok(Entitlement.locksActive() && !Entitlement.isFull(), '無料版にならない');
-  for (let s = 3; s <= 10; s++) for (let k = 2; k <= 13; k++) {
-    const want = s <= 6 && k <= 4;
-    ok(Entitlement.stageOpen(s, k) === want, `${s}×${s} / ${k} 種の判定が違う`);
+  // 無料: 3×3（練習）、4×4・5×5 のすべて、6×6 のやさしい。完全版: 6×6 のふつう・むずかしい、7×7、8×8
+  for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
+    const want = s <= 5 || (s === 6 && d === 0);
+    ok(Entitlement.stageOpen(s, d) === want, `${s}×${s} / ${DIFFS[d]} の判定が違う`);
+  }
+  ok(Entitlement.stageOpen(6, 0) && !Entitlement.stageOpen(6, 1) && !Entitlement.stageOpen(6, 2), '6×6 の境目が違う');
+  ok(Entitlement.stageOpen(5, 2) && Entitlement.stageOpen(3, 0) && !Entitlement.stageOpen(7, 0) && !Entitlement.stageOpen(8, 0), '大きさの境目が違う');
+  // どの無料ステージも、無料のブロックだけで盤が作れる（表の種類数が無料ブロックの数 7 以下）
+  for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
+    if (Entitlement.stageOpen(s, d)) ok(stageDef(s, d).k <= Entitlement.FREE_BLOCKS.length, `${s}×${s} / ${DIFFS[d]} が無料のブロック数を超える`);
   }
   ok(!Entitlement.customOpen(), 'カスタムが開いている');
   const free = ABILITIES.filter((ab) => Entitlement.blockOpen(ab.id)).map((ab) => ab.id).sort().join();
@@ -28,24 +35,24 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  無料の範囲の判定  OK');
 
   // ランダム選びが無料のブロックに収まる（盤・種類数をいろいろ）
-  for (const [s, k] of [[3, 2], [4, 3], [5, 4], [6, 4], [3, 4]]) {
-    W = H = s; SIZE = s * s; buildDom(); forcedAbilities = null; types = k;
+  for (const [s, d] of [[3, 0], [4, 1], [5, 2], [6, 0], [3, 2], [5, 0]]) {
+    useStageSetup(s, d);
     for (let t = 0; t < 8; t++) {
       generate(1000 + t * 7919);
       const bad = [...new Set(tileAbility)].filter((a) => !Entitlement.blockOpen(ABILITIES[a].id));
-      ok(!bad.length, `${s}×${s} / ${k} 種で無料外のブロックが出た: ${bad}`);
+      ok(!bad.length, `${s}×${s} / ${DIFFS[d]} で無料外のブロックが出た: ${bad}`);
     }
   }
   console.log('  ブロックの選び方が無料の範囲に収まる  OK');
 
   // 保存したゴールのブロックの範囲の印が違えば作り直す
-  W = H = 4; SIZE = 16; buildDom(); forcedAbilities = null; types = 3;
+  useStageSetup(4, 1);
   const st = { seed: 12345, clears: 0 };
   Entitlement._override({ locks: true, full: true });
-  const full = goalForStage(4, 3, st);
+  const full = goalForStage(4, 1, st);
   ok(st.pool === 'all', 'all の印が付かない');
   Entitlement._override({ locks: true, full: false });
-  const freeGoal = goalForStage(4, 3, st);
+  const freeGoal = goalForStage(4, 1, st);
   ok(st.pool === 'free', 'free の印に変わらない');
   ok([...new Set(freeGoal)].every((a) => Entitlement.blockOpen(ABILITIES[a].id)), '作り直したゴールが無料の範囲に収まらない');
   ok(full.length === freeGoal.length, 'ゴールの長さが違う');
@@ -53,22 +60,22 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 
   // 鍵つきのステージの絵は全ブロックで作る（買ったあとも同じ絵のまま遊べる）
   const lockedSt = { seed: 777, clears: 0 };
-  const lockedGoal = goalForStage(7, 6, lockedSt);
+  const lockedGoal = goalForStage(7, 1, lockedSt);
   ok(lockedSt.pool === 'all', '鍵つきのステージが all の印にならない');
   let paid = false;
   for (let t = 0; t < 6 && !paid; t++) {
-    const g = goalForStage(7, 6, { seed: 5000 + t, clears: 0 });
+    const g = goalForStage(7, 1, { seed: 5000 + t, clears: 0 });
     paid = g.some((a) => !Entitlement.FREE_BLOCKS.includes(ABILITIES[a].id));
   }
   ok(paid, '鍵つきのステージの絵に完全版のブロックが出ない');
   Entitlement._override({ locks: true, full: true });
-  ok(goalForStage(7, 6, lockedSt).join() === lockedGoal.join(), '買ったあとに鍵つきのステージの絵が変わる');
+  ok(goalForStage(7, 1, lockedSt).join() === lockedGoal.join(), '買ったあとに鍵つきのステージの絵が変わる');
   Entitlement._override({ locks: true, full: false });
   console.log('  鍵つきのステージの絵は全ブロック  OK');
 
   // 完全版にすると全部開く
   Entitlement._override({ locks: true, full: true });
-  ok(Entitlement.stageOpen(10, 13) && Entitlement.customOpen() && Entitlement.blockOpen('ringCW'), '完全版で開かない');
+  ok(Entitlement.stageOpen(8, 2) && Entitlement.stageOpen(6, 1) && Entitlement.customOpen() && Entitlement.blockOpen('ringCW'), '完全版で開かない');
   let called = 0;
   Entitlement.onChange(() => { called++; });
   Entitlement.setFull(true);

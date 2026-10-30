@@ -2,10 +2,14 @@ let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 const el = (id) => document.getElementById(id);
 
-// 最短と確定できる盤面では「最短」と出る
-W = H = 4; SIZE = 16; buildDom(); types = 2; newPuzzle(3);
+// 最短と確定できる盤面では「最短」と出る。
+// 最初のヒントは、混ぜた手順の逆の次の 1 手をすぐ光らせる（探索を待たない）。探索が最短と確かめたあとの
+// ヒントから「最短」と出る。
+useStageSetup(4, 0); newPuzzle(3);
 showHint();
+ok(slots.some((s) => s._cls.has('hinted')), '最初のヒントがすぐ光らない');
 ok(hintPlan && hintPlan.optimal, '4×4 2 色で最短が出ていない');
+showHint();
 ok(el('log').textContent.includes('最短'), `表示: ${el('log').textContent}`);
 ok(!el('log').textContent.includes('かぎりません'), '最短なのに但し書きが出ている');
 console.log(`  最短が確定した場合: 「${el('log').textContent}」`);
@@ -19,22 +23,18 @@ console.log(`  最短が確定した場合: 「${el('log').textContent}」`);
   console.log('  ヒントを押すたびに今の盤面から計算し直す: OK');
 }
 
-// 確定できない盤面では但し書きが出る
+// 確定できない盤面では但し書きが出る（手数は短い手順なので出す）
 {
-  W = H = 8; SIZE = 64; buildDom(); types = 7; newPuzzle(5);
+  useStageSetup(8, 2); newPuzzle(5);
   showHint();
-  ok(hintPlan !== null, '大きい盤で手順が出ない');
-  // 出方は 3 通りある。探して見つけた手順なら手数を出し、保険の手順（逆手順）しか
-  // 無いときは手数を出さない。1 万手を超える数字は遊ぶ人には意味がないため。
-  if (hintPlan && hintPlan.method === 'reverse') {
-    ok(!/残り \d+ 手|最短 \d+ 手/.test(el('log').textContent),
-       `保険の手順なのに手数を出している: ${el('log').textContent}`);
-    console.log(`  保険の手順しか無い場合: 「${el('log').textContent}」`);
-  } else if (hintPlan && !hintPlan.optimal) {
-    ok(el('log').textContent.includes('かぎりません'), `表示: ${el('log').textContent}`);
-    console.log(`  最短と確定できない場合: 「${el('log').textContent}」`);
-  } else {
+  ok(planCost(activeRuns()) > 0 && planCost(activeRuns()) <= scrambleN, '大きい盤で手順が出ない');
+  showHint();
+  const t = el('log').textContent;
+  if (hintPlan && hintPlan.optimal && activeRuns() === hintPlan.runs) {
     console.log('  （この盤面はたまたま最短が確定した）');
+  } else {
+    ok(/残り \d+ 手/.test(t) && t.includes('かぎりません'), `表示: ${t}`);
+    console.log(`  最短と確定できない場合: 「${t}」`);
   }
 }
 console.log(fail === 0 ? '手順の質の表示: 全チェック通過' : `失敗 ${fail} 件`);

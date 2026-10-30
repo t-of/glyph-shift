@@ -17,9 +17,8 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 
 // クリア表示と perfect の記録（par を直接与える）
 {
-  const s = 5, k = 3;
-  W = H = s; SIZE = s * s; buildDom();
-  forcedAbilities = null; types = k;
+  const s = 5, k = 0;
+  useStageSetup(s, k);
   const st = stageFor(s, k);
   newPuzzle(st.seed);
   const before = st.perfect || 0;
