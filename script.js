@@ -2107,9 +2107,17 @@ function setPanel(key, open) {
     PANELS[key].onOpen?.();
     PANELS[key].close.focus();
   } else {
-    PANELS[key].btn.focus();
+    (panelOpener && !panelOpener.closest('[hidden]') ? panelOpener : PANELS[key].btn).focus();
+    panelOpener = null;
   }
 }
+// ホームの「設定」から開いたときは、閉じたらそのボタンへ戻す（右上のメニューはホームでは隠れている）
+let panelOpener = null;
+document.getElementById('homeConfigBtn').addEventListener('click', (e) => {
+  panelOpener = e.currentTarget;
+  setPanelTab('config');
+  setPanel('panel', true);
+});
 
 for (const [key, p] of Object.entries(PANELS)) {
   p.btn.addEventListener('click', () => {
