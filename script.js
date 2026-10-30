@@ -2609,16 +2609,13 @@ function renderDailyCard() {
   const title = document.createElement('span');
   title.className = 'daily-title';
   title.textContent = L('今日の 1 問', 'Daily puzzle');
-  const date = document.createElement('span');
-  date.className = 'stage-meta';
-  date.textContent = L(`${m}月${d}日・5×5`, `${monthDayEn(m, d)} · 5×5`);
   const state = document.createElement('span');
   state.className = 'stage-stars';
   state.textContent = dailyIsCleared(rec)
     ? L(`クリア${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`, `cleared${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`)
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
     : resume || (rec && rec.ms > 0) ? L('途中', 'in progress') : L('未挑戦', 'not played');
-  body.append(title, date, state);
+  body.append(title, state);   // 日付と大きさは出さない（2026-10-30 オーナー。読み上げには残す）
   const streak = dailyStreak(daily, key);
   if (streak >= 2) {
     const sk = document.createElement('span');
