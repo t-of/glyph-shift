@@ -31,11 +31,8 @@ ok(locked, '揃ったのにロックされていない');
 ok(el('log')._cls.has('done'), '完成の知らせが出ていない');
 ok(el('log').textContent.includes('自動で揃えました'), `表示: ${el('log').textContent}`);
 ok(gridEl._cls.has('cleared'), '盤面の完成演出が付いていない');
-// 揃っても操作バーは残す（戻って見直せるようにするため）。閉じるのは「やめる」。
-ok(!autoSolving && el('autoBar').hidden, '揃ったのに解説のまま／再生のバーが出ている（バーは出さない。2026-10-30）');
-ok(el('autoBack').disabled === false, '揃ったあとに「戻す」が押せない');
-el('autoStop').fire('click', {});
-ok(!autoSolving && el('autoBar').hidden, '「やめる」で閉じない');
+// 揃ったら解説は終わる（再生のバーは無い。2026-10-30）
+ok(!autoSolving, '揃ったのに解説のまま');
 ok(board.some((v, i) => v !== boardBefore[i]), '盤面が動いていない');
 console.log('  承諾すると順に動いて揃い、自動で揃えたと表示される: OK');
 
@@ -67,7 +64,7 @@ console.log(`  自力クリアでは手数が出る: 「${el('log').textContent}
   el('solveBtn').fire('click', {});
   newPuzzle(6);
   ok(el('confirmOverlay').hidden, '新しい盤面にしても確認が残っている');
-  ok(!autoSolving && el('autoBar').hidden, '新しい盤面にしても再生中のまま');
+  ok(!autoSolving, '新しい盤面にしても再生中のまま');
   ok(autoSolvedFlag === false, '自動で揃えた印が残っている');
   console.log('  新しい盤面で状態がリセットされる: OK');
 }

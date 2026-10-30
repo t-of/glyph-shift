@@ -112,12 +112,6 @@ const I18n = (() => {
     confirmText: 'The board will move until it matches the goal.<br>You won\'t be able to solve this board yourself.',
     cancel: 'Cancel',
     confirmYes: 'Solve',
-    transport: 'Solution playback',
-    stepBack: 'Back one move',
-    pause: 'Pause',
-    stepNext: 'Forward one move',
-    autoText: 'Solving…',
-    quit: 'Stop',
   };
 
   // index.html の data-i18n* を英語に替える。日本語のときは何もしない（HTML がそのまま日本語）

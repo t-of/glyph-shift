@@ -1216,18 +1216,6 @@ function fire(i, dir = 1) {
 }
 
 
-// 完成の知らせ。盤面を隠さないよう、全画面では出さない。
-// 揃った表示を解く。解説で揃ったところから戻るときに使う。
-function unClear() {
-  locked = false;
-  gridEl.classList.remove('cleared');
-  logEl.classList.remove('done');
-  setClearBar(false);
-  logEl.textContent = readyLine();
-  shareBtnEl.hidden = true;
-  clearPending = null;
-}
-
 // クリアの行。手数も★の評価も出さない（2026-10-30 オーナー）。揃ったことは盤の光と音で見せる。
 // 引数は前のまま（呼ぶ側を変えない）。par・★は記録には残るが、画面には出さない。
 const DAILY_REVEALED_LINE = L('解説を見た', 'Solution viewed');
@@ -1360,15 +1348,13 @@ document.getElementById('clearHomeBtn').addEventListener('click', goHome);
 
 // ---- 解説（自動で揃える） ----
 // 手順どおりに 1 手ずつ押していく。1 手ごとに手順を読み直すので、
-// 途中で解き直しが入っても破綻しない。
-// 勝手に進むだけでなく、止めて 1 手ずつ進める・戻すこともできる。
+// 途中で解き直しが入っても破綻しない。止める・戻す操作は無く、最後まで自動で進む（2026-10-30 オーナー）。
+// 止めるのは Esc か、ホームへ戻ったときだけ。
 let autoSolving = false;   // 解説を開いているか
-let autoPlaying = false;   // そのうち、勝手に進んでいるか
+let autoPlaying = false;   // 勝手に進んでいるか（始める前の手順の計算中は false）
 let autoStep = null;        // 始めるときに決めた進め方 { interval, chunk }
 let autoSolvedFlag = false;
 let autoTimer = null;
-const autoHist = [];        // 解説のあいだに進めた手。戻すときに逆から取り出す
-let autoMoves0 = 0;         // 解説を開いたときの手数。全部戻したらここへ返す
 
 // 1 手ずつ見せられる上限。これを超える手順は一気に揃える。
 // 混ぜ切った大きい盤では、保険の手順が数千〜数万手になることがあるため。
@@ -1421,11 +1407,6 @@ function closeConfirm() {
   confirmReturn = null;
   if (wasOpen && back && back.isConnected !== false && typeof back.focus === 'function') back.focus();
 }
-const autoBarEl = document.getElementById('autoBar');
-const autoTextEl = document.getElementById('autoText');
-const autoBackEl = document.getElementById('autoBack');
-const autoPlayEl = document.getElementById('autoPlay');
-const autoNextEl = document.getElementById('autoNext');
 
 function askAutoSolve() {
   if (autoSolving || locked) return;
@@ -1454,31 +1435,25 @@ function askRegenerate() {
     L('作る', 'Make'), () => { closeConfirm(); newPuzzle(); });
 }
 
+const AUTO_THINKING = L('手順を計算しています…', 'Working out the moves…');
 function startAutoSolve() {
   closeConfirm();
   if (autoSolving || locked) return;
   // 手順の計算が終わるまで入力を受けないよう、先に解説モードに入る
   autoSolving = true;
   autoPlaying = false;
-  autoHist.length = 0;
-  autoMoves0 = moves;
-  // 再生・一時停止・1 手ずつのバーは出さない。最後まで自動で動かす（2026-10-30 オーナー）。Esc で止まる
-  autoBarEl.classList.add('paused');
-  autoBackEl.disabled = true;
-  autoNextEl.disabled = true;
-  autoPlayEl.disabled = true;
   const go = () => {
     if (!autoSolving) return;              // 計算中に「やめる」を押した
     if (locked || isSolved()) { stopAutoSolve(); return; }
     // 手順がまったく無いときだけは、そのまま完成形へ動かす
     if (!activeRuns().length) { stopAutoSolve(); autoSolvedFlag = true; snapToGoal(); return; }
     autoStep = autoPace(planCost(activeRuns()));
-    autoPlayEl.disabled = false;
+    if (logEl.textContent === AUTO_THINKING) logEl.textContent = '';
     playAuto();
   };
   // 使える短い手順がもうあれば、探索の終わりを待たずにそれで始める（裏の探索はそのまま続く）
   if (activeRuns().length && planCost(activeRuns()) <= HINT_SHOW_MAX) { go(); return; }
-  autoTextEl.textContent = L('手順を計算しています…', 'Working out the moves…');
+  logEl.textContent = AUTO_THINKING;   // 手順の計算に時間がかかる盤だけ、盤の下に出す
   requestSolve(go, true);
 }
 
@@ -1494,7 +1469,6 @@ function advanceAuto(count, slide) {
       const dir = r.n <= r.order - r.n ? 1 : -1;
       const ab = abilityAt(r.i);
       if (!applyMoveState(r.i, dir)) break;
-      autoHist.push([r.i, dir]);
       last = { i: r.i, dir, ab };
     }
   }, slide);
@@ -1506,70 +1480,15 @@ function advanceAuto(count, slide) {
   return last;
 }
 
-// 解説のあいだに進めた手を 1 つ取り消す。押した手はいつでも逆に打てるので、
-// 逆向きに打ち直すだけでよい（手数も差し引きで元に戻る）。
-function undoAuto() {
-  if (!autoSolving || !autoHist.length) return;
-  pauseAuto();
-  if (locked) unClear();      // 揃ったところから戻る。完成の表示も解く
-  const [i, dir] = autoHist.pop();
-  const ab = abilityAt(i);            // 押したマスは動かないので前後で変わらない
-  animatePlacement(() => applyMoveState(i, -dir), 300);
-  flashSlot(i, -dir);
-  Sfx.move(ab, -dir);
-  if (!autoHist.length) {
-    // 解説を開く前と同じ盤面に戻った。手数もそこへ返す。
-    // （手数は「同じマスを続けて押したぶん」を差し引いて数えるので、
-    //   進めて戻すと往復ぶんが残ってしまう。解説の操作は player の手数ではない。）
-    autoSolvedFlag = false;
-    commitRun();
-    moves = autoMoves0;
-    run = { i: -1, d: 0, order: 1 };
-  }
-  markAuto();
-}
-
-// 1 手だけ進める
-function nextAuto() {
-  if (!autoSolving || locked || isSolved()) return;
-  pauseAuto();
-  advanceAuto(1, 300);
-  if (isSolved()) { showClear(); return; }
-  markAuto();
-}
-
 function playAuto() {
   if (!autoSolving || locked || isSolved()) return;
   autoPlaying = true;
-  markAuto();
   stepAuto();
 }
 
 function pauseAuto() {
   autoPlaying = false;
   if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-  markAuto();
-}
-
-const toggleAuto = () => (autoPlaying ? pauseAuto() : playAuto());
-
-// ボタンの出方と案内の文字を、今の状態に合わせる
-function markAuto() {
-  if (!autoSolving) return;
-  autoBarEl.classList.toggle('paused', !autoPlaying);
-  const playLabel = autoPlaying ? L('一時停止', 'Pause') : L('再生', 'Play');
-  autoPlayEl.setAttribute('aria-label', playLabel);
-  autoPlayEl.title = playLabel;
-  autoBackEl.disabled = !autoHist.length;
-  const done = locked || isSolved() || !activeRuns().length;
-  autoNextEl.disabled = done;
-  autoPlayEl.disabled = done;
-  const left = planCost(activeRuns());
-  autoTextEl.textContent = done
-    ? (isSolved() ? L('そろいました — 戻って見直せます', 'Solved — step back to review') : L('進める手がありません', 'No more moves'))
-    : autoPlaying
-      ? L(`揃えています… 残り ${left} 手`, `Solving… ${movesEn(left)} to go`)
-      : L(`止まっています — 残り ${left} 手`, `Paused — ${movesEn(left)} to go`);
 }
 
 function stepAuto() {
@@ -1586,7 +1505,6 @@ function stepAuto() {
   // まとめて動かすときは滑らせない（途中の隙間が目立つうえ、追えもしない）。
   advanceAuto(chunk, chunk <= 3 ? Math.min(300, Math.round(interval * 0.75)) : 0);
   if (isSolved()) { showClear(); return; }
-  markAuto();
   autoTimer = setTimeout(stepAuto, interval);
 }
 
@@ -1600,9 +1518,8 @@ function stopAutoSolve() {
   autoSolving = false;
   autoPlaying = false;
   autoStep = null;
-  autoHist.length = 0;
   if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-  autoBarEl.hidden = true;
+  if (logEl.textContent === AUTO_THINKING) logEl.textContent = '';
 }
 
 // 新しい盤面が出るときの入り。transform を使うが、手を打てば
@@ -2153,10 +2070,6 @@ document.getElementById('panelNew').addEventListener('click', () => {
 });
 confirmYesEl.addEventListener('click', () => { const a = confirmAction; if (a) a(); });
 document.getElementById('confirmNo').addEventListener('click', closeConfirm);
-document.getElementById('autoStop').addEventListener('click', stopAutoSolve);
-autoBackEl.addEventListener('click', undoAuto);
-autoPlayEl.addEventListener('click', toggleAuto);
-autoNextEl.addEventListener('click', nextAuto);
 
 // ---- パネルの開閉 ----
 // 設定パネルとブロック説明パネルを同じ仕組みで扱う。片方を開くともう片方は閉じる。

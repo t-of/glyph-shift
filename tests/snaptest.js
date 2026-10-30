@@ -30,8 +30,6 @@ for (const [n, k, s, label] of [[4,3,3,'短い手順'], [10,10,1,'非常に長�
   const mid = seen[Math.floor(seen.length / 2)];
   ok(mid.some((v, i) => v !== i), `${n}×${n}: 途中で既に完成形になっている`);
   ok(mid.some((v, i) => v !== before[i]), `${n}×${n}: 途中で開始時のまま止まっている`);
-  // 手順の順番どおりに残りが減っている
-  ok(el('autoText').textContent.includes('残り') || isSolved(), '残り手数の表示が出ていない');
   console.log(`  ${n}×${n} ${k} 種（${label}・${cost} 手）: ${seen.length} 回に分けて順に完成`);
 }
 
