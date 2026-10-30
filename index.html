@@ -250,6 +250,12 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
 
   <!-- ホーム -->
   <main class="screen title" id="title" hidden>
+    <button id="homeConfigBtn" class="icon home-gear" type="button" data-i18n-aria="settings" aria-label="設定" title="設定">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+      </svg>
+    </button>
     <header class="title-head">
       <h1 class="title-name"><span class="wm" role="img" aria-label="ABILITILE"><span class="wm-ch" aria-hidden="true"><i>A</i></span><span class="wm-ch wm-on wm-t1" style="--c:#ffa289" aria-hidden="true"><i>B</i></span><span class="wm-ch" aria-hidden="true"><i>I</i></span><span class="wm-ch wm-press" aria-hidden="true"><i>L</i></span><span class="wm-ch wm-on wm-t2" style="--c:#fc9000" aria-hidden="true"><i>I</i></span><span class="wm-ch" aria-hidden="true"><i>T</i></span><span class="wm-ch" aria-hidden="true"><i>I</i></span><span class="wm-ch" aria-hidden="true"><i>L</i></span><span class="wm-ch wm-on wm-t3" style="--c:#65c77a" aria-hidden="true"><i>E</i></span></span></h1>
     </header>
@@ -259,7 +265,6 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
       <div class="home-links">
         <button id="homeCustomBtn" class="ghost-btn" type="button"><span data-i18n="homeCustom">カスタム</span><span class="lock-tag" id="customLock" hidden data-i18n="fullTag">完全版</span></button>
         <button id="homeHowtoBtn" class="ghost-btn" type="button" data-i18n="howto">遊び方</button>
-        <button id="homeConfigBtn" class="ghost-btn" type="button" data-i18n="settings">設定</button>
       </div>
     </section>
 

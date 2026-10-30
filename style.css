@@ -216,6 +216,8 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 /* 上の帯は遊ぶ画面だけ（ロゴだけ、アイコンなし）。起動画面・ホームでは帯ごと出さない（2026-10-30 オーナー） */
 body.no-rail { --rail-h: env(safe-area-inset-top); }
 body.no-rail .rail { display: none; }
+/* ホームの設定は右上の歯車（上の帯はホームでは出さないので、ここに置く） */
+.home-gear { position: absolute; top: calc(env(safe-area-inset-top) + 10px); right: max(12px, env(safe-area-inset-right)); z-index: 5; }
 /* ホームはアイコンを出さず、名前のロゴを真ん中に大きく */
 .title .title-name { font-size: min(40px, calc((100vw - 56px) / 10.4)); }
 .title-name .wm { font-size: inherit; }
