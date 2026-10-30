@@ -1985,8 +1985,10 @@ const PANELS = {
     el: document.getElementById('setup'),
     btn: document.getElementById('homeCustomBtn'),
     close: document.getElementById('setupClose'),
-    label: L('盤面の設定', 'board settings'),
+    label: L('カスタム', 'custom'),
     onOpen: syncSetup,
+    // 無料版は開かずに完全版の案内を出す（Web 版は鍵が無いので普通に開く）
+    gate: () => Entitlement.customOpen() || (openLockSheet('custom'), false),
   },
   panel: {
     el: document.getElementById('panel'),
@@ -2017,7 +2019,10 @@ function setPanel(key, open) {
 }
 
 for (const [key, p] of Object.entries(PANELS)) {
-  p.btn.addEventListener('click', () => setPanel(key, !isOpen(key)));
+  p.btn.addEventListener('click', () => {
+    if (!isOpen(key) && p.gate && !p.gate()) return;
+    setPanel(key, !isOpen(key));
+  });
   p.close.addEventListener('click', () => setPanel(key, false));
 }
 backdropEl.addEventListener('click', () => {
@@ -2043,11 +2048,9 @@ let pendCustom = false;
 let pendPicked = new Set();   // カスタムで選んだブロック
 
 const seedInEl = document.getElementById('seedIn');
-const sizeSegEl = document.getElementById('sizeSeg');
 const diffSegEl = document.getElementById('diffSeg');
 const diffNoteEl = document.getElementById('diffNote');
 const createBtnEl = document.getElementById('createBtn');
-const customChk = document.getElementById('customChk');
 const sideAEl = document.getElementById('sideA');
 const sideBEl = document.getElementById('sideB');
 const sizeNoteEl = document.getElementById('sizeNote');
@@ -2072,16 +2075,13 @@ function fillSeg(el, values, label) {
   }
 }
 
-// 難しさの説明（手数・種類数）。カスタムでは種類数は自分で選ぶので、手数だけ
+// 難しさの説明（ブロックの種類数だけ。手数は画面に出さない）。カスタムでは種類数は自分で選んだ数
 function refreshDiffSeg() {
   markSeg(diffSegEl, pendDiff);
   syncLocks();
-  if (pendCustom) {
-    diffNoteEl.textContent = L(`${movesFor(pendW, pendH, pendDiff)} 手ほど混ぜます。`, `Scrambles about ${movesFor(pendW, pendH, pendDiff)} moves.`);
-  } else {
-    const def = stageDef(pendW, pendDiff);
-    diffNoteEl.textContent = def ? L(`${def.n} 手ほど混ぜます。ブロックは ${def.k} 種類です。`, `Scrambles about ${def.n} moves with ${def.k} kinds of blocks.`) : '';
-  }
+  const def = stageDef(pendW, pendDiff);
+  const k = pendCustom ? pendPicked.size : def ? def.k : 0;
+  diffNoteEl.textContent = k ? L(`ブロック ${k} 種`, `${k} kinds of blocks`) : '';
 }
 
 // カスタムのブロック選び
@@ -2115,12 +2115,8 @@ function refreshPicker() {
 
 // カスタムの表示を切り替える
 function refreshCustom() {
-  document.getElementById('plainSize').hidden = pendCustom;
-  document.getElementById('customSize').hidden = !pendCustom;
-  document.getElementById('customBlocks').hidden = !pendCustom;
-  customChk.checked = pendCustom;
-  if (pendCustom) { applySides(); refreshPicker(); }
-  else markSeg(sizeSegEl, pendW);
+  applySides();
+  refreshPicker();
   refreshDiffSeg();
   createBtnEl.disabled = pendCustom && !customReady();
 }
@@ -2145,26 +2141,17 @@ function syncSetup() {
   pendW = W;
   pendH = H;
   pendDiff = curDiff;
-  pendCustom = W !== H || forcedAbilities !== null || !STAGE_SIZES.includes(W);
+  pendCustom = true;   // パネルはいつもカスタム
   pendPicked = new Set(forcedAbilities || [...new Set(tileAbility)]);
   seedInEl.value = '';
   refreshCustom();
 }
 
-fillSeg(sizeSegEl, STAGE_SIZES, (v) => `${v}×${v}`);
 fillSeg(diffSegEl, [0, 1, 2], (v) => DIFFS[v]);
 fillSeg(sideAEl, SIZES, (v) => String(v));
 fillSeg(sideBEl, SIZES, (v) => String(v));
 fillPicker();
 
-sizeSegEl.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (!b || b.disabled) return;
-  if (b.classList.contains('locked')) { openLockSheet(); return; }
-  pendA = pendB = pendW = pendH = Number(b.dataset.v);
-  markSeg(sizeSegEl, pendW);
-  refreshDiffSeg();
-});
 diffSegEl.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
@@ -2186,21 +2173,11 @@ pickerEl.addEventListener('click', (e) => {
   const k = Number(b.dataset.v);
   if (pendPicked.has(k)) pendPicked.delete(k); else pendPicked.add(k);
   refreshPicker();
+  refreshDiffSeg();
   createBtnEl.disabled = !customReady();
 });
-customChk.addEventListener('change', () => {
-  if (customChk.checked && !Entitlement.customOpen()) { customChk.checked = false; openLockSheet(); return; }
-  pendCustom = customChk.checked; refreshCustom();
-});
-
-// 設定パネルの鍵つき（無料の範囲の外）を押せなくして、印を付ける。カスタムの入口には鍵の札を出す。
+// 設定パネルの鍵つき（無料の範囲の外）を押せなくして、印を付ける。カスタムの入口（ホームのボタン）には鍵の札を出す。
 function syncLocks() {
-  // 大きさは、その大きさに無料で遊べる難しさが 1 つも無いときだけ鍵つき。難しさは、選んでいる大きさで判定する
-  for (const b of sizeSegEl.querySelectorAll('button')) {
-    const lk = !Entitlement.stageOpen(Number(b.dataset.v), 0);
-    b.classList.toggle('locked', lk);
-    b.setAttribute('aria-disabled', String(lk));
-  }
   for (const b of diffSegEl.querySelectorAll('button')) {
     const lk = pendCustom ? !Entitlement.customOpen() : !Entitlement.stageOpen(pendW, Number(b.dataset.v));
     b.classList.toggle('locked', lk);
@@ -2418,6 +2395,7 @@ const syncAdPrivacy = () => { adPrivacyEl.hidden = !Entitlement.adsActive(); };
 syncAdPrivacy();
 syncFullField();
 Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); });
+syncLocks();   // ホームの「カスタムで作る」の鍵の札を、起動時の状態に合わせる
 
 // ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）
 let rewardBusy = false;

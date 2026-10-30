@@ -72,31 +72,20 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
   <div class="panel-backdrop" id="panelBackdrop" hidden></div>
 
-  <aside class="panel" id="setup" aria-hidden="true" data-i18n-aria="setupTitle" aria-label="盤面の設定">
+  <aside class="panel" id="setup" aria-hidden="true" data-i18n-aria="setupTitle" aria-label="カスタム">
     <div class="panel-head">
-      <h2 data-i18n="setupTitle">盤面の設定</h2>
+      <h2 data-i18n="setupTitle">カスタム</h2>
       <button id="setupClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
     </div>
     <div class="setup-body">
-      <label class="switch">
-        <input type="checkbox" id="customChk">
-        <span data-i18n="custom">カスタム<span class="lock-tag" id="customLock" hidden>完全版</span></span>
-        <span class="switch-note" data-i18n="customNote">盤を長方形にして、使うブロックも自分で選ぶ</span>
-      </label>
-
-      <div class="field" id="plainSize">
-        <span class="label" data-i18n="size">サイズ</span>
-        <div class="seg" id="sizeSeg" role="group" data-i18n-aria="sizeAria" aria-label="盤のサイズ"></div>
-      </div>
-
-      <div class="field" id="customSize" hidden>
+      <div class="field" id="customSize">
         <span class="label" data-i18n="sideA">一辺</span>
         <div class="seg" id="sideA" role="group" data-i18n-aria="sideAAria" aria-label="辺の長さ"></div>
         <span class="label spaced" data-i18n="sideB">もう一辺</span>
         <div class="seg" id="sideB" role="group" data-i18n-aria="sideBAria" aria-label="もう一方の辺の長さ"></div>
         <p class="note" id="sizeNote"></p>
       </div>
-      <div class="field" id="customBlocks" hidden>
+      <div class="field" id="customBlocks">
         <span class="label" data-i18n="useBlocks">使うブロック</span>
         <div class="picker" id="blockPicker"></div>
         <p class="note" id="pickNote"></p>
@@ -106,11 +95,14 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <div class="seg" id="diffSeg" role="group" data-i18n-aria="difficulty" aria-label="難しさ"></div>
         <p class="note" id="diffNote"></p>
       </div>
-      <div class="field">
-        <span class="label">SEED</span>
-        <input id="seedIn" type="text" inputmode="numeric" data-i18n-ph="seedPh" placeholder="空ならランダム" aria-label="SEED">
-        <p class="note" data-i18n="seedNote">同じ SEED を入れると、同じ盤面がもう一度出ます。</p>
-      </div>
+      <details class="howto-more">
+        <summary data-i18n="advanced">詳しく</summary>
+        <div class="field">
+          <span class="label">SEED</span>
+          <input id="seedIn" type="text" inputmode="numeric" data-i18n-ph="seedPh" placeholder="空ならランダム" aria-label="SEED">
+          <p class="note" data-i18n="seedNote">同じ SEED を入れると、同じ盤面がもう一度出ます。</p>
+        </div>
+      </details>
     </div>
     <button id="createBtn" class="primary wide" type="button" data-i18n="create">この設定で作成</button>
   </aside>
@@ -298,7 +290,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <section class="home-pick">
       <div id="stageList" class="stage-list" role="group" data-i18n-aria="stages" aria-label="ステージ"></div>
       <div class="home-links">
-        <button id="homeCustomBtn" class="ghost-btn" type="button" data-i18n="homeCustom">カスタムで作る</button>
+        <button id="homeCustomBtn" class="ghost-btn" type="button"><span data-i18n="homeCustom">カスタムで作る</span><span class="lock-tag" id="customLock" hidden data-i18n="fullTag">完全版</span></button>
         <button id="homeHowtoBtn" class="ghost-btn" type="button" data-i18n="howto">遊び方</button>
       </div>
     </section>

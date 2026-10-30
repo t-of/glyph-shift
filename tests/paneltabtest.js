@@ -57,7 +57,7 @@ ok(onlyShown('config'), '端から ← キーで反対の端に回らない');
   ok(secConfig.includes('id="glyphSeg"'), '設定の区画に絵柄の選びが無い');
   ok(secConfig.includes('id="soundChk"'), '設定の区画に効果音が無い');
   ok(!setup.includes('id="glyphSeg"'), '盤面の設定にまだ絵柄が残っている');
-  ok(setup.includes('id="sizeSeg"') && setup.includes('id="createBtn"'), '盤面の設定から盤の項目が消えている');
+  ok(setup.includes('id="sideA"') && setup.includes('id="createBtn"'), '盤面の設定から辺の項目が消えている');
 }
 
 // 6. 読み方は選んでいる絵柄の説明になっている

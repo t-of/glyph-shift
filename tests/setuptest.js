@@ -16,7 +16,8 @@ const addBtns = (id, vals) => {
   }
   return made;
 };
-const sizeBtns = addBtns('sizeSeg', [4, 5, 6]);
+const aBtns = addBtns('sideA', [4, 5, 6]);
+const bBtns = addBtns('sideB', [4, 5, 6]);
 const diffBtns = addBtns('diffSeg', [0, 1, 2]);
 
 const before = { W, H, SIZE, types, scrambleN, board: [...board], tiles: [...tileAbility] };
@@ -28,7 +29,8 @@ document.getElementById('homeCustomBtn').fire('click', {});
 ok(same(board, before.board), 'パネルを開いただけで盤面が変わった');
 
 // 2. サイズを選んでも盤面は変わらない
-document.getElementById('sizeSeg').fire('click', { target: sizeBtns[6] });
+document.getElementById('sideA').fire('click', { target: aBtns[6] });
+document.getElementById('sideB').fire('click', { target: bBtns[6] });
 ok(W === before.W, `サイズ選択だけで W が変わった: ${W}`);
 ok(SIZE === before.SIZE, `サイズ選択だけで SIZE が変わった: ${SIZE}`);
 ok(same(board, before.board), 'サイズ選択だけで盤面が変わった');
@@ -40,16 +42,16 @@ ok(types === before.types && scrambleN === before.scrambleN, `難しさ選択だ
 ok(same(board, before.board), '難しさ選択だけで盤面が変わった');
 
 // 4. 選択はボタンの押下状態に反映されている
-ok(sizeBtns[6].getAttribute('aria-pressed') === 'true', 'サイズ 6 が選択表示になっていない');
-ok(sizeBtns[4].getAttribute('aria-pressed') === 'false', 'サイズ 4 の選択表示が残っている');
+ok(aBtns[6].getAttribute('aria-pressed') === 'true', '辺 6 が選択表示になっていない');
+ok(aBtns[4].getAttribute('aria-pressed') === 'false', '辺 4 の選択表示が残っている');
 ok(diffBtns[2].getAttribute('aria-pressed') === 'true', '難しさ「むずかしい」が選択表示になっていない');
 
 // 5. 「作成」を押すと反映される
 document.getElementById('seedIn').value = '4242';
 document.getElementById('createBtn').fire('click', {});
 ok(W === 6 && SIZE === 36, `作成後に反映されていない: W=${W} SIZE=${SIZE}`);
-ok(types === stageDef(6, 2).k && scrambleN === stageDef(6, 2).n, `作成後に types / 手数が反映されていない: ${types} / ${scrambleN}`);
-ok(new Set(tileAbility).size === stageDef(6, 2).k, `ブロック数が表と違う: ${new Set(tileAbility).size}`);
+ok(types === forcedAbilities.length && scrambleN === stageDef(6, 2).n, `作成後に types / 手数が反映されていない: ${types} / ${scrambleN}`);
+ok(new Set(tileAbility).size === types, `ブロック数が種類数と違う: ${new Set(tileAbility).size}`);
 ok(planCost(solution) <= scrambleN && planCost(solution) >= scrambleN - 2, `答えの手数が ${planCost(solution)}（混ぜた手数 ${scrambleN}）`);
 ok(board.length === 36, `盤面の大きさが ${board.length}`);
 ok(!isSolved(), '作成直後に完成している');
@@ -66,10 +68,11 @@ document.getElementById('createBtn').fire('click', {});
 ok(same(board, madeBoard) && same(tileAbility, madeTiles), '同じ SEED なのに違う盤面になった');
 
 // 8. パネルを開き直すと、選択は今の盤面の設定に戻っている
-document.getElementById('sizeSeg').fire('click', { target: sizeBtns[4] });
+document.getElementById('sideA').fire('click', { target: aBtns[4] });
+document.getElementById('sideB').fire('click', { target: bBtns[4] });
 document.getElementById('homeCustomBtn').fire('click', {});  // 閉じる
 document.getElementById('homeCustomBtn').fire('click', {});  // 開き直す
-ok(sizeBtns[6].getAttribute('aria-pressed') === 'true', '開き直したとき現在のサイズが選択されていない');
+ok(aBtns[6].getAttribute('aria-pressed') === 'true', '開き直したとき現在のサイズが選択されていない');
 ok(document.getElementById('seedIn').value === '', 'SEED 欄が空に戻っていない');
 
 console.log(fail === 0 ? '設定パネルの検証: 全チェック通過' : `失敗 ${fail} 件`);

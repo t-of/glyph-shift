@@ -59,16 +59,16 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log(`  3 種以下でも「何も起きない」が混ざる（${withBlank} / ${total} 盤）  OK`);
 }
 
-// 設定パネルの難しさ: 選んだ大きさの手数・種類数が説明に出る。カスタムは手数だけ
+// 設定パネルの難しさの説明: ブロックの種類数だけ（手数は出さない）。カスタムは選んだ数
 {
   setPanel('setup', true);
   pendA = pendB = pendW = pendH = 5; pendDiff = 2; pendCustom = false;
   refreshDiffSeg();
   const d5 = stageDef(5, 2);
-  ok(diffNoteEl.textContent.includes(`${d5.n} 手`) && diffNoteEl.textContent.includes(`${d5.k} 種`), `説明が「${diffNoteEl.textContent}」`);
-  pendCustom = true; pendW = 9; pendH = 7; pendDiff = 1;
+  ok(diffNoteEl.textContent.includes(`${d5.k} 種`) && !/\d+ 手/.test(diffNoteEl.textContent), `説明が「${diffNoteEl.textContent}」`);
+  pendCustom = true; pendW = 9; pendH = 7; pendDiff = 1; pendPicked = new Set([0, 1, 2, 3]);
   refreshDiffSeg();
-  ok(diffNoteEl.textContent.includes(`${movesFor(9, 7, 1)} 手`), `カスタムの説明が「${diffNoteEl.textContent}」`);
+  ok(diffNoteEl.textContent.includes('4 種') && !/\d+ 手/.test(diffNoteEl.textContent), `カスタムの説明が「${diffNoteEl.textContent}」`);
   ok(movesFor(10, 10, 2) === stageDef(8, 2).n && movesFor(3, 3, 0) === stageDef(3, 0).n, 'カスタムの手数の借り方が違う');
   console.log('  設定パネルの難しさの説明  OK');
 }

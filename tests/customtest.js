@@ -17,10 +17,14 @@ const addBtns = (id, vals) => {
 };
 
 console.log('長方形の盤');
-// カスタムに切り替える
-el('customChk').checked = true;
-el('customChk').fire('change', {});
-ok(el('customSize').hidden === false && el('plainSize').hidden === true, 'カスタムに切り替えても表示が入れ替わらない');
+// パネルはいつもカスタムの形（スイッチも通常のサイズ欄も無い）
+{
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  ok(!html.includes('id="customChk"') && !html.includes('id="plainSize"') && !html.includes('id="sizeSeg"'), 'カスタムのスイッチや通常のサイズ欄が残っている');
+}
+el('homeCustomBtn').fire('click', {});   // 開く（syncSetup が走る）
+pendPicked = new Set();                  // ブロックは 1 つも選んでいない状態から始める
+refreshCustom();
 
 // 辺は 2 つ選ぶだけ。長いほうが横になるので、縦長の盤にはならない。
 const aBtns = addBtns('sideA', [3, 4, 5, 6, 7]);
@@ -86,18 +90,12 @@ ok(el('sizeNote').textContent.includes('正方形'), '同じ数を選んでも�
 el('createBtn').fire('click', {});
 ok(W === 5 && H === 5, `同じ数を選んでも正方形にならない: ${W}×${H}`);
 
-console.log('\n正方形に戻すと元どおり');
-el('homeCustomBtn').fire('click', {});          // syncSetup が走る
-ok(el('customChk').checked === true, '長方形の盤なのにカスタムが解除されている');
-el('customChk').checked = false;
-el('customChk').fire('change', {});
-const sizeBtns = addBtns('sizeSeg', [3, 4, 5, 6]);
-addBtns('typeSeg', [2, 3, 4]);
-el('sizeSeg').fire('click', { target: sizeBtns[4] });
+console.log('\nステージから始めると正方形に戻る（カスタムの指定が残らない）');
+pendA = pendB = pendW = pendH = 4; pendDiff = 0; pendCustom = false;
 el('seedIn').value = '3';
-el('createBtn').fire('click', {});
+startFromPending();
 ok(W === 4 && H === 4 && SIZE === 16, `正方形に戻っていない: ${W}×${H}`);
-ok(forcedAbilities === null, 'カスタムを外してもブロックの指定が残っている');
+ok(forcedAbilities === null, 'ステージで始めてもブロックの指定が残っている');
 ok(!el('hintBtn').disabled && !el('solveBtn').disabled, '正方形なのにソルバーが使えない');
 showHint();
 ok(slots.some((s) => s._cls.has('hinted')), '正方形でヒントが光らない');
