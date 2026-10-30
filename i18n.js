@@ -64,7 +64,6 @@ const I18n = (() => {
     themeLight: 'Light',
     themeAuto: 'Match device',
     langLabel: 'Language',
-    catch: 'A puzzle where each glyph is an ability. Press a tile to trigger it.',
     start: 'Start',
     howto: 'How to play',
     install: 'Install app',

@@ -2343,7 +2343,7 @@ createBtnEl.addEventListener('click', () => {
 });
 
 // ---- ホーム（ステージ一覧） ----
-// サイズごとのクリア数（旧仕様からの記録。捨てず、見出しに「これまで n 回」として出す）。
+// サイズごとのクリア数（旧仕様からの記録。画面には出さないが、捨てずに残す）。
 const CLEARS_KEY = 'glyphshift.clears';
 function loadClears() {
   try {
@@ -2661,19 +2661,7 @@ function renderStageList() {
     sec.className = 'stage-size';
     const head = document.createElement('h2');
     head.className = 'stage-size-head';
-    head.append(`${s}×${s}`);
-    if (s === 3) {
-      const tag = document.createElement('span');
-      tag.className = 'stage-legacy';
-      tag.textContent = L('れんしゅう', 'Practice');
-      head.append(tag);
-    }
-    if (clears[s]) {
-      const legacy = document.createElement('span');
-      legacy.className = 'stage-legacy';
-      legacy.textContent = L(`これまで ${clears[s]} 回`, `${timesEn(clears[s])} before`);
-      head.append(legacy);
-    }
+    head.append(`${s}×${s}`);   // 見出しはサイズだけ（「れんしゅう」「これまで n 回」は出さない。2026-10-30 オーナー）
 
     const row = document.createElement('div');
     row.className = 'stage-row';
