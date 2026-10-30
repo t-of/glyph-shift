@@ -376,6 +376,7 @@ body::before {
 .daily-title.wm { font-size: clamp(24px, 7.5vw, 34px); }
 .daily-streak { font-size: 13px; font-weight: 600; color: var(--accent); }
 .daily-item .stage-stars { font-size: 13px; }
+.daily-body > :empty { display: none; }   /* 未挑戦・途中は状態の文字が空。空の欄が高さを取って TODAY を押し上げないように */
 .share-daily { margin-top: 4px; }
 .share-daily[hidden] { display: none; }
 /* 広告のある画面の下のプライバシーポリシー。目立たせず、クリアの表示のときだけ */
