@@ -346,12 +346,17 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   now = 90000; goHome(); confirmAction();
   ok(saved().state === 'abandoned' && saved().ms === 90000 && playEl.hidden && dailySince === null, `やめた記録: ${JSON.stringify(saved())}`);
   ok(!dailyIsCleared(daily[key]) && dailyIsClosed(daily[key]) && dailyStreak(daily, key) === 0, 'やめた日がクリア扱い');
-  // もう挑戦できない。結果の画面だけ、時間は出さない
+  // やめた日も遊べる。確認なし・時間なし・記録なし（2026-10-30 オーナー）
   startDaily();
-  ok(confirmEl.hidden && locked && dailyReview && logEl.textContent === '途中でやめた（記録なし）' && clockEl.hidden, `やめた日の画面: ${logEl.textContent}`);
-  // 結果の画面・クリアのあとは確認なしでホームへ戻れる
-  goHome(); ok(confirmEl.hidden && playEl.hidden, '結果の画面から戻るのに確認が出た');
-  ok(stageListEl.querySelector('.daily-item').children[1].children[1].textContent === '記録なし', 'カードにやめた印がない');
+  ok(confirmEl.hidden && !locked && !dailyReview && dailyKey === key && clockEl.hidden && dailySince === null, `やめた日に遊べない: ${locked} ${dailyReview}`);
+  showHint(); ok(confirmEl.hidden && hintUsed, 'やめた日にヒントの確認が出た');
+  askAutoSolve(); ok(!/クリアになりません/.test(confirmTextEl.innerHTML), 'やめた日に今日の 1 問の解説の確認が出た'); closeConfirm();
+  now = 120000; board = Array.from({ length: SIZE }, (_, i) => i); par = { cost: 4, optimal: true }; autoSolvedFlag = false; moves = 4; showClear();
+  ok(saved().state === 'abandoned' && saved().ms === 90000 && logEl.textContent === 'クリア' && shareBtnEl.hidden, `やめた日のクリアで記録が変わった: ${JSON.stringify(saved())} ${logEl.textContent}`);
+  // クリアのあとは確認なしでホームへ戻れる。途中でも確認は出ない
+  goHome(); ok(confirmEl.hidden && playEl.hidden, 'やめた日のクリアから戻るのに確認が出た');
+  startDaily(); goHome(); ok(confirmEl.hidden && playEl.hidden, 'やめた日の途中で戻るのに確認が出た');
+  ok(stageListEl.querySelector('.daily-item').children[1].children[1].textContent === '' && /記録なし/.test(stageListEl.querySelector('.daily-item').getAttribute('aria-label')), 'カードにやめた文字が出た／読み上げにない');
   // クリアした日は時間が止まって表示される
   daily = {}; localStorage.removeItem('glyphshift.daily'); now = 0; dailyKey = null;
   startDaily({ confirmed: true }); now = 42000;

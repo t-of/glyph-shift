@@ -283,23 +283,29 @@ body.no-rail .rail { display: none; }
 .howto-sheet .wide { margin-top: 24px; }
 
 /* ---- 背景: 浮かぶタイル（2026-10-30 オーナー、比較は docs/private/launch/abilitile-background/） ----
-   駒の色の大きなタイルを画面の端に傾けて薄く置く。盤の真後ろ（画面の真ん中）には置かない。
-   画面に固定して、スクロールしても動かさない。濃さは --float-tiles（明るい画面は濃いめ）。 */
+   駒の色の大きなタイルを画面の左右の端に傾けて薄く置き、ゆっくり上へ流す（左右で速さを変える）。
+   盤の真後ろ（画面の真ん中）には置かない。タイルは 1000px ごとにくり返す縦の帯で、帯の 1 周ぶん
+   動かしてつなぎ目なく回す。動かすのは transform だけ（描き直さない）。濃さは --float-tiles。 */
 :root { --float-tiles: .09; }
 :root[data-theme="light"] { --float-tiles: .16; }
-body::before {
+body::before, body::after {
   content: "";
   position: fixed;
-  inset: 0;
+  top: 0;
+  bottom: -1000px;   /* 帯 1 周ぶん長くして、上へ 1000px 動かしても下が空かない */
+  width: 280px;
   z-index: -1;
   pointer-events: none;
   opacity: var(--float-tiles);
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='242' height='242'%3E%3Crect x='36.0' y='36.0' width='170' height='170' rx='34' fill='%23ffa289' transform='rotate(-14 121 121)'/%3E%3C/svg%3E") -56px 34px / 242px 242px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='213' height='213'%3E%3Crect x='31.5' y='31.5' width='150' height='150' rx='30' fill='%23fc9000' transform='rotate(12 106.5 106.5)'/%3E%3C/svg%3E") right -52px top -16px / 213px 213px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='270' height='270'%3E%3Crect x='40.0' y='40.0' width='190' height='190' rx='38' fill='%2365c77a' transform='rotate(-8 135 135)'/%3E%3C/svg%3E") right -92px top 44% / 270px 270px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='228' height='228'%3E%3Crect x='34.0' y='34.0' width='160' height='160' rx='32' fill='%23a5c1ff' transform='rotate(18 114 114)'/%3E%3C/svg%3E") -80px 70% / 228px 228px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='199' height='199'%3E%3Crect x='29.5' y='29.5' width='140' height='140' rx='28' fill='%23f9b800' transform='rotate(-20 99.5 99.5)'/%3E%3C/svg%3E") right 30px bottom -40px / 199px 199px no-repeat;
+  background-repeat: repeat-y;
+  background-size: 280px 1000px;
+  will-change: transform;
+}
+body::before { left: -70px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='1000'%3E%3Crect x='55' y='65' width='170' height='170' rx='34' fill='%23ffa289' transform='rotate(-14 140 150)'/%3E%3Crect x='50' y='420' width='160' height='160' rx='32' fill='%23a5c1ff' transform='rotate(18 130 500)'/%3E%3Crect x='80' y='760' width='140' height='140' rx='28' fill='%23f9b800' transform='rotate(-20 150 830)'/%3E%3C/svg%3E"); animation: float-tiles 80s linear infinite; }
+body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='1000'%3E%3Crect x='65' y='165' width='150' height='150' rx='30' fill='%23fc9000' transform='rotate(12 140 240)'/%3E%3Crect x='45' y='505' width='190' height='190' rx='38' fill='%2365c77a' transform='rotate(-8 140 600)'/%3E%3Crect x='65' y='815' width='130' height='130' rx='26' fill='%2300c5d3' transform='rotate(16 130 880)'/%3E%3C/svg%3E"); animation: float-tiles 110s linear infinite; }
+@keyframes float-tiles { to { transform: translateY(-1000px); } }
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { animation: none; }
 }
 
 /* ---- ステージ一覧 ---- */

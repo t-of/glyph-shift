@@ -513,7 +513,7 @@ function hintAfterSolve() {
 function showHint() {
   if (autoSolving || locked || isSolved()) return;
   // 今日の 1 問で初めてヒントを使うときだけ確認する（使った時点で保存。ランキングには載らない）
-  if (dailyKey && !tutorial && !hintUsed) {
+  if (dailyKey && !tutorial && !hintUsed && !dailyFree()) {
     askConfirm(L('ヒントを使う', 'Use a hint'),
       L('ヒントを使うと、<strong>今日のランキングには載りません</strong>。<br>クリアの記録と連続日数には入ります。',
         'If you use a hint, you <strong>won\'t appear in today\'s ranking</strong>.<br>It still counts as a clear and keeps your streak.'),
@@ -965,6 +965,8 @@ function markDailyAbandoned() {
   daily = addDaily(daily, dailyKey, { state: 'abandoned', ms, hint: !!hintUsed });
   saveDaily();
 }
+// 途中でやめた日の盤。記録・時間・ランキングなしで、同じ盤を何度でも遊べる（2026-10-30 オーナー）
+const dailyFree = () => !!dailyKey && !!daily[dailyKey] && daily[dailyKey].state === 'abandoned';
 // いま今日の 1 問を時間を数えながら遊んでいるか（やめるときに確認する）
 const dailyLive = () => !!dailyKey && !dailyReview && !tutorial && !isSolved() && !autoSolving && !dailyIsClosed(daily[dailyKey]);
 
@@ -1228,7 +1230,7 @@ function unClear() {
 // クリアの行。手数も★の評価も出さない（2026-10-30 オーナー）。揃ったことは盤の光と音で見せる。
 // 引数は前のまま（呼ぶ側を変えない）。par・★は記録には残るが、画面には出さない。
 const DAILY_REVEALED_LINE = L('解説を見た', 'Solution viewed');
-const DAILY_ABANDONED_LINE = L('途中でやめた（記録なし）', 'Quit midway (no record)');
+const DAILY_ABANDONED_LINE = '';   // 途中でやめた日は文字を出さない（2026-10-30 オーナー）
 function clearLine(n, used) {
   return L('クリア', 'Clear');
 }
@@ -1293,11 +1295,12 @@ function showClear() {
   // 今日の 1 問: 解説を見ていたら（確認を通らずに揃った場合も含め）その日は解説の記録にする
   if (dailyKey && autoSolvedFlag && !dailyIsClosed(daily[dailyKey])) markDailyRevealed();
   const dayRevealed = !!dailyKey && daily[dailyKey] && daily[dailyKey].state === 'revealed';
+  const ranked = !!dailyKey && !dailyFree();   // やめた日の盤は、時間・共有なしのふつうのクリアの行
   logEl.textContent = (autoSolvedFlag || dayRevealed)
-    ? (dailyKey ? DAILY_REVEALED_LINE : L('自動で揃えました', 'Solved automatically'))
-    : dailyKey ? dailyResultLine(dailyElapsed(), hintUsed) : clearLine(moves, hintUsed);
+    ? (ranked ? DAILY_REVEALED_LINE : L('自動で揃えました', 'Solved automatically'))
+    : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : clearLine(moves, hintUsed);
   clearPending = (!autoSolvedFlag && !dayRevealed && par === undefined) ? { moves, hintUsed } : null;
-  shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag && !dayRevealed);
+  shareBtnEl.hidden = !(ranked && !autoSolvedFlag && !dayRevealed);
 
   // 自分で揃えた回数を数える（全画面の広告の間隔に使う。iOS 版だけが受け取る）。「解説」で揃えたものは数えない
   if (!autoSolvedFlag && !dayRevealed) adDue = Rewards.recordClear(!!dailyKey).due;
@@ -2587,7 +2590,7 @@ function startDaily(opts = {}) {
   curDiff = DAILY_DIFF;
   newPuzzle(dailySeed(key), key);
   // 1 日 1 回。解いた日・解説を見た日は、揃った盤と結果を見るだけ
-  if (dailyIsClosed(daily[key])) showDailyResult(daily[key]);
+  if (dailyIsClosed(daily[key]) && !dailyFree()) showDailyResult(daily[key]);   // やめた日はそのまま遊べる（記録なし）
   show(playEl);
 }
 
@@ -2660,7 +2663,7 @@ function renderDailyCard() {
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
     : rec && rec.state === 'abandoned' ? L('記録なし', 'no record')
     : playing ? L('途中', 'in progress') : L('未挑戦', 'not played');
-  state.textContent = (playing || !rec) ? '' : stateLabel;
+  state.textContent = (playing || !rec || rec.state === 'abandoned') ? '' : stateLabel;   // やめた日も文字なし（読み上げには残す）
   if (playing) item.classList.add('resume');
   body.append(title, state);   // 日付と大きさは出さない（2026-10-30 オーナー。読み上げには残す）
   const streak = dailyStreak(daily, key);
