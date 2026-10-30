@@ -2414,8 +2414,8 @@ const inProgress = (s, d) =>
   W === s && H === s && curDiff === d && !forcedAbilities && !dailyKey && !tutorial
   && seed === stageFor(s, d).seed && run.i >= 0 && !isSolved();
 
-// 一覧のカードの記録（2026-10-30 オーナー。文字を減らす）。クリアしたかはミニ盤の色で見せる
-// （未クリアは灰色、クリアすると駒の色）。2 回目からはカードの隅に回数の数字を出す。
+// 一覧のカードの記録（2026-10-30 オーナー。文字を減らす）。クリアしたかはカードの縁の色で見せる。
+// 2 回目からはカードの隅に回数の数字を出す。
 // 文字の言い方はカードの読み上げ（aria-label）に残す。
 const clearsMark = (n) => n >= 2 ? String(n) : '';
 const clearsLabel = (st) =>

@@ -315,12 +315,11 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   scroll-snap-align: start;
   position: relative;
 }
-/* 未クリアのミニ盤は灰色に沈め、クリアすると駒の色で見せる（クリアの印の代わり） */
-.stage-item:not(.cleared) .stage-mini { filter: grayscale(1); opacity: .6; }
-.stage-item:not(.cleared):hover .stage-mini { opacity: .8; }
+/* クリアしたカードは縁を ★ と同じ色にする（クリアの印の代わり。ミニ盤はいつも駒の色） */
+.stage-item.cleared { border-color: var(--warn); box-shadow: inset 0 0 0 1px var(--warn); }
 /* 2 回目からのクリア回数。カードの右上に小さく */
 .stage-count { position: absolute; top: 4px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
-  background: var(--accent); color: var(--accent-ink); font: 600 10px/16px var(--mono); text-align: center; }
+  background: var(--warn); color: var(--ground); font: 600 10px/16px var(--mono); text-align: center; }
 .stage-item:hover { border-color: var(--accent); }
 .stage-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* 実際の盤と同じ .slot/.tile（立体タイル・絵柄）で描く。--nx/--ny/--cell/--gap は
