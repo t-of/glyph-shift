@@ -56,7 +56,6 @@ const I18n = (() => {
         <li><strong>Long-press</strong> (or right-click) a rotation to turn it <strong>the other way</strong>.</li>
         <li>The board doesn't wrap around. A tile <strong>can't be used</strong> where its effect would go off the board.</li>
         <li>Match the <strong>goal pattern</strong> to clear. Tiles with the same glyph are interchangeable.</li>`,
-    rulesNote: 'Moves are counted net. Press a rotation 3 times and undo it, and that is 0 moves; one step the other way is 1 move.',
     tutorialAgain: 'Replay the tutorial',
     glyphLegendSum: 'How to read the glyphs',
     glyphLabel: 'Glyphs',
@@ -81,7 +80,7 @@ const I18n = (() => {
     h4t: 'Match the goal pattern',
     h4p: 'Arrange the colors like the “Goal” on the play screen to clear. Any tile with the same glyph will do.',
     h5t: 'Pick a stage',
-    h5p: 'Stages on the home screen are <strong>board size × difficulty</strong> (harder means more scrambling moves and more kinds of blocks). Tap a card to start; ★ shows how many times you\'ve cleared it. Boards you left halfway say “Continue”. Stuck? Use “Hint” and “Solution”.',
+    h5p: 'Stages on the home screen are <strong>board size × difficulty</strong> (harder means more scrambling moves and more kinds of blocks). Tap a card to start; each card shows how many times you\'ve cleared it. Boards you left halfway say “Continue”. Stuck? Use “Hint” and “Solution”.',
     gotIt: 'Got it',
     lockTitle: 'Available in the full version',
     lockPrice: '¥500 · one-time purchase',

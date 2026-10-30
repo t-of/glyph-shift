@@ -21,15 +21,15 @@ console.log('探して見つけた手順のとき');
   hintPlan = { runs: activeRuns(), optimal: true, ms: 1, method: 'bidirectional' };
   hintBusy = false;
   blinkHint();
-  ok(note().includes('最短'), `最短と出ない: ${note()}`);
-  ok(/最短 \d+ 手/.test(note()), `手数が出ていない: ${note()}`);
+  ok(!/\d+ 手/.test(note()), `手数を出している: ${note()}`);
+  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数が出ない: ${note()}`);
   console.log(`  最短が確定: 「${note()}」`);
 
   // 探したが最短とは確定できない場合
   hintPlan = { runs: activeRuns(), optimal: false, ms: 1, method: 'constructive' };
   blinkHint();
-  ok(!note().includes('最短'), `確定していないのに最短と出る: ${note()}`);
-  ok(/残り \d+ 手/.test(note()), `手数が出ていない: ${note()}`);
+  ok(!/\d+ 手/.test(note()), `手数を出している: ${note()}`);
+  ok(/(押す|長押し) ×\d+/.test(note()), `押す回数が出ない: ${note()}`);
   console.log(`  最短と確定できない: 「${note()}」`);
 }
 
@@ -39,7 +39,7 @@ console.log('\n混ぜた手順の逆だけでも、短いので手数を出す')
   hintPlan = null;
   hintBusy = true;
   blinkHint();
-  ok(/残り \d+ 手/.test(note()) && !note().includes('最短'), `混ぜた手順の逆で手数が出ない: ${note()}`);
+  ok(!/\d+ 手/.test(note()) && !note().includes('探し'), `短い手順なのに手数か探索中が出る: ${note()}`);
   ok(/(押す|長押し) ×\d+/.test(note()), `押す回数の案内が消えている: ${note()}`);
   console.log(`  探索中でも: 「${note()}」`);
 }
@@ -97,7 +97,7 @@ for (const [w, d, s] of [[8, 2, 5], [7, 2, 3], [8, 1, 1]]) {
   showHint();
   const n = bigNumber(note());
   ok(n === undefined, `${w}×${w} ${DIFFS[d]}: ${n} という数字を出している → ${note()}`);
-  ok(/残り \d+ 手/.test(note()), `${w}×${w} ${DIFFS[d]}: 手数が出ない → ${note()}`);
+  ok(!/\d+ 手/.test(note()), `${w}×${w} ${DIFFS[d]}: 手数を出している → ${note()}`);
   console.log(`  ${w}×${w} ${DIFFS[d]}: 「${note()}」`);
 }
 

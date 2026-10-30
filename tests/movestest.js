@@ -59,7 +59,7 @@ ok(isSolved(), '完成させられなかった');
 ok(locked, '完成してもロックされていない');
 const log = document.getElementById('log');
 ok(log._cls.has('done'), '完成の知らせが出ていない');
-ok(log.textContent.includes(`${moves} 手`), `表示「${log.textContent}」に手数 ${moves} が出ていない`);
+ok(!/\d|★/.test(log.textContent), `表示「${log.textContent}」に手数や★を出している`);
 ok(moves > 0, `手数が ${moves}`);
 console.log(`完成時の表示: 「${log.textContent}」`);
 

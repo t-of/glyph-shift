@@ -1,4 +1,4 @@
-// 表示される「残り N 手」が、実際に必要な手数と一致するか
+// ヒントの手順の長さ（planCost）が、実際に必要な手数と一致するか（手数は画面には出さない）
 let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 const el = (id) => document.getElementById(id);
@@ -6,7 +6,8 @@ const el = (id) => document.getElementById(id);
 for (const [n, k, seed] of [[4, 4, 4], [5, 3, 9], [6, 2, 2]]) {
   W = H = n; SIZE = n * n; buildDom(); types = k; newPuzzle(seed);
   showHint();
-  const shown = Number(el('log').textContent.match(/(\d+) 手/)[1]);
+  const shown = planCost(activeRuns());
+  ok(!/\d+ 手/.test(el('log').textContent), `ヒントに手数を出している: ${el('log').textContent}`);
 
   // 表示どおりに押して、実際の手数と一致するか
   let guard = 0;

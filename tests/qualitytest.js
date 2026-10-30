@@ -10,8 +10,7 @@ showHint();
 ok(slots.some((s) => s._cls.has('hinted')), '最初のヒントがすぐ光らない');
 ok(hintPlan && hintPlan.optimal, '4×4 2 色で最短が出ていない');
 showHint();
-ok(el('log').textContent.includes('最短'), `表示: ${el('log').textContent}`);
-ok(!/残り/.test(el('log').textContent), '最短なのに「残り」と出ている');
+ok(!/\d+ 手/.test(el('log').textContent), `ヒントに手数を出している: ${el('log').textContent}`);
 console.log(`  最短が確定した場合: 「${el('log').textContent}」`);
 
 // 押すたびに毎回計算し直している
@@ -33,7 +32,7 @@ console.log(`  最短が確定した場合: 「${el('log').textContent}」`);
   if (hintPlan && hintPlan.optimal && activeRuns() === hintPlan.runs) {
     console.log('  （この盤面はたまたま最短が確定した）');
   } else {
-    ok(/残り \d+ 手/.test(t) && !t.includes('最短'), `表示: ${t}`);
+    ok(!/\d+ 手/.test(t), `表示: ${t}`);
     console.log(`  最短と確定できない場合: 「${t}」`);
   }
 }

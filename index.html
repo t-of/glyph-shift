@@ -131,8 +131,6 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <li>盤の端はつながっていない。効果が盤の外に出る位置では<strong>使えない</strong>。</li>
         <li><strong>目標の柄</strong>と同じ並びにすればクリア。同じ絵柄どうしは入れ替え可能。</li>
       </ol>
-      <p class="howto-note" data-i18n="rulesNote">手数は差し引きで数える。回転を 3 回押して元に戻れば 0 手、
-        逆回りに 1 つぶんなら 1 手。</p>
       <button id="panelTutorial" class="ghost-btn" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>
     </section>
 
@@ -232,7 +230,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
       </li>
       <li>
         <h3 data-i18n="h5t">ステージを選ぶ</h3>
-        <p data-i18n="h5p">ホームの一覧は<strong>盤のサイズ × 難しさ</strong>（難しいほど、混ぜた手数もブロックの種類も増えます）。カードを押すと始まり、★はクリアした回数。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
+        <p data-i18n="h5p">ホームの一覧は<strong>盤のサイズ × 難しさ</strong>（難しいほど、混ぜた手数もブロックの種類も増えます）。カードを押すと始まり、クリアした回数がカードに出ます。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
       </li>
     </ol>
     <button id="howtoTutorial" class="ghost-btn wide" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>

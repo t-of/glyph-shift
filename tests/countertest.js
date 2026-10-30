@@ -107,7 +107,7 @@ for (const c of CASES) {
   }
   ok(isSolved(), '完成させられなかった');
   const log = document.getElementById('log');
-  ok(log.textContent.includes(`${moves} 手`), `表示「${log.textContent}」と内部の手数 ${moves} が不一致`);
+  ok(!/\d|★/.test(log.textContent), `クリアの表示に手数や★を出している「${log.textContent}」`);
   ok(run.d === 0, '完成時にまとまりが確定されていない');
   console.log(`  完成時の表示: ${moves} 手（逆再生は ${rec.length} まとまり）  OK`);
 }

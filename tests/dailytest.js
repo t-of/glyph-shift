@@ -73,13 +73,13 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   const txt = dailyShareText({ key: '2026-10-29', moves: 9, stars: 3, par: { cost: 9, optimal: true }, hint: false, goal, w: 5 });
   const L = txt.split('\n');
   ok(L[0] === 'ABILITILE 今日の1問 10/29', L[0]);
-  ok(L[1] === '★★★ 9手（最短 9手）', L[1]);
+  ok(L[1] === 'クリア', L[1]);   // 手数・★は入れない
   ok(L.length === 7 && L.slice(2).every((r) => [...r].length === 5), '絵文字が 5 行 5 列でない');
   ok(L[2] === '🟥🟧🟣⬜🟥', L[2]);
   const t2 = dailyShareText({ key: '2026-01-05', moves: 14, stars: 2, par: { cost: 10, optimal: false }, hint: true, goal, w: 5 });
-  ok(t2.split('\n')[0].endsWith('1/5') && t2.split('\n')[1] === '★★ 14手（目安 10手）（ヒントあり）', t2.split('\n')[1]);
+  ok(t2.split('\n')[0].endsWith('1/5') && t2.split('\n')[1] === 'クリア', t2.split('\n')[1]);
   const t3 = dailyShareText({ key: '2026-01-05', moves: 14, stars: 0, par: null, hint: false, goal, w: 5 });
-  ok(t3.split('\n')[1] === '14手', t3.split('\n')[1]);
+  ok(!/\d|★/.test(t3.split('\n')[1]), t3.split('\n')[1]);
   const ids = Object.keys(SHARE_EMOJI);
   ok(ids.length === ABILITIES.length && new Set(Object.values(SHARE_EMOJI)).size === ids.length && ABILITIES.every((a) => SHARE_EMOJI[a.id]), '絵文字が 13 種で重なる／足りない');
   ok(!/[→↑↓←]/.test(txt), '手順を含む');

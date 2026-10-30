@@ -29,7 +29,7 @@ while (!locked && activeRuns().length && guard++ < 400) {
 ok(isSolved(), '揃わなかった');
 ok(locked, '揃ってもロックされていない');
 ok(el('log')._cls.has('done'), '完成の知らせが出ていない');
-ok(/\d+ 手/.test(el('log').textContent), `表示: ${el('log').textContent}`);
+ok(el('log').textContent === 'クリア', `表示: ${el('log').textContent}`);
 ok(gridEl._cls.has('cleared'), '盤面の演出が付いていない');
 console.log(`  完成時の表示: 「${el('log').textContent}」`);
 

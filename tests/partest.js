@@ -69,10 +69,10 @@ const fresh = (seed, s = 5) => {
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 1; hintUsed = false; autoSolvedFlag = false;
   showClear();
-  ok(!/…/.test(logEl.textContent) && /★/.test(logEl.textContent), `先読み中でも★が付くはず: ${logEl.textContent}`);
+  ok(par && starRating(moves, par.cost, hintUsed) > 0 && !/★/.test(logEl.textContent), `先読み中でも★の判定ができるはず（画面には出さない）: ${logEl.textContent}`);
   const shown = logEl.textContent, p0 = par.cost;
   reply(pm);
-  ok(/★/.test(logEl.textContent) && par.cost === p0, `届いたあとで表示や par が動いた: ${logEl.textContent}`);
+  ok(logEl.textContent === shown && par.cost === p0, `届いたあとで表示や par が動いた: ${logEl.textContent}`);
   console.log('  先読み中のクリア: すぐ★（あとから動かない）');
 }
 

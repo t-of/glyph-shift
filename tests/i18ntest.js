@@ -55,7 +55,7 @@ ok(I18n.L('あ', 'a') === 'あ', 'L が日本語を返さない');
   ]`);
   for (const t of texts) ok(!JA.test(t), `英語に日本語が残る: ${t}`);
   const share = E(`dailyShareText({ key: '2026-10-29', moves: 9, stars: 3, par: { cost: 9, optimal: true }, hint: true, goal: [0, 1, 2, 3], w: 2 })`);
-  ok(share.startsWith('ABILITILE Daily 10/29\n★★★ 9 moves (best 9) (with hint)'), `共有の文: ${share}`);
+  ok(share.startsWith('ABILITILE Daily 10/29\nSolved\n'), `共有の文: ${share}`);
   ok(E('movesEn(1)') === '1 move' && E('timesEn(2)') === 'twice' && E('monthDayEn(10, 29)') === 'Oct 29', '英語の数え方');
   console.log(`  英語の文言 ${texts.length} 個  OK`);
 }

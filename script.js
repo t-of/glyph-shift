@@ -502,12 +502,9 @@ function blinkHint() {
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
   // 光らせる手自体は正しいので、長すぎるときは数字だけ伏せる。
+  // 残りの手数は出さない（手数は画面に書かない）。長い保険の手順で裏で探しているときだけ、そう添える。
   const real = planCost(plan) <= HINT_SHOW_MAX;
-  const quality = real
-    ? (hintPlan && hintPlan.optimal && planCost(hintPlan.runs) <= planCost(plan)   // 探索が最短と保証した長さと同じ
-      ? L(` ・ 最短 ${planCost(plan)} 手`, ` · ${movesEn(planCost(plan))} left (best)`)
-      : L(` ・ 残り ${planCost(plan)} 手`, ` · ${movesEn(planCost(plan))} left`))
-    : hintBusy ? HINT_SEARCHING_NOTE : '';
+  const quality = !real && hintBusy ? HINT_SEARCHING_NOTE : '';
   logEl.textContent = how + quality;
   hintTimer = setTimeout(clearHint, HINT_BLINK_MS);
 }
@@ -826,14 +823,11 @@ const SHARE_EMOJI = {
   swapLR: '🟥', swapUD: '🟧', swapD1: '🟫', swapD2: '🟨', crossCW: '🟩', diagCW: '🟢', ringCW: '🔷',
   crossHalf: '🔹', diagHalf: '🟦', sqUD: '🔴', sqLR: '🟪', ringHalf: '🟣', none: '⬜',
 };
-// 共有の文（純粋）。答えの手順は入れない。par は { cost, optimal } か null。
+// 共有の文（純粋）。答えの手順は入れない。引数の moves・stars・par・hint は前の形のまま受けて、使わない。
 function dailyShareText({ key, moves, stars, par, hint, goal, w }) {
   const [, m, d] = key.split('-').map(Number);
-  let line = '';
-  if (par && stars) line += `${'★'.repeat(stars)} `;
-  line += L(`${moves}手`, movesEn(moves));
-  if (par) line += L(`（${par.optimal ? '最短' : '目安'} ${par.cost}手）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost})`);
-  if (hint) line += L('（ヒントあり）', ' (with hint)');
+  // 手数・★は入れない（画面に出さないのと揃える）
+  const line = L('クリア', 'Solved');
   const rows = [];
   for (let y = 0; y * w < goal.length; y++) {
     rows.push(Array.from(goal.slice(y * w, y * w + w), (a) => SHARE_EMOJI[ABILITIES[a].id] || '⬛').join(''));
@@ -963,7 +957,7 @@ function finishSolve(id, res, partial = false) {
     // 探し直しで短い手順が見つかったら、出したままの案内を新しくする。
     // 光らせる場所は動かさない（押した時点で決めたものを尊重する）。
     if (hintPlan && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
-      logEl.textContent = L(`短い手順あり（残り ${planCost(activeRuns())} 手）`, `Shorter way found (${movesEn(planCost(activeRuns()))} left)`);
+      logEl.textContent = L('短い手順あり', 'Shorter way found');
     }
     scheduleImprove(res);
   }
@@ -1109,16 +1103,10 @@ function unClear() {
   clearPending = null;
 }
 
-// クリアの行。par があれば最短（目安）と★を付ける。
+// クリアの行。手数も★の評価も出さない（2026-10-30 オーナー）。揃ったことは盤の光と音で見せる。
+// 引数は前のまま（呼ぶ側を変えない）。par・★は記録には残るが、画面には出さない。
 function clearLine(n, used) {
-  // ★ を先に、あとは手数と基準だけ（揃ったことは盤の光で見せる）
-  let t = L(`${n} 手`, movesEn(n));
-  if (par === undefined) t += ' …';
-  else if (par) {
-    const r = starRating(n, par.cost, used);
-    t = '★'.repeat(r) + ' ' + t + L(`（${par.optimal ? '最短' : '目安'} ${par.cost}）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost})`);
-  }
-  return t;
+  return L('クリア', 'Clear');
 }
 
 // par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
@@ -2282,9 +2270,10 @@ const inProgress = (s, d) =>
   && seed === stageFor(s, d).seed && run.i >= 0 && !isSolved();
 
 // 一覧のカードの記録。★は「評価」の意味だけに使い、クリア回数は文字で出す。
+// ★（手数の評価）は出さない。
 const clearsLabel = (st) =>
   st.clears
-    ? L(`クリア ${st.clears} 回${st.perfect ? ` ★★★ ${st.perfect} 回` : ''}`, `cleared ${timesEn(st.clears)}${st.perfect ? `, ★★★ ${timesEn(st.perfect)}` : ''}`)
+    ? L(`クリア ${st.clears} 回`, `cleared ${timesEn(st.clears)}`)
     : L('未クリア', 'not cleared');
 
 // ---- ステージのミニ盤（カードの絵柄）----
@@ -2436,12 +2425,11 @@ function renderDailyCard() {
   title.textContent = L('今日の 1 問', 'Daily puzzle');
   const date = document.createElement('span');
   date.className = 'stage-meta';
-  date.textContent = L(`${m}月${d}日・5×5・${DAILY_MOVES} 手・${DAILY_TYPES} 種（全ブロックから）`,
-    `${monthDayEn(m, d)} · 5×5 · ${DAILY_MOVES} moves · ${DAILY_TYPES} kinds (from all blocks)`);
+  date.textContent = L(`${m}月${d}日・5×5`, `${monthDayEn(m, d)} · 5×5`);
   const state = document.createElement('span');
   state.className = 'stage-stars';
   state.textContent = rec
-    ? (rec.stars ? '★'.repeat(rec.stars) + ' ' : '') + L(`${rec.moves} 手${rec.hint ? '（ヒントあり）' : ''}`, `${movesEn(rec.moves)}${rec.hint ? ' (with hint)' : ''}`)
+    ? L('クリア', 'cleared')
     : resume ? L('途中', 'in progress') : L('未挑戦', 'not played');
   body.append(title, date, state);
   const streak = dailyStreak(daily, key);
@@ -2533,7 +2521,7 @@ function renderStageList() {
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
-      meta.textContent = L(`${DIFFS[d]}・${def.n} 手`, `${DIFFS[d]} · ${movesEn(def.n)}`);
+      meta.textContent = DIFFS[d];
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
