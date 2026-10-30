@@ -8,6 +8,10 @@ try{var d=JSON.parse(decodeURIComponent(m[1]));for(var k in d)if(localStorage.ge
 history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''));})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#131217">
+<script>/* 画面の明暗（glyphshift.theme）。描画の前に data-theme を付けて、暗い画面のちらつきを防ぐ。script.js の applyTheme と同じ規則 */
+(function(){var t='dark';try{t=localStorage.getItem('glyphshift.theme')||'dark';}catch(e){}
+var l=t==='light'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches);
+if(l){document.documentElement.setAttribute('data-theme','light');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#f4f3f6';}})();</script>
 <meta name="description" content="絵柄が能力を表すパズル。押すとその絵柄の効果が発動し、能力はブロックに付いて一緒に動く。">
 <title>ABILITILE — 能力を持ったブロックのパズル</title>
 
@@ -139,6 +143,14 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <span data-i18n="haptics">振動</span>
         <span class="switch-note" data-i18n="hapticsNote">押したとき・揃ったときに端末が振動する</span>
       </label>
+      <div class="field">
+        <span class="label" data-i18n="themeLabel">画面 / Theme</span>
+        <div class="seg" id="themeSeg" role="group" data-i18n-aria="themeLabel" aria-label="画面 / Theme">
+          <button type="button" data-v="dark" data-i18n="themeDark">暗い</button>
+          <button type="button" data-v="light" data-i18n="themeLight">明るい</button>
+          <button type="button" data-v="auto" data-i18n="themeAuto">端末に合わせる</button>
+        </div>
+      </div>
       <div class="field">
         <span class="label" data-i18n="langLabel">言語 / Language</span>
         <div class="seg" id="langSeg" role="group" data-i18n-aria="langLabel" aria-label="言語 / Language">

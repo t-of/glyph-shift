@@ -58,6 +58,7 @@ globalThis.document = {
   getElementById: (id) => (cache[id] ||= mk('div')),
   documentElement: mk('html'),
   body: mk('body'),
+  querySelector: () => null,
   addEventListener(){},
 };
 

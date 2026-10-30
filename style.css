@@ -19,6 +19,22 @@
   --accent-glow: color-mix(in srgb, var(--accent) 45%, transparent);
   --wm-tile: #2a2733;    /* 名前のロゴの、色を持たないタイル */
   --warn: #ffcf5c;
+  --err: #e0707a;
+  --slot: #17151d;        /* 盤の空きスロット */
+  --chip: #33303d;        /* 小さな地図の空きマス */
+  --rail-bg: rgba(19, 18, 23, .86);
+  --scrim: rgba(10, 9, 13, .78);
+  --scrim-soft: rgba(10, 9, 13, .6);
+  --well-in: rgba(0, 0, 0, .65);   /* 盤の窪みの内側の影 */
+  --sh-drop: rgba(0, 0, 0, .5);    /* 駒の下に落ちる影（くっきり） */
+  --sh-blur: rgba(0, 0, 0, .35);   /* 駒の下に落ちる影（ぼかし） */
+  --sh-blur2: rgba(0, 0, 0, .4);
+  --sh-mini: rgba(0, 0, 0, .45);
+  --sh-mini-blur: rgba(0, 0, 0, .3);
+  --sh-float: rgba(0, 0, 0, .45);  /* 浮いた面（自動再生バー）の影 */
+  --sh-icon: rgba(0, 0, 0, .35);
+  --wm-ink: var(--text);           /* 色なしタイルの文字 */
+  color-scheme: dark;
 
   --cell: 72px;
   --gap: 8px;
@@ -38,6 +54,35 @@
   --wak-accent-fg: var(--accent-ink);
   --wak-radius: 16px;
   --wak-font: var(--ui);
+}
+:root[data-theme="light"] {
+  --ground: #f4f3f6;
+  --panel: #ffffff;
+  --well: #e4e2e9;        /* 盤の窪み。駒が沈まないよう薄いグレー */
+  --line: #d6d3dd;
+  --line-soft: #e5e3ea;
+  --text: #1b1a20;
+  --dim: #6a6772;
+  --accent: #26242c;      /* 濃い墨色。上は白い文字 */
+  --accent-ink: #ffffff;
+  --wm-tile: #dedbe4;
+  --wm-ink: #1b1a20;
+  --warn: #a8660a;
+  --err: #c0394a;
+  --slot: #d3d0da;
+  --chip: #d3d0da;
+  --rail-bg: rgba(244, 243, 246, .86);
+  --scrim: rgba(30, 28, 36, .5);
+  --scrim-soft: rgba(30, 28, 36, .32);
+  --well-in: rgba(0, 0, 0, .14);
+  --sh-drop: rgba(0, 0, 0, .22);
+  --sh-blur: rgba(0, 0, 0, .12);
+  --sh-blur2: rgba(0, 0, 0, .14);
+  --sh-mini: rgba(0, 0, 0, .22);
+  --sh-mini-blur: rgba(0, 0, 0, .1);
+  --sh-float: rgba(0, 0, 0, .16);
+  --sh-icon: rgba(0, 0, 0, .15);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -85,7 +130,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   padding: env(safe-area-inset-top) max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left));
-  background: rgba(19, 18, 23, .86);
+  background: var(--rail-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line-soft);
 }
@@ -150,17 +195,17 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .title-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .title-head .mark { color: var(--accent); }
-.title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 6px 18px var(--sh-icon); }
 /* 名前のロゴ（2026-10-30 オーナーが案 2 を選ぶ）。1 字ずつ小さなタイルに載せ、B・T・E の 3 枚だけ駒の色で傾け、
    L は押されて沈んだ形にして、アイコンの「押した瞬間」と響かせる。大きさは font-size で決める（em で縮む） */
 .wm { display: inline-flex; gap: .09em; font-family: var(--ui); font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; white-space: nowrap; vertical-align: middle; }
-.wm-ch { position: relative; width: 1.02em; height: 1.12em; display: grid; place-items: center; font-size: .78em; border-radius: .2em; color: var(--text);
+.wm-ch { position: relative; width: 1.02em; height: 1.12em; display: grid; place-items: center; font-size: .78em; border-radius: .2em; color: var(--wm-ink);
   background: var(--c, var(--wm-tile));
-  box-shadow: inset 0 -.1em 0 rgba(0, 0, 0, .38), inset 0 .035em 0 rgba(255, 255, 255, .4), 0 .05em 0 rgba(0, 0, 0, .5); }
+  box-shadow: inset 0 -.1em 0 rgba(0, 0, 0, .38), inset 0 .035em 0 rgba(255, 255, 255, .4), 0 .05em 0 var(--sh-drop); }
 .wm-ch::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
   background: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .08) 32%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, .16)); }
 .wm-ch > i { font-style: normal; position: relative; line-height: 1; margin-top: -.06em; }
-.wm-on { color: var(--accent-ink); }
+.wm-on { color: #131217; }  /* 色つきタイルは明暗どちらでも暗い文字 */
 .wm-t1 { transform: rotate(-7deg) translateY(-.08em); }
 .wm-t2 { transform: rotate(5deg) translateY(-.04em); }
 .wm-t3 { transform: rotate(-4deg); }
@@ -210,7 +255,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   color: var(--text);
   font-family: var(--ui);
 }
-.howto-sheet::backdrop { background: rgba(10, 9, 13, .78); }
+.howto-sheet::backdrop { background: var(--scrim); }
 .howto-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 20px; }
 .howto-steps li { counter-increment: step; position: relative; padding-left: 34px; }
 .howto-steps li::before {
@@ -381,7 +426,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border-radius: 16px;
   background: var(--well);
   /* 輪郭は box-shadow で描く。border にすると幅が増えて目盛りとずれるため。 */
-  box-shadow: 0 0 0 1px var(--line-soft), inset 0 2px 7px rgba(0, 0, 0, .65);
+  box-shadow: 0 0 0 1px var(--line-soft), inset 0 2px 7px var(--well-in);
 }
 
 .grid {
@@ -393,7 +438,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 
 /* container-type でマスの幅（cqw）を測り、タイルの厚みをマスの大きさに比例させる。
    固定の px だと、スマホで盤が縮んだときに厚みだけ太く見える。 */
-.slot { position: relative; border-radius: 11px; background: #17151d; container-type: size; }
+.slot { position: relative; border-radius: 11px; background: var(--slot); container-type: size; }
 
 /* 立体のタイル。厚み（下側の濃い縁）＋上端のハイライト＋台からの浮き。絵柄はそのまま見せる。 */
 .tile {
@@ -412,8 +457,8 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     inset 0 calc(-1 * var(--th)) 0 rgba(0, 0, 0, .38),
     inset 0 2px 0 rgba(255, 255, 255, .4),
     inset 0 0 0 1px rgba(0, 0, 0, .18),
-    0 var(--drop) 0 rgba(0, 0, 0, .5),
-    0 calc(var(--drop) * 1.7) calc(var(--drop) * 2.7) rgba(0, 0, 0, .35);
+    0 var(--drop) 0 var(--sh-drop),
+    0 calc(var(--drop) * 1.7) calc(var(--drop) * 2.7) var(--sh-blur);
   transition: box-shadow .15s ease, filter .12s ease;
 }
 /* 上からの柔らかい光。絵柄を隠さないよう控えめに、押せない */
@@ -436,8 +481,8 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
       inset 0 calc(-1 * var(--th)) 0 rgba(0, 0, 0, .38),
       inset 0 2px 0 rgba(255, 255, 255, .4),
       inset 0 0 0 2px rgba(255, 255, 255, .72),
-      0 var(--drop) 0 rgba(0, 0, 0, .5),
-      0 calc(var(--drop) * 2) calc(var(--drop) * 3.3) rgba(0, 0, 0, .4);
+      0 var(--drop) 0 var(--sh-drop),
+      0 calc(var(--drop) * 2) calc(var(--drop) * 3.3) var(--sh-blur2);
   }
 }
 /* 押すと沈む見た目。タイルは WAAPI で transform を動かすことがあるので、
@@ -589,12 +634,12 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     inset 0 calc(-1 * var(--th)) 0 rgba(0, 0, 0, .35),
     inset 0 1px 0 rgba(255, 255, 255, .35),
     inset 0 0 0 1px rgba(0, 0, 0, .18),
-    0 var(--drop) 0 rgba(0, 0, 0, .45),
-    0 var(--drop) calc(var(--drop) * 2) rgba(0, 0, 0, .3);
+    0 var(--drop) 0 var(--sh-mini),
+    0 var(--drop) calc(var(--drop) * 2) var(--sh-mini-blur);
 }
 .mini .tile::before, .stage-mini .tile::before { background: linear-gradient(180deg, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .06) 32%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, .14) 100%); }
 .mini .tile svg, .stage-mini .tile svg { translate: 0 calc((1px - var(--th)) / 2); }
-.mini .tile:hover, .stage-mini .tile:hover { box-shadow: inset 0 calc(-1 * var(--th)) 0 rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 0 0 1px rgba(0, 0, 0, .18), 0 var(--drop) 0 rgba(0, 0, 0, .45), 0 var(--drop) calc(var(--drop) * 2) rgba(0, 0, 0, .3); }
+.mini .tile:hover, .stage-mini .tile:hover { box-shadow: inset 0 calc(-1 * var(--th)) 0 rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 0 0 1px rgba(0, 0, 0, .18), 0 var(--drop) 0 var(--sh-mini), 0 var(--drop) calc(var(--drop) * 2) var(--sh-mini-blur); }
 
 .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .legend li { display: flex; align-items: center; gap: 10px; font-size: 11.5px; line-height: 1.45; color: var(--dim); }
@@ -607,8 +652,8 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     inset 0 -3px 0 rgba(0, 0, 0, .35),
     inset 0 1px 0 rgba(255, 255, 255, .35),
     inset 0 0 0 1px rgba(0, 0, 0, .18),
-    0 2px 0 rgba(0, 0, 0, .45),
-    0 2px 4px rgba(0, 0, 0, .3);
+    0 2px 0 var(--sh-mini),
+    0 2px 4px var(--sh-mini-blur);
 }
 .legend .chip::before, .blk .chip::before, .log-chip::before {
   content: "";
@@ -651,7 +696,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .kit-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---- 引き出し ---- */
-.panel-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(10, 9, 13, .6); }
+.panel-backdrop { position: fixed; inset: 0; z-index: 50; background: var(--scrim-soft); }
 .panel-backdrop[hidden] { display: none; }
 
 .panel {
@@ -712,6 +757,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .panel-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .panel-sec > .field + .switch { margin-top: 22px; }
+.panel-sec > .switch + .field, .panel-sec > .field + .field { margin-top: 22px; }
 .haptics-switch { margin-top: 16px; }
 .full-field { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid var(--line-soft); }
 .full-state { margin: 8px 0 0; font-size: 12.5px; line-height: 1.6; }
@@ -754,7 +800,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .blk-detail { margin: 0; font-size: 11.5px; color: var(--dim); line-height: 1.8; }
 .blk-where { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .blk-map { display: grid; gap: 2px; }
-.blk-map i { width: 8px; height: 8px; border-radius: 2px; background: #33303d; display: block; }
+.blk-map i { width: 8px; height: 8px; border-radius: 2px; background: var(--chip); display: block; }
 .blk-map i.on { background: var(--accent); }
 .blk-where span { font-size: 10.5px; color: var(--dim); }
 .blk.dim .chip, .blk.dim .blk-main { opacity: .55; }
@@ -817,7 +863,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .ghost-btn:hover { border-color: var(--dim); }
 
 /* ---- 確認 ---- */
-.modal { position: fixed; inset: 0; z-index: 70; background: rgba(10, 9, 13, .78); display: grid; place-items: center; padding: 20px; }
+.modal { position: fixed; inset: 0; z-index: 70; background: var(--scrim); display: grid; place-items: center; padding: 20px; }
 .modal[hidden] { display: none; }
 .modal-card {
   background: var(--panel);
@@ -853,7 +899,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border-radius: 999px;
   font-size: 12px;
   color: var(--dim);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+  box-shadow: 0 8px 28px var(--sh-float);
 }
 .auto-bar[hidden] { display: none; }
 .auto-bar button {
@@ -915,7 +961,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     grid-template-rows: repeat(var(--ny), var(--cell));
     padding: 6px; border-radius: 10px;
     background: var(--well);
-    box-shadow: 0 0 0 1px var(--line-soft), inset 0 2px 7px rgba(0, 0, 0, .65);
+    box-shadow: 0 0 0 1px var(--line-soft), inset 0 2px 7px var(--well-in);
   }
   .side .card { display: none; }   /* 目標は盤の上に出す */
   .board-frame { width: 100%; grid-template-columns: 13px auto; grid-template-rows: 13px auto; }
@@ -1024,7 +1070,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .lock-note { margin: 12px 0 0; font-size: 11.5px; color: var(--dim); line-height: 1.7; }
 .lock-status { margin: 10px 0 0; min-height: 1.6em; font-size: 12.5px; line-height: 1.6; }
 .lock-owned { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--accent); }
-.lock-status[data-kind="error"] { color: #e0707a; }
+.lock-status[data-kind="error"] { color: var(--err); }
 .howto-sheet .lock-status + .wide { margin-top: 8px; }
 .howto-sheet .lock-list + .wide { margin-top: 20px; }
 .howto-sheet .wide + .wide { margin-top: 8px; }

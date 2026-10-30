@@ -1952,6 +1952,35 @@ if (inNativeApp) {
   });
 }
 
+// 画面の明暗。'dark'（既定）/ 'light' / 'auto'（端末に合わせ、変わったら追う）。index.html の head にも同じ規則の先読みがある
+const THEME_KEY = 'glyphshift.theme';
+const themeSegEl = document.getElementById('themeSeg');
+const themeMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+function themeSetting() {
+  let t = 'dark';
+  try { t = localStorage.getItem(THEME_KEY) || 'dark'; } catch (e) { /* 読めなければ暗いまま */ }
+  return ['dark', 'light', 'auto'].includes(t) ? t : 'dark';
+}
+function applyTheme() {
+  const t = themeSetting();
+  const light = t === 'light' || (t === 'auto' && !!themeMQ && themeMQ.matches);
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', light ? '#f4f3f6' : '#131217');
+  for (const b of themeSegEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === t));
+}
+themeSegEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  try { localStorage.setItem(THEME_KEY, b.dataset.v); } catch (err) { /* 保存できなくても今回は効く */ }
+  applyTheme();
+});
+if (themeMQ) {
+  if (themeMQ.addEventListener) themeMQ.addEventListener('change', () => { if (themeSetting() === 'auto') applyTheme(); });
+  else if (themeMQ.addListener) themeMQ.addListener(() => { if (themeSetting() === 'auto') applyTheme(); });
+}
+applyTheme();
+
 // 言語。選ぶと覚えて読み込み直す（i18n.js。途中で言葉が混ざらないように）
 const langSegEl = document.getElementById('langSeg');
 if (typeof I18n !== 'undefined') {
