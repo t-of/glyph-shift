@@ -496,13 +496,13 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   gap: 8px 12px;
 }
 .tut-bar[hidden] { display: none; }
-.tut-step { font: 500 12px/1 var(--mono); color: var(--dim); letter-spacing: .06em; }
+.tut-step { font: 500 14px/1 var(--mono); color: var(--dim); letter-spacing: .06em; }
 .tut-skip { padding: 8px 14px; font-size: 12px; }
 /* 練習中は目標の柄を説明のすぐ下に小さく出す（スマホ幅では本来の欄が盤の下で見えないため） */
 .tut-goal { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; }
-.tut-goal-label { font-size: 12px; color: var(--dim); }
+.tut-goal-label { font-size: 14px; color: var(--dim); }
 .tut-goal.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); animation: tutGlow 1s ease-in-out infinite; }
-.tut-text { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.5; }
+.tut-text { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 19px; font-weight: 600; color: var(--text); line-height: 1.5; }
 .action.tut-glow, .card.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); animation: tutGlow 1s ease-in-out infinite; }
 @keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 2.5px rgba(179, 156, 255, .3), 0 0 6px 1px rgba(179, 156, 255, .15); } 50% { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); } }
 #howtoTutorial { margin-top: 12px; }

@@ -1061,10 +1061,7 @@ function fire(i, dir = 1) {
   if (!cyclesAt(i)) {
     shakeTile(i);
     Sfx.blocked();
-    logEl.textContent = isBlank(abilityAt(i))
-      ? L('能力のないタイル', 'No ability')
-      : L('ここでは盤の外に出る', 'Would go off the board');
-    return;
+    return;   // 揺れと音だけで伝え、文字は出さない（2026-10-30 オーナー）
   }
   const ab = abilityAt(i);   // 使ったタイルは動かないので、前後で変わらない
   animatePlacement(() => applyMoveState(i, dir));
