@@ -328,7 +328,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   goHome(); dailyKey = null;
   // まだ始めていない日は、確認を出してから始める。やめれば何も起きない
   startDaily();
-  ok(!confirmEl.hidden && /時間を計ります/.test(confirmTextEl.innerHTML) && dailyKey === null && !saved().state, `始める前の確認: ${confirmTextEl.innerHTML}`);
+  ok(!confirmEl.hidden && /時間が動き出します/.test(confirmTextEl.innerHTML) && dailyKey === null && !saved().state, `始める前の確認: ${confirmTextEl.innerHTML}`);
   closeConfirm(); ok(dailyKey === null && !saved().state, 'やめたのに始まった');
   startDaily(); confirmAction();
   ok(confirmEl.hidden && dailyKey === key && saved().state === 'playing' && dailySince !== null, `始まらない: ${JSON.stringify(saved())}`);

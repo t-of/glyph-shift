@@ -375,10 +375,15 @@ function buildDom() {
   slots.length = 0;
   tiles.length = 0;
 
+  // キーボード・読み上げでも遊べるよう、マスはボタンとして扱う。Tab で入るのは 1 マスだけ（矢印で動く）
+  gridEl.setAttribute('role', 'group');
+  gridEl.setAttribute('aria-label', L('盤。矢印で動かし、Enter で押す、Shift+Enter で長押し', 'Board. Arrow keys to move, Enter to tap, Shift+Enter to hold'));
   for (let i = 0; i < SIZE; i++) {
     const slot = document.createElement('div');
     slot.className = 'slot';
     slot.dataset.i = String(i);
+    slot.setAttribute('role', 'button');
+    slot.tabIndex = i === 0 ? 0 : -1;
     gridEl.append(slot);
     slots[i] = slot;
   }
@@ -416,7 +421,10 @@ function markUsable() {
   for (let i = 0; i < SIZE; i++) {
     const t = tiles[board[i]];
     const ab = abilityAt(i);
-    if (cyclesAt(i)) { t.classList.remove('off', 'blank'); t.title = ABILITIES[ab].name; usable++; }
+    const ok = !!cyclesAt(i);
+    slots[i].setAttribute('aria-label', L(`${ABILITIES[ab].name}、${Math.floor(i / W) + 1} 行 ${i % W + 1} 列`, `${ABILITIES[ab].name}, row ${Math.floor(i / W) + 1}, column ${i % W + 1}`));
+    slots[i].setAttribute('aria-disabled', String(!ok));
+    if (ok) { t.classList.remove('off', 'blank'); t.title = ABILITIES[ab].name; usable++; }
     else if (isBlank(ab)) {
       // 能力そのものが無いマス。位置のせいではないので、暗くする印は付けない
       t.classList.remove('off');
@@ -1398,13 +1406,27 @@ function askConfirm(title, text, yesLabel, action, noLabel) {
   confirmYesEl.textContent = yesLabel;
   document.getElementById('confirmNo').textContent = noLabel || L('やめる', 'Cancel');
   confirmAction = action;
+  if (confirmEl.hidden && typeof document.activeElement !== 'undefined') confirmReturn = document.activeElement;
   confirmEl.hidden = false;
   document.getElementById('confirmNo').focus();
 }
+let confirmReturn = null;   // 確認を閉じたらフォーカスを戻す先
+// 確認が出ているあいだは Tab を 2 つのボタンの中で回す（後ろの盤やボタンへ出ない）
+confirmEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const no = document.getElementById('confirmNo');
+  const first = no, last = confirmYesEl;
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 function closeConfirm() {
+  const wasOpen = !confirmEl.hidden;
   confirmEl.hidden = true;
   confirmAction = null;
+  const back = confirmReturn;
+  confirmReturn = null;
+  if (wasOpen && back && back.isConnected !== false && typeof back.focus === 'function') back.focus();
 }
 const autoBarEl = document.getElementById('autoBar');
 const autoTextEl = document.getElementById('autoText');
@@ -1935,6 +1957,30 @@ const abortPress = () => { endPress(); pressHandled = true; };
 gridEl.addEventListener('pointercancel', abortPress);
 gridEl.addEventListener('pointerleave', abortPress);
 
+// キーボード: 矢印でマスを移る（Tab で入るのは今いる 1 マスだけ）。Enter・Space で押す、Shift を足すと長押し（逆方向）
+gridEl.addEventListener('keydown', (e) => {
+  const slot = e.target.closest && e.target.closest('.slot');
+  if (!slot) return;
+  const i = Number(slot.dataset.i);
+  const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -W, ArrowDown: W }[e.key];
+  if (step !== undefined) {
+    const j = i + step;
+    const sameRow = Math.abs(step) !== 1 || Math.floor(j / W) === Math.floor(i / W);
+    if (j >= 0 && j < SIZE && sameRow) {
+      slots[i].tabIndex = -1;
+      slots[j].tabIndex = 0;
+      slots[j].focus();
+    }
+    e.preventDefault();
+    return;
+  }
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (autoSolving || e.repeat) return;
+    fire(i, e.shiftKey ? -1 : 1);
+  }
+});
+
 gridEl.addEventListener('contextmenu', (e) => {
   const slot = e.target.closest('.slot');
   if (!slot) return;
@@ -2386,7 +2432,14 @@ const STAGES_KEY = 'glyphshift.stages';
 function loadStages() {
   try {
     const v = JSON.parse(localStorage.getItem(STAGES_KEY));
-    return v && typeof v === 'object' ? v : {};
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    // 1 件ずつ形をそろえる（壊れた値で seed が毎回変わったり、回数が文字になったりしないように）
+    const out = {};
+    for (const [k, st] of Object.entries(v)) {
+      if (!st || typeof st !== 'object' || !Number.isFinite(st.seed)) continue;
+      out[k] = { ...st, clears: Number.isFinite(st.clears) ? st.clears : 0, ...(st.perfect !== undefined ? { perfect: Number.isFinite(st.perfect) ? st.perfect : 0 } : {}) };
+    }
+    return out;
   } catch (e) { return {}; }
 }
 function saveStages() {
@@ -2575,8 +2628,8 @@ function startDaily(opts = {}) {
   // まだ始めていない日は、時間を数えはじめる前に確かめる（途中の記録がある日はそのまま続ける）
   if (!daily[key] && !opts.confirmed) {
     askConfirm(L('今日の 1 問を始める', 'Start today\'s puzzle'),
-      L('開いた瞬間から<strong>時間を計ります</strong>。挑戦は 1 日 1 回です。<br>途中でホームに戻ると、今日の記録は残りません。',
-        'The <strong>timer starts</strong> as soon as it opens. One try per day.<br>If you go back home midway, today\'s result won\'t be recorded.'),
+      L('「始める」を押すと<strong>時間が動き出します</strong>。挑戦は 1 日 1 回です。<br>ヒントを使うとランキングに載らず、途中でホームに戻ると記録は残りません。',
+        'The <strong>timer starts</strong> when you tap Start. One try per day.<br>Using a hint keeps you off the ranking, and going home midway leaves no record.'),
       L('始める', 'Start'), () => { closeConfirm(); startDaily({ confirmed: true }); });
     return;
   }
