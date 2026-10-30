@@ -3,6 +3,7 @@
 //
 // 決まり（本部の docs/private/launch/abilitile-appstore.md §2）:
 //   - 全画面は、自分で揃えたクリア（今日の 1 問も含む。「解説」で揃えたものは数えない）の通算 6 回目から、3 回に 1 回。
+//     出すのはクリアの画面を離れるとき（「次へ」「ホーム」を押したあと）。揃った瞬間には出さない（2026-10-30 オーナー）。
 //   - ごほうび広告は、鍵つきのステージ（カスタム含む）を 1 回遊べる権利。貯めない（Entitlement の ticket）。
 const Rewards = (() => {
   const COUNT_KEY = 'glyphshift.adClears';   // 自分で揃えた回数（通算）
@@ -32,6 +33,14 @@ const Rewards = (() => {
     return detail;
   }
 
+  // クリアの画面を離れるときに呼ぶ（script.js が、出す回のクリアのあとにだけ呼ぶ）。'abilitile:interstitial' を送る。
+  // 出すかどうか（完全版・iOS・読み込み済みか）は受け手が決める。遊びは待たせない（次の盤はすぐ始まり、広告がその上に出る）。
+  function requestInterstitial() {
+    try {
+      if (typeof window !== 'undefined' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('abilitile:interstitial'));
+    } catch (e) { /* 通知できなくても遊べる */ }
+  }
+
   // ---- ごほうび広告の口 ----
   // provider = { show(): Promise<'earned'|'dismissed'|'failed'> }  見終わって報酬が出たときだけ 'earned'
   let provider = null;
@@ -46,6 +55,6 @@ const Rewards = (() => {
   // 提供元の答えのうち、報酬が出た 'earned' だけを通す
   const outcome = (r) => (r === 'earned' ? 'earned' : 'dismissed');
 
-  return { FREE_CLEARS, EVERY, interstitialDue, recordClear, attach, onAttach, available, watch, outcome, _count: readCount };
+  return { FREE_CLEARS, EVERY, interstitialDue, recordClear, requestInterstitial, attach, onAttach, available, watch, outcome, _count: readCount };
 })();
 if (typeof window !== 'undefined') window.Rewards = Rewards;

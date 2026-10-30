@@ -1158,7 +1158,7 @@ function showClear() {
   shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag);
 
   // 自分で揃えた回数を数える（全画面の広告の間隔に使う。iOS 版だけが受け取る）。「解説」で揃えたものは数えない
-  if (!autoSolvedFlag) Rewards.recordClear(!!dailyKey);
+  if (!autoSolvedFlag) adDue = Rewards.recordClear(!!dailyKey).due;
 
   // 今日の 1 問は、自分で揃えたときだけ日ごとの記録に残す（ステージの記録には数えない）
   if (dailyKey && !autoSolvedFlag) { recordDaily(moves, hintUsed, par || null); return; }
@@ -1182,6 +1182,13 @@ function showClear() {
 // クリアのあとの「次へ」「ホーム」。ボタンの列（ヒント・解説・再生成）と入れ替える。
 // 今日の 1 問は次の盤が無いので「次へ」を出さない（共有とホーム）。
 const clearBarEl = document.getElementById('clearBar');
+let adDue = false;   // このクリアの画面を離れるときに全画面広告を出す回か（Rewards が数える）
+// クリアの画面を離れる（次へ・ホーム）。出す回なら広告を頼む。広告は次の画面の上に出る。
+function leaveClear() {
+  if (!adDue) return;
+  adDue = false;
+  Rewards.requestInterstitial();
+}
 const nextBtnEl = document.getElementById('nextBtn');
 function setClearBar(on) {
   document.getElementById('play').classList.toggle('is-clear', on);   // playEl はこの下で決まるので直接引く
@@ -1190,15 +1197,17 @@ function setClearBar(on) {
 // 次の盤。ステージなら同じステージの次の柄（鍵つきなら完全版の案内）、カスタムなら同じ設定で作り直す。
 function goNext() {
   if (dailyKey) { goHome(); return; }
+  // 鍵つきなら完全版の案内を開くだけ。購入の画面に広告を重ねないよう、ここでは広告を頼まない（RULES §13）
   if (W === H && !forcedAbilities && stageDef(W, curDiff)) {
     if (!Entitlement.stageOpen(W, curDiff)) { openLockSheet({ s: W, d: curDiff }); return; }
     const st = stageFor(W, curDiff);
     if (autoSolvedFlag) { st.seed = Math.floor(Math.random() * 1e9); delete st.goal; saveStages(); }   // 解説で揃えた盤も次は別の柄
     playStage(W, curDiff);
-    return;
+  } else {
+    if (forcedAbilities && !Entitlement.customOpen()) { openLockSheet(); return; }
+    newPuzzle();
   }
-  if (forcedAbilities && !Entitlement.customOpen()) { openLockSheet(); return; }
-  newPuzzle();
+  leaveClear();   // 次の盤を出してから。広告はその上に出て、閉じれば続きから遊べる
 }
 nextBtnEl.addEventListener('click', goNext);
 document.getElementById('clearHomeBtn').addEventListener('click', goHome);
@@ -2614,6 +2623,7 @@ function show(screen) {
 }
 
 function goHome() {
+  const fromClear = document.getElementById('play').classList.contains('is-clear');
   endTutorial();
   stopAutoSolve();
   closeConfirm();
@@ -2623,6 +2633,7 @@ function goHome() {
   setPanel('panel', false);
   renderStageList();
   show(titleEl);
+  if (fromClear) leaveClear();   // ホームを出してから広告を頼む
 }
 
 const menuBtnEl = document.getElementById('menuBtn');
