@@ -1,6 +1,6 @@
 // リポジトリの場所に依らないよう、根の位置を自分で求める
 const __root = require('path').join(__dirname, '..');
-// ハンバーガーの中身が「ルール / ブロック / 設定」の 3 タブになっているかの検証
+// ハンバーガーの中身が「遊び方 / ブロック / 設定」の 3 タブになっているかの検証
 let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 const el = (id) => document.getElementById(id);
@@ -50,7 +50,8 @@ ok(onlyShown('config'), '端から ← キーで反対の端に回らない');
   const secConfig = between('id="secConfig"', '</aside>');
   const setup = between('id="setup"', 'id="panel"');
 
-  ok(secRule.includes('class="howto"'), 'ルールの区画に手順が無い');
+  ok(secRule.includes('id="panelHowto"') && secRule.includes('id="panelTutorial"'), '遊び方の区画にボタンが無い');
+  ok(!secRule.includes('class="howto"'), '遊び方の箇条書きがパネルに残っている（本体はシート 1 つ）');
   ok(secBlock.includes('id="panelBody"'), 'ブロックの区画に一覧が無い');
   ok(secBlock.includes('id="glyphLegend"'), 'ブロックの区画に絵柄の読み方が無い');
   ok(secConfig.includes('id="glyphSeg"'), '設定の区画に絵柄の選びが無い');

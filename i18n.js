@@ -51,11 +51,7 @@ const I18n = (() => {
     create: 'Create with these settings',
     panelTitle: 'How to play &amp; settings',
     panelTabs: 'Switch view',
-    rules: `<li>The glyph is the tile's <strong>ability</strong>. Press it to trigger it. The ability moves along with the tile.</li>
-        <li>The tile you press stays put. Only the cells around it move.</li>
-        <li><strong>Long-press</strong> (or right-click) a rotation to turn it <strong>the other way</strong>.</li>
-        <li>The board doesn't wrap around. A tile <strong>can't be used</strong> where its effect would go off the board.</li>
-        <li>Match the <strong>goal pattern</strong> to clear. Tiles with the same glyph are interchangeable.</li>`,
+    howtoView: 'See how to play',
     tutorialAgain: 'Replay the tutorial',
     glyphLegendSum: 'How to read the glyphs',
     glyphLabel: 'Glyphs',

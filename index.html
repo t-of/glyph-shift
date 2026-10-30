@@ -124,13 +124,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <div class="panel-tabs" id="panelTabs" role="tablist" data-i18n-aria="panelTabs" aria-label="表示を切り替える"></div>
 
     <section class="panel-sec" id="secRule" role="tabpanel" aria-labelledby="tabRule" tabindex="0">
-      <ol class="howto" data-i18n="rules">
-        <li>絵柄がそのタイルの<strong>能力</strong>。押すと発動し、能力はタイルに付いて一緒に動く。</li>
-        <li>使ったタイル自身は動かない。動くのはまわりのマス。</li>
-        <li>回転は<strong>長押し</strong>（右クリックでも可）で<strong>逆回り</strong>。</li>
-        <li>盤の端はつながっていない。効果が盤の外に出る位置では<strong>使えない</strong>。</li>
-        <li><strong>目標の柄</strong>と同じ並びにすればクリア。同じ絵柄どうしは入れ替え可能。</li>
-      </ol>
+      <button id="panelHowto" class="ghost-btn" type="button" data-i18n="howtoView">遊び方を見る</button>
       <button id="panelTutorial" class="ghost-btn" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>
     </section>
 
@@ -209,7 +203,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </footer>
   </main>
 
-  <!-- 遊び方（スタートとホームから開く。プレイ中はパネルの「ルール」） -->
+  <!-- 遊び方（説明の本体はここだけ。スタート・ホーム・パネルの「遊び方」タブから開く） -->
   <dialog class="howto-sheet" id="howto" aria-labelledby="howtoTitle">
     <div class="panel-head">
       <h2 id="howtoTitle" data-i18n="howto">遊び方</h2>

@@ -1793,10 +1793,10 @@ gridEl.addEventListener('contextmenu', (e) => {
 document.getElementById('hintBtn').addEventListener('click', showHint);
 
 // ---- パネルのタブ ----
-// ブロックの一覧が長いので、ルール・ブロック・設定は積まずに切り替える。
+// ブロックの一覧が長いので、遊び方・ブロック・設定は積まずに切り替える。
 const panelTabsEl = document.getElementById('panelTabs');
 const TABS = [
-  { key: 'rule', label: L('ルール', 'Rules'), sec: 'secRule' },
+  { key: 'rule', label: L('遊び方', 'How to play'), sec: 'secRule' },
   { key: 'block', label: L('ブロック', 'Blocks'), sec: 'secBlock' },
   { key: 'config', label: L('設定', 'Settings'), sec: 'secConfig' },
 ];
@@ -2648,7 +2648,8 @@ function show(screen) {
   startEl.hidden = screen !== startEl;
   titleEl.hidden = screen !== titleEl;
   playEl.hidden = screen !== playEl;
-  menuBtnEl.hidden = screen !== playEl;
+  menuBtnEl.hidden = screen === startEl;   // ホームでも音・言語・絵柄の設定を触れるように
+  document.getElementById('panel').classList.toggle('at-home', screen !== playEl);   // 盤が無い間は「今のパズル」前提の表示を隠す
   homeBtnEl.hidden = screen !== playEl;
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 }
@@ -2675,13 +2676,14 @@ document.getElementById('logoBtn').addEventListener('click', goHome);
 document.getElementById('startBtn').addEventListener('click', () => { if (shouldShowTutorial()) startTutorial(); else show(titleEl); });
 
 // ---- 遊び方（スタートとホーム） ----
-// プレイ中のパネルは設定も兼ねるので、始める前に読むものは別に持つ。
+// 説明の本体はこのシートだけ。パネルの「遊び方」タブからはここを開く。
 // <dialog> の showModal で、Esc・フォーカスの閉じ込め・背景の操作止めを任せる。
 const howtoEl = document.getElementById('howto');
 function openHowto() { howtoEl.showModal?.(); }
 function closeHowto() { howtoEl.close?.(); }
 document.getElementById('startHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('homeHowtoBtn').addEventListener('click', openHowto);
+document.getElementById('panelHowto').addEventListener('click', openHowto);   // パネルは開いたまま重ねる。閉じればパネルに戻る
 document.getElementById('howtoClose').addEventListener('click', closeHowto);
 
 // 使うブロックの動きは、目標の柄の横の ⓘ から開くシートで見る（画面にはいつも出さない）
@@ -2695,7 +2697,7 @@ howtoEl.addEventListener('click', (e) => { if (e.target === howtoEl) closeHowto(
 // ---- 最初のチュートリアル ----
 // 初めて起動したとき（スタートの「はじめる」）だけ、決まった盤 5 面で遊び方を覚えてもらう。
 // 盤は手で決めた固定のもので、generate を通さない。揃えても★・クリアの回数・今日の 1 問・広告の回数には数えない。
-// 終えた・飛ばしたら localStorage の glyphshift.tutorial に覚え、次からは出さない（メニューの「ルール」から呼べる）。
+// 終えた・飛ばしたら localStorage の glyphshift.tutorial に覚え、次からは出さない（メニューの「遊び方」から呼べる）。
 // 文字は能力: N 何も起きない / L 左右の入れ替え / U 上下の入れ替え / C 上下左右の回転 / a 左上と右下 / b 右上と左下 / d 斜め 4 マスの回転。
 // すべて無料版のブロック（entitlement.js の FREE_BLOCKS）。a b d は色だけの目印で、盤のへりでは使えない。
 // mark: auto 次に押すマスを光らせる / goal 目標の柄を光らせる / hint ヒントのボタンを光らせる / 無し 印なし
