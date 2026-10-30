@@ -320,13 +320,9 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
       <!-- 狭い画面だけ: 目標の柄を盤の上に出し、見比べるのにスクロールしなくてよいようにする。広い画面は右の .side -->
       <div class="play-head" id="playHead">
         <div class="grid mini goal-top" id="goalTopGrid" role="img" data-i18n-aria="goalAria" aria-label="目標の柄"></div>
-        <div class="play-head-side">
-          <span class="play-head-label" data-i18n="goalCard">目標の柄</span>
-          <button id="legendBtn" class="ghost-btn legend-btn" type="button" aria-haspopup="dialog">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/></svg>
-            <span data-i18n="useBlocks">使うブロック</span>
-          </button>
-        </div>
+        <button id="legendBtn" class="icon legend-btn" type="button" aria-haspopup="dialog" data-i18n-aria="useBlocks" aria-label="使うブロック" title="使うブロック">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/></svg>
+        </button>
       </div>
       <div class="board-frame">
         <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>
@@ -367,12 +363,13 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
     <aside class="side">
       <section class="card" id="goalCard">
-        <h2 class="label" data-i18n="goalCard">目標の柄</h2>
+        <div class="card-head">
+          <h2 class="label" data-i18n="goalCard">目標の柄</h2>
+          <button id="legendBtnSide" class="icon legend-btn" type="button" aria-haspopup="dialog" data-i18n-aria="useBlocks" aria-label="使うブロック" title="使うブロック">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/></svg>
+          </button>
+        </div>
         <div class="grid mini" id="goalGrid"></div>
-      </section>
-      <section class="card">
-        <h2 class="label" data-i18n="useBlocks">使うブロック</h2>
-        <ul class="legend" id="legend"></ul>
       </section>
       <p class="seed">SEED <code id="seedOut">-</code></p>
       <p class="credit" data-i18n="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>

@@ -338,7 +338,6 @@ const tiles = [];
 
 const gridEl = document.getElementById('grid');
 const goalGridEl = document.getElementById('goalGrid');
-const legendEl = document.getElementById('legend');
 const goalTopEl = document.getElementById('goalTopGrid');
 const legendSheetListEl = document.getElementById('legendSheetList');
 const seedOutEl = document.getElementById('seedOut');
@@ -460,10 +459,9 @@ function renderGoal() {
 }
 
 function renderLegend() {
-  legendEl.replaceChildren();
   legendSheetListEl.replaceChildren();
   for (const ab of [...new Set(tileAbility)].sort((a, b) => a - b)) {
-    for (const host of [legendEl, legendSheetListEl]) {
+    {
       const li = document.createElement('li');
       const chip = document.createElement('span');
       chip.className = 'chip';
@@ -473,7 +471,7 @@ function renderLegend() {
       const txt = document.createElement('span');
       txt.textContent = ABILITIES[ab].name;
       li.append(chip, txt);
-      host.append(li);
+      legendSheetListEl.append(li);
     }
   }
 }
@@ -2615,9 +2613,9 @@ document.getElementById('startHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('homeHowtoBtn').addEventListener('click', openHowto);
 document.getElementById('howtoClose').addEventListener('click', closeHowto);
 
-// 狭い画面で、盤の上の「使うブロック」から凡例を開く（広い画面は右の .side にいつも出ている）
+// 使うブロックの動きは、目標の柄の横の ⓘ から開くシートで見る（画面にはいつも出さない）
 const legendSheetEl = document.getElementById('legendSheet');
-document.getElementById('legendBtn').addEventListener('click', () => legendSheetEl.showModal?.());
+for (const id of ['legendBtn', 'legendBtnSide']) document.getElementById(id).addEventListener('click', () => legendSheetEl.showModal?.());
 document.getElementById('legendClose').addEventListener('click', () => legendSheetEl.close?.());
 legendSheetEl.addEventListener('click', (e) => { if (e.target === legendSheetEl) legendSheetEl.close?.(); });
 document.getElementById('howtoOk').addEventListener('click', closeHowto);
