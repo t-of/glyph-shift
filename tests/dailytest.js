@@ -310,7 +310,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   // カード
   goHome();
   const card = stageListEl.querySelector('.daily-item');
-  ok(/解説を見た/.test(card.children[1].children[2].textContent), `カード: ${card.children[1].children[2].textContent}`);
+  ok(/解説を見た/.test(card.children[1].children[1].textContent), `カード: ${card.children[1].children[1].textContent}`);
 
   // 通常の盤ではヒントに確認を出さない
   newPuzzle(); showHint(); ok(confirmEl.hidden, '通常の盤でヒントの確認が出た');
@@ -321,7 +321,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // カードの表示: 未挑戦・途中・クリア（時間つき）・解説を見た
 {
   const key = todayKey();
-  const stateText = () => stageListEl.querySelector('.daily-item').children[1].children[2].textContent;
+  const stateText = () => stageListEl.querySelector('.daily-item').children[1].children[1].textContent;
   daily = {}; newPuzzle(); renderStageList(); ok(stateText() === '未挑戦', stateText());
   daily = { [key]: { state: 'playing', ms: 5000, hint: false } }; renderStageList(); ok(stateText() === '途中', stateText());
   daily = { [key]: { state: 'cleared', ms: 83000, hint: false, moves: 5, stars: 3, rankable: true } }; renderStageList(); ok(stateText() === 'クリア 1:23', stateText());
