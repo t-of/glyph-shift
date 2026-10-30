@@ -29,7 +29,7 @@ ok(el('confirmOverlay').hidden, '確認が閉じていない');
 ok(isSolved(), '承諾しても揃わない');
 ok(locked, '揃ったのにロックされていない');
 ok(el('log')._cls.has('done'), '完成の知らせが出ていない');
-ok(el('log').textContent.includes('自動で揃えました'), `表示: ${el('log').textContent}`);
+ok(el('log').textContent === '', `解説で揃ったのに文字が出た: ${el('log').textContent}`);
 ok(gridEl._cls.has('cleared'), '盤面の完成演出が付いていない');
 // 揃ったら解説は終わる（再生のバーは無い。2026-10-30）
 ok(!autoSolving, '揃ったのに解説のまま');

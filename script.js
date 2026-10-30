@@ -1286,7 +1286,7 @@ function showClear() {
   const dayRevealed = !!dailyKey && daily[dailyKey] && daily[dailyKey].state === 'revealed';
   const ranked = !!dailyKey && !dailyFree();   // やめた日の盤は、時間・共有なしのふつうのクリアの行
   logEl.textContent = (autoSolvedFlag || dayRevealed)
-    ? (ranked ? DAILY_REVEALED_LINE : L('自動で揃えました', 'Solved automatically'))
+    ? (ranked ? DAILY_REVEALED_LINE : '')   // 解説で揃ったときは文字を出さない（2026-10-30 オーナー）
     : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : clearLine(moves, hintUsed);
   clearPending = (!autoSolvedFlag && !dayRevealed && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(ranked && !autoSolvedFlag && !dayRevealed);

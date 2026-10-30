@@ -33,8 +33,8 @@ for (const [n, k, s, label] of [[4,3,3,'短い手順'], [10,10,1,'非常に長�
   console.log(`  ${n}×${n} ${k} 種（${label}・${cost} 手）: ${seen.length} 回に分けて順に完成`);
 }
 
-// 完成の知らせは「自動で揃えました」
-ok(el('log').textContent.includes('自動'), `表示: ${el('log').textContent}`);
+// 解説で揃ったときは文字を出さない
+ok(el('log').textContent === '', `表示: ${el('log').textContent}`);
 ok(board.every((v, i) => tileAbility[v] === tileAbility[i]), '絵柄が目標と違う');
 console.log('  自動で揃えた旨が表示され、結果も正しい完成形');
 
