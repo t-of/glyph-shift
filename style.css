@@ -824,14 +824,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .howto-more ul { padding-left: 17px; line-height: 1.8; margin: 8px 0 0; }
 .panel-sub { padding-top: 18px; border-top: 1px solid var(--line-soft); }
 
-.panel-body { display: flex; flex-direction: column; gap: 24px; }
-.fam-title {
-  margin: 0 0 12px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .08em;
-  color: var(--dim);
-}
+.panel-body { display: flex; flex-direction: column; gap: 16px; }   /* 見出しが無いので、ひと続きの一覧に見えるよう中と同じ間隔 */
 .fam-list { display: flex; flex-direction: column; gap: 16px; }
 .blk { display: grid; grid-template-columns: 42px 1fr; gap: 12px; }
 .blk .chip { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; position: relative; }
@@ -855,6 +848,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .blk-map i.on { background: var(--accent); }
 .blk-where span { font-size: 10.5px; color: var(--dim); }
 .blk.dim .chip, .blk.dim .blk-main { opacity: .55; }
+.panel.at-home .blk.dim .chip, .panel.at-home .blk.dim .blk-main { opacity: 1; }   /* ホームでは前の盤と関係なく全部明るく */
 
 /* ---- 設定 ---- */
 .setup-body { display: flex; flex-direction: column; gap: 24px; }
@@ -992,7 +986,6 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .switch { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; cursor: pointer; }
 .switch input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
 .switch > span:nth-of-type(1) { font-size: 13px; font-weight: 600; }
-.switch-note { grid-column: 2; font-size: 11px; color: var(--dim); line-height: 1.6; }
 .field[hidden] { display: none; }
 
 .label.spaced { margin-top: 14px; }

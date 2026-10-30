@@ -130,12 +130,10 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
       <label class="switch sound-switch">
         <input type="checkbox" id="soundChk" checked>
         <span data-i18n="sound">効果音</span>
-        <span class="switch-note" data-i18n="soundNote">押したとき・揃ったとき・完成したときに短い音が鳴る</span>
       </label>
       <label class="switch haptics-switch" id="hapticsRow" hidden>
         <input type="checkbox" id="hapticsChk" checked>
         <span data-i18n="haptics">振動</span>
-        <span class="switch-note" data-i18n="hapticsNote">押したとき・揃ったときに端末が振動する</span>
       </label>
       <div class="field">
         <span class="label" data-i18n="themeLabel">画面 / Theme</span>
@@ -152,7 +150,7 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
           <button type="button" data-v="en" lang="en">English</button>
         </div>
       </div>
-      <!-- 問い合わせへのリンクはここだけ（RULES §7 の必須。画面からは外した 2026-10-30） -->
+      <!-- 問い合わせへのリンクはここだけ（RULES §7 の必須で Web 版には残す。iOS 版は build-www.mjs で外す 2026-10-30 オーナー） -->
       <p class="credit" data-i18n="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
     </section>
   </aside>
@@ -250,11 +248,8 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
 
   <!-- ホーム -->
   <main class="screen title" id="title" hidden>
-    <button id="homeConfigBtn" class="icon home-gear" type="button" data-i18n-aria="settings" aria-label="設定" title="設定">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
-      </svg>
+    <button id="homeConfigBtn" class="icon home-gear menu-btn" type="button" data-i18n-aria="settings" aria-label="設定" title="設定">
+      <span></span><span></span><span></span>
     </button>
     <header class="title-head">
       <h1 class="title-name"><span class="wm" role="img" aria-label="ABILITILE"><span class="wm-ch" aria-hidden="true"><i>A</i></span><span class="wm-ch wm-on wm-t1" style="--c:#ffa289" aria-hidden="true"><i>B</i></span><span class="wm-ch" aria-hidden="true"><i>I</i></span><span class="wm-ch wm-press" aria-hidden="true"><i>L</i></span><span class="wm-ch wm-on wm-t2" style="--c:#fc9000" aria-hidden="true"><i>I</i></span><span class="wm-ch" aria-hidden="true"><i>T</i></span><span class="wm-ch" aria-hidden="true"><i>I</i></span><span class="wm-ch" aria-hidden="true"><i>L</i></span><span class="wm-ch wm-on wm-t3" style="--c:#65c77a" aria-hidden="true"><i>E</i></span></span></h1>

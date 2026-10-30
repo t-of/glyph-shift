@@ -12,8 +12,9 @@ for (const size of [4, 5, 6]) {
   const blks = all.filter((e) => e._cls.has('blk'));
   ok(blks.length === ABILITIES.length, `${size}×${size}: ブロック数 ${blks.length}（期待 ${ABILITIES.length}）`);
 
-  const titles = all.filter((e) => e._cls.has('fam-title')).map((e) => e.textContent);
-  ok(titles.length === FAMILIES.length, `${size}×${size}: 系統の見出しが ${titles.length} 個（期待 ${FAMILIES.length}）`);
+  // 「入れ替え」「回転」などの系統の見出しは出さない（2026-10-30 オーナー）
+  const titles = all.filter((e) => e._cls.has('fam-title'));
+  ok(titles.length === 0, `${size}×${size}: 系統の見出しが ${titles.length} 個出ている（出さない）`);
 
   // 「使用中」バッジの数が、このパズルで使う能力の種類数と一致するか
   const badges = all.filter((e) => e._cls.has('used')).length;

@@ -551,9 +551,6 @@ function renderPanel() {
   for (const fam of FAMILIES) {
     const ids = ABILITIES.map((ab, k) => [ab, k]).filter(([ab]) => INFO[ab.id].fam === fam.key);
     const sec = document.createElement('section');
-    const h = document.createElement('p');
-    h.className = 'fam-title';
-    h.textContent = L(`${fam.label}（${ids.length} 種）`, `${fam.label} (${ids.length})`);
     const list = document.createElement('div');
     list.className = 'fam-list';
 
@@ -606,7 +603,7 @@ function renderPanel() {
       row.append(chip, main);
       list.append(row);
     }
-    sec.append(h, list);
+    sec.append(list);   // 「入れ替え」「回転」などの見出しは出さない（2026-10-30 オーナー。並びはそのまま）
     body.append(sec);
   }
 }
