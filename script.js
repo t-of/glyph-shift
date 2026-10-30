@@ -2611,10 +2611,14 @@ function renderDailyCard() {
   title.textContent = L('今日の 1 問', 'Daily puzzle');
   const state = document.createElement('span');
   state.className = 'stage-stars';
-  state.textContent = dailyIsCleared(rec)
+  // 途中の日は文字を出さず、カードの縁（resume と同じ）で見せる（2026-10-30 オーナー）。読み上げには「途中」を残す
+  const playing = !dailyIsClosed(rec) && (resume || (rec && rec.ms > 0));
+  const stateLabel = dailyIsCleared(rec)
     ? L(`クリア${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`, `cleared${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`)
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
-    : resume || (rec && rec.ms > 0) ? L('途中', 'in progress') : L('未挑戦', 'not played');
+    : playing ? L('途中', 'in progress') : L('未挑戦', 'not played');
+  state.textContent = playing ? '' : stateLabel;
+  if (playing) item.classList.add('resume');
   body.append(title, state);   // 日付と大きさは出さない（2026-10-30 オーナー。読み上げには残す）
   const streak = dailyStreak(daily, key);
   if (streak >= 2) {
@@ -2630,8 +2634,8 @@ function renderDailyCard() {
     body.append(tag);
   }
   item.append(mini, body);
-  item.setAttribute('aria-label', L(`今日の 1 問、${m}月${d}日、${state.textContent}${streak >= 2 ? `、${streak} 日連続` : ''}`,
-    `Daily puzzle, ${monthDayEn(m, d)}, ${state.textContent}${streak >= 2 ? `, ${streak}-day streak` : ''}`));
+  item.setAttribute('aria-label', L(`今日の 1 問、${m}月${d}日、${stateLabel}${streak >= 2 ? `、${streak} 日連続` : ''}`,
+    `Daily puzzle, ${monthDayEn(m, d)}, ${stateLabel}${streak >= 2 ? `, ${streak}-day streak` : ''}`));
   item.addEventListener('click', startDaily);
   return item;
 }

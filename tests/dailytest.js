@@ -323,7 +323,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   const key = todayKey();
   const stateText = () => stageListEl.querySelector('.daily-item').children[1].children[1].textContent;
   daily = {}; newPuzzle(); renderStageList(); ok(stateText() === '未挑戦', stateText());
-  daily = { [key]: { state: 'playing', ms: 5000, hint: false } }; renderStageList(); ok(stateText() === '途中', stateText());
+  daily = { [key]: { state: 'playing', ms: 5000, hint: false } }; renderStageList(); ok(stateText() === '' && stageListEl.querySelector('.daily-item').classList.contains('resume') && /途中/.test(stageListEl.querySelector('.daily-item').getAttribute('aria-label')), `途中: ${stateText()}`);
   daily = { [key]: { state: 'cleared', ms: 83000, hint: false, moves: 5, stars: 3, rankable: true } }; renderStageList(); ok(stateText() === 'クリア 1:23', stateText());
   daily = { [key]: { moves: 5, stars: 3, hint: false } }; renderStageList(); ok(stateText() === 'クリア', `古い形: ${stateText()}`);
   daily = { [key]: { state: 'revealed', ms: 5000, hint: true } }; renderStageList(); ok(stateText() === '解説を見た', stateText());
