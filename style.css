@@ -99,7 +99,7 @@ html { background: var(--ground); }
 body {
   margin: 0;
   padding: calc(var(--rail-h) + 40px) 24px 72px;
-  background: var(--ground);
+  background: transparent;   /* 地は html が塗り、その上に浮かぶタイル（body::before）を置く */
   color: var(--text);
   font-family: var(--ui);
   font-size: 14px;
@@ -282,6 +282,26 @@ body.no-rail .rail { display: none; }
 .howto-steps .howto-cap { font-size: 11px; }
 .howto-sheet .wide { margin-top: 24px; }
 
+/* ---- 背景: 浮かぶタイル（2026-10-30 オーナー、比較は docs/private/launch/abilitile-background/） ----
+   駒の色の大きなタイルを画面の端に傾けて薄く置く。盤の真後ろ（画面の真ん中）には置かない。
+   画面に固定して、スクロールしても動かさない。濃さは --float-tiles（明るい画面は濃いめ）。 */
+:root { --float-tiles: .09; }
+:root[data-theme="light"] { --float-tiles: .16; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--float-tiles);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='242' height='242'%3E%3Crect x='36.0' y='36.0' width='170' height='170' rx='34' fill='%23ffa289' transform='rotate(-14 121 121)'/%3E%3C/svg%3E") -56px 34px / 242px 242px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='213' height='213'%3E%3Crect x='31.5' y='31.5' width='150' height='150' rx='30' fill='%23fc9000' transform='rotate(12 106.5 106.5)'/%3E%3C/svg%3E") right -52px top -16px / 213px 213px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='270' height='270'%3E%3Crect x='40.0' y='40.0' width='190' height='190' rx='38' fill='%2365c77a' transform='rotate(-8 135 135)'/%3E%3C/svg%3E") right -92px top 44% / 270px 270px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='228' height='228'%3E%3Crect x='34.0' y='34.0' width='160' height='160' rx='32' fill='%23a5c1ff' transform='rotate(18 114 114)'/%3E%3C/svg%3E") -80px 70% / 228px 228px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='199' height='199'%3E%3Crect x='29.5' y='29.5' width='140' height='140' rx='28' fill='%23f9b800' transform='rotate(-20 99.5 99.5)'/%3E%3C/svg%3E") right 30px bottom -40px / 199px 199px no-repeat;
+}
+
 /* ---- ステージ一覧 ---- */
 /* サイズごとに 1 行、行の中は横スクロール（スマホの指で流せるようスナップ付き）。
    ページ全体は縦にふつうにスクロールする（内側に高さで区切らない）。 */
@@ -390,6 +410,7 @@ body.no-rail .rail { display: none; }
     text-align: left;
   }
   .title-head { grid-column: 1; grid-row: 1; align-items: flex-start; }
+  .title .title-name { font-size: 22px; }   /* 左の 240px の列に収める（40px だと一覧に食い込む） */
   .home-pick { display: contents; }
   .home-links { grid-column: 1; grid-row: 2; flex-direction: column; margin-top: 0; }
   .home-foot { grid-column: 1; grid-row: 3; align-items: flex-start; }
