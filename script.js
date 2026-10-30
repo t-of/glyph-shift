@@ -2409,8 +2409,9 @@ const inProgress = (s, d) =>
   W === s && H === s && curDiff === d && !forcedAbilities && !dailyKey && !tutorial
   && seed === stageFor(s, d).seed && run.i >= 0 && !isSolved();
 
-// 一覧のカードの記録。★は「評価」の意味だけに使い、クリア回数は文字で出す。
-// ★（手数の評価）は出さない。
+// 一覧のカードの記録。クリアの回数を ★ の数で出す（2026-10-30 オーナー。文字を減らす）。
+// 5 回までは ★ を並べ、6 回からは ★×6。未クリアは何も出さない。文字の言い方はカードの読み上げ（aria-label）に残す。
+const clearsMark = (n) => !n ? '' : n <= 5 ? '★'.repeat(n) : `★×${n}`;
 const clearsLabel = (st) =>
   st.clears
     ? L(`クリア ${st.clears} 回`, `cleared ${timesEn(st.clears)}`)
@@ -2705,7 +2706,7 @@ function renderStageList() {
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
-      stars.textContent = clearsLabel(st);
+      stars.textContent = clearsMark(st.clears);
 
       item.append(mini, meta, stars);
       if (locked) {

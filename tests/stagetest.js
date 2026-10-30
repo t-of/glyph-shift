@@ -98,4 +98,9 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  解説で揃えたときは数えない  OK');
 }
 
+// クリアの回数は ★ の数（5 回まで並べ、6 回から ★×N。未クリアは空）
+ok(clearsMark(0) === '' && clearsMark(undefined) === '', '未クリアで何か出る');
+ok(clearsMark(1) === '★' && clearsMark(5) === '★★★★★', `★ の並び: ${clearsMark(5)}`);
+ok(clearsMark(6) === '★×6' && clearsMark(23) === '★×23', `6 回から: ${clearsMark(6)}`);
+
 console.log(fail === 0 ? '\nステージ一覧: 全チェック通過' : `\n失敗 ${fail} 件`);
