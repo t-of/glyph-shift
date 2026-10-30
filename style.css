@@ -438,13 +438,13 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 
 /* container-type でマスの幅（cqw）を測り、タイルの厚みをマスの大きさに比例させる。
    固定の px だと、スマホで盤が縮んだときに厚みだけ太く見える。 */
-.slot { position: relative; border-radius: 11px; background: var(--slot); container-type: size; }
+.slot { position: relative; border-radius: 15%; background: var(--slot); container-type: size; }   /* 角はマスの大きさに比例（72px で約 11px）。小さいマスでも丸くならない */
 
 /* 立体のタイル。厚み（下側の濃い縁）＋上端のハイライト＋台からの浮き。絵柄はそのまま見せる。 */
 .tile {
   position: absolute;
   inset: 0;
-  border-radius: 11px;
+  border-radius: 15%;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -622,11 +622,11 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .card { margin: 0; }
 
 .mini { --cell: var(--mini-cell, 30px); --gap: 4px; }
-.mini .slot, .stage-mini .slot { border-radius: 6px; background: none; }
+.mini .slot, .stage-mini .slot { border-radius: 15%; background: none; }
 /* 小さいタイルなので、厚みと影は本盤より弱める（潰れて見えないように）。
    目標の柄（サイドバー）とステージ一覧のカードで共通に使う。 */
 .mini .tile, .stage-mini .tile {
-  border-radius: 6px;
+  border-radius: 15%;
   cursor: default;
   --th: clamp(1px, 10cqw, 3px);
   --drop: clamp(1px, 5cqw, 2px);
@@ -974,7 +974,6 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   }
   .ruler-x { padding: 0 7px; }
   .ruler-y { padding: 7px 0; }
-  .slot, .tile { border-radius: 9px; }
   .message { max-width: 100%; margin-top: 16px; min-height: 38px; }
 
   .side {
