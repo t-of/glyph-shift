@@ -2,7 +2,8 @@
    ABILITILE
    盤面に彩度の高いタイルが並ぶので、まわりの UI は色を持たない。
    色はタイルに全部持たせ、地・枠・文字はニュートラルに徹する。
-   アクセントの菫色はタイルの色相（0〜215）に無い帯なので衝突しない。
+   アクセントも色を持たない明るいグレー（2026-10-30 オーナー。駒の 13 色が色相をほぼ一周し、
+   どの色相でもどれかの駒とかぶるため。前は菫色 #b39cff）。
    =========================================================== */
 
 :root {
@@ -12,9 +13,11 @@
   --line: #2b2833;
   --line-soft: #211f28;
   --text: #efecf5;
-  --dim: #948fa6;         /* 補助文字。アクセント寄りに色味を振る */
-  --accent: #b39cff;
-  --accent-ink: #17131f;
+  --dim: #9b98a3;         /* 補助文字 */
+  --accent: #efecf5;
+  --accent-ink: #131217;
+  --accent-glow: color-mix(in srgb, var(--accent) 45%, transparent);
+  --wm-tile: #2a2733;    /* 名前のロゴの、色を持たないタイル */
   --warn: #ffcf5c;
 
   --cell: 72px;
@@ -148,7 +151,24 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .title-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .title-head .mark { color: var(--accent); }
 .title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
-.title-name { margin: 2px 0 0; font-size: 28px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
+/* 名前のロゴ（2026-10-30 オーナーが案 2 を選ぶ）。1 字ずつ小さなタイルに載せ、B・T・E の 3 枚だけ駒の色で傾け、
+   L は押されて沈んだ形にして、アイコンの「押した瞬間」と響かせる。大きさは font-size で決める（em で縮む） */
+.wm { display: inline-flex; gap: .09em; font-family: var(--ui); font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; white-space: nowrap; vertical-align: middle; }
+.wm-ch { position: relative; width: 1.02em; height: 1.12em; display: grid; place-items: center; font-size: .78em; border-radius: .2em; color: var(--text);
+  background: var(--c, var(--wm-tile));
+  box-shadow: inset 0 -.1em 0 rgba(0, 0, 0, .38), inset 0 .035em 0 rgba(255, 255, 255, .4), 0 .05em 0 rgba(0, 0, 0, .5); }
+.wm-ch::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .32), rgba(255, 255, 255, .08) 32%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, .16)); }
+.wm-ch > i { font-style: normal; position: relative; line-height: 1; margin-top: -.06em; }
+.wm-on { color: var(--accent-ink); }
+.wm-t1 { transform: rotate(-7deg) translateY(-.08em); }
+.wm-t2 { transform: rotate(5deg) translateY(-.04em); }
+.wm-t3 { transform: rotate(-4deg); }
+.wm-press { box-shadow: inset 0 -.04em 0 rgba(0, 0, 0, .3), inset 0 .06em .1em rgba(0, 0, 0, .35); transform: translateY(.05em); filter: brightness(.92); }
+.wordmark.wm { font-size: 16px; }
+.title-name .wm { font-size: inherit; }
+
+.title-name { margin: 2px 0 0; font-size: 28px; font-weight: 700; color: var(--text); }
 .title-catch { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.7; }
 
 .home-pick { align-self: stretch; display: flex; flex-direction: column; gap: 22px; text-align: left; }
@@ -168,7 +188,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   text-align: center;
 }
 .start .title-head .mark-icon { width: 112px; height: 112px; }
-.start .title-name { font-size: 36px; }
+.start .title-name { font-size: min(36px, calc((100vw - 56px) / 10.4)); }
 .start-actions { align-self: stretch; display: flex; flex-direction: column; gap: 10px; }
 .start-actions button { padding: 16px; font-size: 14px; }
 
@@ -455,7 +475,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   position: absolute;
   inset: -6px;
   border-radius: 17px;
-  box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45);
+  box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px var(--accent-glow);
   animation: hintPulse 1s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;
@@ -503,10 +523,10 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 /* 練習中は目標の柄を説明のすぐ下に小さく出す（スマホ幅では本来の欄が盤の下で見えないため） */
 .tut-goal { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; }
 .tut-goal-label { font-size: 14px; color: var(--dim); }
-.tut-goal.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); animation: tutGlow 1s ease-in-out infinite; }
+.tut-goal.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px var(--accent-glow); animation: tutGlow 1s ease-in-out infinite; }
 .tut-text { grid-column: 1 / -1; margin: 0; text-align: center; font-size: 19px; font-weight: 600; color: var(--text); line-height: 1.5; }
-.action.tut-glow, .card.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); animation: tutGlow 1s ease-in-out infinite; }
-@keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 2.5px rgba(179, 156, 255, .3), 0 0 6px 1px rgba(179, 156, 255, .15); } 50% { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px rgba(179, 156, 255, .45); } }
+.action.tut-glow, .card.tut-glow { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px var(--accent-glow); animation: tutGlow 1s ease-in-out infinite; }
+@keyframes tutGlow { 0%, 100% { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 6px 1px color-mix(in srgb, var(--accent) 15%, transparent); } 50% { box-shadow: 0 0 0 2.5px var(--accent), 0 0 22px 5px var(--accent-glow); } }
 #howtoTutorial { margin-top: 12px; }
 #panelTutorial { margin-top: 4px; }
 #panelNew { margin-bottom: 4px; }
