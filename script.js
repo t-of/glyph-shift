@@ -797,14 +797,14 @@ function dailySeed(key) {
   return (h >>> 0) % 1e9;
 }
 // 今日の 1 問の記録 1 日ぶん（2026-10-30 から）。
-//   { state: 'playing'|'cleared'|'revealed', ms, hint, moves, stars, rankable }
+//   { state: 'playing'|'cleared'|'revealed', ms, hint, moves, stars, rankable }（途中は t0 = 盤を初めて見た時刻も）
 //   playing = 途中（時間とヒントだけ残す） / cleared = 自分で揃えた / revealed = 解説を見た（クリアにならない）
 // 古い形 { moves, stars, hint } は「クリア済み・時間なし」として読む。
 function normDaily(e) {
   if (!e || typeof e !== 'object') return null;
   const ms = Number.isFinite(e.ms) && e.ms >= 0 ? Math.floor(e.ms) : null;
   const hint = !!e.hint;
-  if (e.state === 'playing') return { state: 'playing', ms: ms || 0, hint };
+  if (e.state === 'playing') return { state: 'playing', ms: ms || 0, hint, ...(Number.isFinite(e.t0) ? { t0: e.t0 } : {}) };
   if (e.state === 'revealed') return { state: 'revealed', ms: ms || 0, hint: true };
   if (e.state !== undefined && e.state !== 'cleared') return null;
   if (!Number.isFinite(e.moves)) return null;
@@ -879,14 +879,17 @@ function saveDaily() {
 let dailyKey = null;   // いま遊んでいる盤が今日の 1 問なら、その日付（始めた日。日付をまたいでもその日の記録）。そうでなければ null
 let dailyReview = false;   // 解いた・解説を見た日の盤を見ているだけ（押せない）
 
-// 時間。今日の 1 問の盤が画面に出ていて、アプリが前にあるあいだだけ数える。
-// 数えた ms は数秒ごと・止まるたびに daily[dailyKey] へ保存し、開き直しても続きから数える。
-let dailyMs = 0;            // 止まっているあいだに数え終えた ms
-let dailySince = null;      // 数えている最中なら、その始まり（clockNow の値）
+// 時間。今日の 1 問の盤を初めて見た時刻（t0、端末の時計）から、時計どおりに数える（2026-10-30 オーナー）。
+// ホームに戻っても・アプリを裏にしても・閉じても止まらない（盤を見て外で考える抜け道をふさぐ）。
+// t0 は daily[dailyKey] に保存し、開き直しても同じ t0 から数える。揃った瞬間の ms を記録する。
+let dailyMs = 0;            // t0 の無い古い途中の記録の時間（読み込むときに t0 へ置き換える）
+let dailyT0 = null;         // 盤を初めて見た時刻（clockNow の値）
+let dailySince = null;      // 盤が出ていて、途中の記録を数秒ごとに保存しているあいだ true
 let dailyTickTimer = null;
-let clockNow = () => performance.now();   // テストで差し替える
+let clockNow = () => Date.now();   // テストで差し替える
 const DAILY_SAVE_MS = 3000;
-const dailyElapsed = () => Math.floor(dailyMs + (dailySince !== null ? clockNow() - dailySince : 0));
+// 端末の時計を戻されても負にしない
+const dailyElapsed = () => dailyT0 !== null ? Math.max(0, Math.floor(clockNow() - dailyT0)) : Math.floor(dailyMs);
 function dailyShouldRun() {
   if (!dailyKey || dailyReview || tutorial || locked || playEl.hidden) return false;
   if (typeof document !== 'undefined' && document.hidden) return false;
@@ -896,7 +899,7 @@ function dailyShouldRun() {
 // いまの時間・ヒントを途中の記録として書く（クリア・解説の記録がある日は触らない）
 function dailyPersist() {
   if (!dailyKey || dailyReview) return;
-  daily = addDaily(daily, dailyKey, { state: 'playing', ms: dailyElapsed(), hint: !!hintUsed });
+  daily = addDaily(daily, dailyKey, { state: 'playing', ms: dailyElapsed(), t0: dailyT0, hint: !!hintUsed });
   saveDaily();
 }
 function dailyScheduleTick() {
@@ -908,26 +911,31 @@ function dailyScheduleTick() {
     dailyScheduleTick();
   }, DAILY_SAVE_MS);
 }
-// 数えるべきか見直す。盤・画面・アプリの前後が変わるたびに呼ぶ。
+// 盤が出たら t0 を決める（まだなら）。保存の刻みは盤が出ているあいだだけ回す。時間そのものは止まらない
 function dailyClockSync() {
   const run = dailyShouldRun();
-  if (run && dailySince === null) { dailySince = clockNow(); dailyScheduleTick(); }
+  if (run && dailyT0 === null) { dailyT0 = clockNow() - dailyMs; dailyMs = 0; dailyPersist(); }
+  if (run && dailySince === null) { dailySince = true; dailyScheduleTick(); }
   else if (!run && dailySince !== null) dailyClockStop();
 }
-// 数えるのを止めて保存する
+// 保存の刻みを止めて、いまの時間を保存する（時間は時計どおりに進み続ける）
 function dailyClockStop() {
   if (dailyTickTimer) { clearTimeout(dailyTickTimer); dailyTickTimer = null; }
   if (dailySince === null) return;
-  dailyMs += Math.max(0, clockNow() - dailySince);
   dailySince = null;
   dailyPersist();
 }
-// 盤が変わったとき。その日の記録から時間・ヒントを読み込む（beginBoard が呼ぶ）
+// 盤が変わったとき。その日の記録から t0・ヒントを読み込む（beginBoard が呼ぶ）
 function dailyLoadRecord() {
-  dailyMs = 0; dailySince = null; dailyReview = false;
+  dailyMs = 0; dailyT0 = null; dailySince = null; dailyReview = false;
   if (dailyTickTimer) { clearTimeout(dailyTickTimer); dailyTickTimer = null; }
   const e = dailyKey ? daily[dailyKey] : null;
-  if (e) { dailyMs = e.ms || 0; hintUsed = !!e.hint; }
+  if (e) {
+    hintUsed = !!e.hint;
+    if (e.state === 'playing' && Number.isFinite(e.t0)) dailyT0 = e.t0;
+    else if (e.state === 'playing') dailyT0 = clockNow() - (e.ms || 0);   // t0 の無い古い途中の記録
+    else dailyMs = e.ms || 0;
+  }
   const pn = document.getElementById('panelNew');
   if (pn && !tutorial) pn.hidden = !!dailyKey;   // 「新しい盤にする」は今日の 1 問では出さない
   dailyClockSync();
@@ -940,6 +948,7 @@ function markDailyHint() {
 // 解説を見る。その日はクリアにならない。その場で保存する
 function markDailyRevealed() {
   if (!dailyKey) return;
+  dailyMs = dailyElapsed(); dailyT0 = null;
   dailyClockStop();
   hintUsed = true;
   daily = addDaily(daily, dailyKey, { state: 'revealed', ms: dailyElapsed(), hint: true });
@@ -1252,7 +1261,7 @@ function showClear() {
   if (tutorial) { tutorialCleared(); return; }   // 練習の盤は、★・回数・広告の数のどれにも数えない
   commitRun();
   Sfx.solved();
-  if (dailyKey) dailyClockStop();   // 揃った瞬間の時間で止める（locked にする前に）
+  if (dailyKey) { dailyMs = dailyElapsed(); dailyT0 = null; dailyClockStop(); }   // 揃った瞬間の時間で止める（locked にする前に）
   locked = true;
   // 解説を見ているあいだは、揃ったあとも操作バーを残す。戻って見直せるようにするため。
   // 閉じるのは「やめる」を押したときだけ。

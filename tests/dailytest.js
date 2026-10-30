@@ -209,43 +209,41 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  クリアの流れ・1 日 1 回  OK');
 }
 
-// 時間: 盤が出ていてアプリが前にある間だけ。保存・復元
+// 時間: 盤を初めて見た時刻から時計どおり（裏・ホーム・閉じても止まらない）。保存・復元
 {
   daily = {}; localStorage.removeItem('glyphshift.daily');
   const key = todayKey();
   W = H = 5; SIZE = 25; buildDom(); forcedAbilities = null; types = 4;
   let now = 1000; clockNow = () => now;
   const saved = () => (JSON.parse(localStorage.getItem('glyphshift.daily') || '{}')[key] || {});
-  startDaily();   // 盤が出る → 数え始める
-  ok(dailySince !== null, '盤が出ても数えない');
+  startDaily();   // 盤が出る → t0 が決まる
+  ok(dailySince !== null && saved().t0 === 1000, `盤が出ても t0 が残らない: ${JSON.stringify(saved())}`);
   now += 5000; ok(dailyElapsed() === 5000, `5 秒: ${dailyElapsed()}`);
   // 数秒ごとの保存
   now += 3000; flushTimers();
   ok(saved().state === 'playing' && saved().ms === 8000, `定期保存: ${JSON.stringify(saved())}`);
-  // 裏に回ると止まる
+  // 裏に回っても時間は進む（保存の刻みだけ止まる）
   document.hidden = true; dailyClockSync();
-  ok(dailySince === null && saved().ms === 8000, '裏で止まらない');
-  now += 600000; ok(dailyElapsed() === 8000, `裏のあいだも進んだ: ${dailyElapsed()}`);
+  ok(dailySince === null && saved().ms === 8000, '裏で保存されない');
+  now += 600000; ok(dailyElapsed() === 608000, `裏のあいだ止まった: ${dailyElapsed()}`);
   document.hidden = false; dailyClockSync();
-  ok(dailySince !== null, '戻っても再開しない');
-  now += 2000; ok(dailyElapsed() === 10000, `再開: ${dailyElapsed()}`);
-  // ホームへ戻ると止まる（保存される）
+  ok(dailySince !== null, '戻っても保存の刻みが再開しない');
+  // ホームへ戻っても進む
   goHome();
-  ok(dailySince === null && saved().ms === 10000, `ホームで止まらない: ${JSON.stringify(saved())}`);
-  now += 99999; ok(dailyElapsed() === 10000, 'ホームのあいだ進んだ');
-  // 開き直し（記録だけ残して、変数を捨てた状態）→ 続きから数える
-  dailyMs = 0; dailyKey = null;
+  now += 2000; ok(dailyElapsed() === 610000, `ホームで止まった: ${dailyElapsed()}`);
+  // 開き直し（記録だけ残して、変数を捨てた状態）→ 同じ t0 から数える
+  dailyMs = 0; dailyT0 = null; dailyKey = null;
   daily = loadDaily();
   startDaily();
-  ok(dailyElapsed() === 10000 && dailySince !== null, `開き直しで続きから数えない: ${dailyElapsed()}`);
-  now += 1500; ok(dailyElapsed() === 11500, '続きから 1.5 秒');
-  // 別の盤を始めると、いまの時間を残して止まる
-  newPuzzle();
-  ok(saved().ms === 11500 && dailySince === null, `別の盤で保存されない: ${JSON.stringify(saved())}`);
-  now += 5000;
-  // 画面を消す・アプリを閉じる（pagehide 相当）でも止まる
-  startDaily(); now += 1000; dailyClockStop();
-  ok(saved().ms === 12500, `止めたときの保存: ${saved().ms}`);
+  ok(dailyElapsed() === 610000 && dailySince !== null, `開き直しで t0 が戻らない: ${dailyElapsed()}`);
+  // t0 の無い古い途中の記録は、いまから ms を引いた時刻を t0 にする
+  daily = { [key]: { state: 'playing', ms: 7000, hint: false } }; dailyKey = null;
+  startDaily();
+  ok(dailyElapsed() === 7000, `古い途中の記録: ${dailyElapsed()}`);
+  now += 1000; ok(dailyElapsed() === 8000, '古い途中の記録から進まない');
+  // 端末の時計を戻されても負にならない
+  now -= 999999; ok(dailyElapsed() === 0, `時計を戻すと負: ${dailyElapsed()}`);
+  now += 999999;
   // 設定の盤（ステージ）を遊んでいる間は数えない
   newPuzzle(); ok(dailySince === null, '通常の盤で数えている');
   // 日付をまたいでも始めた日のキーで記録する
@@ -254,7 +252,6 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(dailyKey === k1 && dailySince !== null, '昨日の盤');
   now += 4000; dailyClockStop();
   ok(daily[k1] && daily[k1].ms === 4000 && daily[k1].state === 'playing', `始めた日で記録: ${JSON.stringify(daily[k1])}`);
-  ok(daily[key].ms === 12500, '今日の記録が変わった');
   // クリアすると、クリアの瞬間で止まって以降進まない
   daily = {}; localStorage.removeItem('glyphshift.daily');
   now = 0; newPuzzle(dailySeed(key), key); show(playEl);
