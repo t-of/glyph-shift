@@ -2724,7 +2724,7 @@ function show(screen) {
   startEl.hidden = screen !== startEl;
   titleEl.hidden = screen !== titleEl;
   playEl.hidden = screen !== playEl;
-  menuBtnEl.hidden = screen === startEl;   // ホームでも音・言語・絵柄の設定を触れるように
+  menuBtnEl.hidden = screen !== playEl;   // 右上のボタンは遊ぶ画面だけ（2026-10-30 オーナー。起動画面・ホームでは出さない）
   document.getElementById('panel').classList.toggle('at-home', screen !== playEl);   // 盤が無い間は「今のパズル」前提の表示を隠す
   homeBtnEl.hidden = screen !== playEl;
   dailyClockSync();   // 盤の画面が出ているあいだだけ時間を数える

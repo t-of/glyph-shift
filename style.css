@@ -212,7 +212,10 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .wm-t2 { transform: rotate(5deg) translateY(-.04em); }
 .wm-t3 { transform: rotate(-4deg); }
 .wm-press { box-shadow: inset 0 -.04em 0 rgba(0, 0, 0, .3), inset 0 .06em .1em rgba(0, 0, 0, .35); transform: translateY(.05em); filter: brightness(.92); }
-.wordmark.wm { font-size: 16px; }
+.wordmark.wm { font-size: 22px; }
+/* 上の帯: アイコンは出さず、名前のロゴを真ん中に大きく置く（2026-10-30 オーナー）。右のボタンは端に寄せる */
+.rail-logo { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 27px); transform: translate(-50%, -50%); }
+.rail-actions { margin-left: auto; }
 .title-name .wm { font-size: inherit; }
 
 .title-name { margin: 2px 0 0; font-size: 28px; font-weight: 700; color: var(--text); }
