@@ -792,8 +792,9 @@ function dailySeed(key) {
   return (h >>> 0) % 1e9;
 }
 // 今日の 1 問の記録 1 日ぶん（2026-10-30 から）。
-//   { state: 'playing'|'cleared'|'revealed', ms, hint, moves, stars, rankable }（途中は t0 = 盤を初めて見た時刻も）
+//   { state: 'playing'|'cleared'|'revealed'|'abandoned', ms, hint, moves, stars, rankable }（途中は t0 = 盤を初めて見た時刻も）
 //   playing = 途中（時間とヒントだけ残す） / cleared = 自分で揃えた / revealed = 解説を見た（クリアにならない）
+//   abandoned = 途中でホームへ戻った（記録なし。その日はもう挑戦できない。2026-10-30 オーナー）
 // 古い形 { moves, stars, hint } は「クリア済み・時間なし」として読む。
 function normDaily(e) {
   if (!e || typeof e !== 'object') return null;
@@ -801,13 +802,14 @@ function normDaily(e) {
   const hint = !!e.hint;
   if (e.state === 'playing') return { state: 'playing', ms: ms || 0, hint, ...(Number.isFinite(e.t0) ? { t0: e.t0 } : {}) };
   if (e.state === 'revealed') return { state: 'revealed', ms: ms || 0, hint: true };
+  if (e.state === 'abandoned') return { state: 'abandoned', ms: ms || 0, hint };
   if (e.state !== undefined && e.state !== 'cleared') return null;
   if (!Number.isFinite(e.moves)) return null;
   // ランキングに載せられるのは、時間があって、ヒントなしで揃えたものだけ
   return { state: 'cleared', ms, hint, moves: e.moves, stars: e.stars | 0, rankable: ms !== null && !hint && e.rankable !== false };
 }
 const dailyIsCleared = (e) => !!e && (e.state === undefined || e.state === 'cleared');
-const dailyIsClosed = (e) => !!e && e.state !== 'playing';   // クリアか解説で、その日はもう遊べない
+const dailyIsClosed = (e) => !!e && e.state !== 'playing';   // クリア・解説・途中でやめたで、その日はもう遊べない
 // 時間の整形。1 時間未満は m:ss、それ以上は h:mm:ss（秒は切り捨て）。
 function fmtTime(ms) {
   const t = Math.max(0, Math.floor((Number(ms) || 0) / 1000));
@@ -881,6 +883,10 @@ let dailyMs = 0;            // t0 の無い古い途中の記録の時間（読�
 let dailyT0 = null;         // 盤を初めて見た時刻（clockNow の値）
 let dailySince = null;      // 盤が出ていて、途中の記録を数秒ごとに保存しているあいだ true
 let dailyTickTimer = null;
+// プレイ時間の表示（下の renderDailyClock）。盤より先に読み込まれるので、ここで決めておく
+const dailyClockEl = typeof document !== 'undefined' ? document.getElementById('dailyClock') : null;
+const dailyClockTextEl = typeof document !== 'undefined' ? document.getElementById('dailyClockText') : null;
+let dailyClockView = null;
 let clockNow = () => Date.now();   // テストで差し替える
 const DAILY_SAVE_MS = 3000;
 // 端末の時計を戻されても負にしない
@@ -912,6 +918,7 @@ function dailyClockSync() {
   if (run && dailyT0 === null) { dailyT0 = clockNow() - dailyMs; dailyMs = 0; dailyPersist(); }
   if (run && dailySince === null) { dailySince = true; dailyScheduleTick(); }
   else if (!run && dailySince !== null) dailyClockStop();
+  dailyClockViewSync();
 }
 // 保存の刻みを止めて、いまの時間を保存する（時間は時計どおりに進み続ける）
 function dailyClockStop() {
@@ -948,6 +955,35 @@ function markDailyRevealed() {
   hintUsed = true;
   daily = addDaily(daily, dailyKey, { state: 'revealed', ms: dailyElapsed(), hint: true });
   saveDaily();
+}
+// 途中でホームへ戻った。その日は記録なしで閉じる（時間を競うので、盤を見てから出直すのを防ぐ）
+function markDailyAbandoned() {
+  if (!dailyKey || dailyIsClosed(daily[dailyKey])) return;
+  const ms = dailyElapsed();
+  dailyMs = ms; dailyT0 = null;
+  dailyClockStop();
+  daily = addDaily(daily, dailyKey, { state: 'abandoned', ms, hint: !!hintUsed });
+  saveDaily();
+}
+// いま今日の 1 問を時間を数えながら遊んでいるか（やめるときに確認する）
+const dailyLive = () => !!dailyKey && !dailyReview && !tutorial && !isSolved() && !autoSolving && !dailyIsClosed(daily[dailyKey]);
+
+// プレイ時間の表示。今日の 1 問の盤が出ているあいだ 1 秒ごとに書き換える。閉じた日は記録の時間で止める
+function renderDailyClock() {
+  if (!dailyClockEl) return;
+  const rec = dailyKey ? daily[dailyKey] : null;
+  const on = !!dailyKey && !tutorial && !(rec && rec.state === 'revealed') && !(rec && rec.state === 'abandoned');
+  dailyClockEl.hidden = !on;
+  if (!on) return;
+  const ms = dailyIsClosed(rec) ? rec.ms : dailyElapsed();
+  dailyClockTextEl.textContent = fmtTime(ms);
+  dailyClockEl.setAttribute('aria-label', L(`プレイ時間 ${fmtTime(ms)}`, `Time ${fmtTime(ms)}`));
+}
+function dailyClockViewSync() {
+  renderDailyClock();
+  const run = dailyShouldRun() && !isSolved();
+  if (run && !dailyClockView) dailyClockView = setTimeout(() => { dailyClockView = null; dailyClockViewSync(); }, 1000);
+  else if (!run && dailyClockView) { clearTimeout(dailyClockView); dailyClockView = null; }
 }
 if (typeof document !== 'undefined' && document.addEventListener) {
   document.addEventListener('visibilitychange', dailyClockSync);
@@ -1192,6 +1228,7 @@ function unClear() {
 // クリアの行。手数も★の評価も出さない（2026-10-30 オーナー）。揃ったことは盤の光と音で見せる。
 // 引数は前のまま（呼ぶ側を変えない）。par・★は記録には残るが、画面には出さない。
 const DAILY_REVEALED_LINE = L('解説を見た', 'Solution viewed');
+const DAILY_ABANDONED_LINE = L('途中でやめた（記録なし）', 'Quit midway (no record)');
 function clearLine(n, used) {
   return L('クリア', 'Clear');
 }
@@ -1266,7 +1303,7 @@ function showClear() {
   if (!autoSolvedFlag && !dayRevealed) adDue = Rewards.recordClear(!!dailyKey).due;
 
   // 今日の 1 問は、自分で揃えたときだけ日ごとの記録に残す（ステージの記録には数えない）
-  if (dailyKey) { if (!autoSolvedFlag && !dayRevealed) recordDaily(moves, hintUsed, par || null, dailyElapsed()); return; }
+  if (dailyKey) { if (!autoSolvedFlag && !dayRevealed) recordDaily(moves, hintUsed, par || null, dailyElapsed()); dailyClockViewSync(); return; }
 
   // 自分で揃えた、正方形・カスタムでない盤だけをステージのクリアに数える。
   // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
@@ -1351,10 +1388,12 @@ const confirmYesEl = document.getElementById('confirmYes');
 let confirmAction = null;   // 「はい」を押したときにすること
 
 // 確認画面はひとつを使い回す。見出し・本文・決定ボタンの文言を差し替える。
-function askConfirm(title, text, yesLabel, action) {
+// 取り消しのボタンはふだん「やめる」。決定が「やめる」の確認では noLabel（「続ける」など）を渡す
+function askConfirm(title, text, yesLabel, action, noLabel) {
   confirmTitleEl.textContent = title;
   confirmTextEl.innerHTML = text;
   confirmYesEl.textContent = yesLabel;
+  document.getElementById('confirmNo').textContent = noLabel || L('やめる', 'Cancel');
   confirmAction = action;
   confirmEl.hidden = false;
   document.getElementById('confirmNo').focus();
@@ -2527,9 +2566,17 @@ const dailyInProgress = () =>
   !!dailyKey && dailyKey === todayKey() && W === DAILY_SIZE && H === DAILY_SIZE && run.i >= 0 && !isSolved()
   && !dailyReview && (!daily[dailyKey] || daily[dailyKey].state === 'playing');
 
-function startDaily() {
+function startDaily(opts = {}) {
   const key = todayKey();
   if (dailyInProgress()) { show(playEl); return; }   // 途中の盤をそのまま続ける
+  // まだ始めていない日は、時間を数えはじめる前に確かめる（途中の記録がある日はそのまま続ける）
+  if (!daily[key] && !opts.confirmed) {
+    askConfirm(L('今日の 1 問を始める', 'Start today\'s puzzle'),
+      L('開いた瞬間から<strong>時間を計ります</strong>。挑戦は 1 日 1 回です。<br>途中でホームに戻ると、今日の記録は残りません。',
+        'The <strong>timer starts</strong> as soon as it opens. One try per day.<br>If you go back home midway, today\'s result won\'t be recorded.'),
+      L('始める', 'Start'), () => { closeConfirm(); startDaily({ confirmed: true }); });
+    return;
+  }
   pendA = pendB = pendW = pendH = DAILY_SIZE;
   pendDiff = DAILY_DIFF;
   pendCustom = false;
@@ -2556,7 +2603,8 @@ function showDailyResult(rec) {
   gridEl.classList.add('cleared');
   logEl.classList.add('done');
   setClearBar(true);
-  logEl.textContent = dailyIsCleared(rec) ? dailyResultLine(rec.ms, rec.hint) : DAILY_REVEALED_LINE;
+  logEl.textContent = dailyIsCleared(rec) ? dailyResultLine(rec.ms, rec.hint)
+    : rec.state === 'abandoned' ? DAILY_ABANDONED_LINE : DAILY_REVEALED_LINE;
   shareBtnEl.hidden = !dailyIsCleared(rec);
   clearPending = null;
 }
@@ -2610,6 +2658,7 @@ function renderDailyCard() {
   const stateLabel = dailyIsCleared(rec)
     ? L(`クリア${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`, `cleared${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`)
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
+    : rec && rec.state === 'abandoned' ? L('記録なし', 'no record')
     : playing ? L('途中', 'in progress') : L('未挑戦', 'not played');
   state.textContent = (playing || !rec) ? '' : stateLabel;
   if (playing) item.classList.add('resume');
@@ -2624,7 +2673,7 @@ function renderDailyCard() {
   item.append(mini, body);
   item.setAttribute('aria-label', L(`今日の 1 問、${m}月${d}日、${stateLabel}${streak >= 2 ? `、${streak} 日連続` : ''}`,
     `Daily puzzle, ${monthDayEn(m, d)}, ${stateLabel}${streak >= 2 ? `, ${streak}-day streak` : ''}`));
-  item.addEventListener('click', startDaily);
+  item.addEventListener('click', () => startDaily());
   return item;
 }
 
@@ -2753,6 +2802,14 @@ function show(screen) {
 }
 
 function goHome() {
+  // 今日の 1 問を遊んでいる途中なら、やめると記録が残らないことを確かめてから
+  if (dailyLive()) {
+    askConfirm(L('今日の 1 問をやめる', 'Quit today\'s puzzle'),
+      L('今やめると、<strong>今日の記録は残りません</strong>。<br>今日はもう挑戦できません。',
+        'If you quit now, <strong>today\'s result won\'t be recorded</strong>.<br>You can\'t try again today.'),
+      L('やめる', 'Quit'), () => { closeConfirm(); markDailyAbandoned(); goHome(); }, L('続ける', 'Keep playing'));
+    return;
+  }
   const fromClear = document.getElementById('play').classList.contains('is-clear');
   endTutorial();
   stopAutoSolve();

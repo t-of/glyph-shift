@@ -216,7 +216,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   W = H = 5; SIZE = 25; buildDom(); forcedAbilities = null; types = 4;
   let now = 1000; clockNow = () => now;
   const saved = () => (JSON.parse(localStorage.getItem('glyphshift.daily') || '{}')[key] || {});
-  startDaily();   // 盤が出る → t0 が決まる
+  startDaily({ confirmed: true });   // 盤が出る → t0 が決まる
   ok(dailySince !== null && saved().t0 === 1000, `盤が出ても t0 が残らない: ${JSON.stringify(saved())}`);
   now += 5000; ok(dailyElapsed() === 5000, `5 秒: ${dailyElapsed()}`);
   // 数秒ごとの保存
@@ -228,9 +228,9 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   now += 600000; ok(dailyElapsed() === 608000, `裏のあいだ止まった: ${dailyElapsed()}`);
   document.hidden = false; dailyClockSync();
   ok(dailySince !== null, '戻っても保存の刻みが再開しない');
-  // ホームへ戻っても進む
-  goHome();
-  now += 2000; ok(dailyElapsed() === 610000, `ホームで止まった: ${dailyElapsed()}`);
+  // アプリを閉じても進む（ホームのボタンで戻るのは「やめる」。下の別の塊）
+  show(titleEl);
+  now += 2000; ok(dailyElapsed() === 610000, `閉じているあいだ止まった: ${dailyElapsed()}`);
   // 開き直し（記録だけ残して、変数を捨てた状態）→ 同じ t0 から数える
   dailyMs = 0; dailyT0 = null; dailyKey = null;
   daily = loadDaily();
@@ -269,7 +269,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   W = H = 5; SIZE = 25; buildDom(); forcedAbilities = null; types = 4;
   let now = 0; clockNow = () => now;
   const saved = () => (JSON.parse(localStorage.getItem('glyphshift.daily') || '{}')[key] || {});
-  startDaily(); now = 7000;
+  startDaily({ confirmed: true }); now = 7000;
 
   // 初めてのヒント: 確認が出る。はいを押すまで使ったことにならない
   showHint();
@@ -283,7 +283,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   // 2 回目からは確認を出さない
   showHint(); ok(confirmEl.hidden, '2 回目も確認が出た');
   // 閉じて開き直してもヒントの印は消えない（やり直しても元に戻らない）
-  goHome(); daily = loadDaily(); hintUsed = false;
+  show(titleEl); daily = loadDaily(); hintUsed = false;   // アプリを閉じて開き直す
   startDaily();
   ok(hintUsed === true, 'やり直しでヒントの印が消えた');
   showHint(); ok(confirmEl.hidden, 'やり直したら確認がまた出た');
@@ -293,7 +293,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 
   // 解説: 確認 → はいで保存（revealed）。やめれば何も起きない
   daily = {}; localStorage.removeItem('glyphshift.daily'); now = 0;
-  startDaily(); now = 3000;
+  startDaily({ confirmed: true }); now = 3000;
   askAutoSolve();
   ok(!confirmEl.hidden && /クリアになりません/.test(confirmTextEl.innerHTML), `解説の確認: ${confirmTextEl.innerHTML}`);
   ok(!saved().state || saved().state === 'playing', '確認だけで解説の記録になった');
@@ -316,6 +316,54 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   newPuzzle(); showHint(); ok(confirmEl.hidden, '通常の盤でヒントの確認が出た');
   clockNow = () => performance.now();
   console.log('  ヒント・解説の確認と保存  OK');
+}
+
+// 始める前の確認・プレイ時間の表示・途中でやめたら記録なし（2026-10-30 オーナー）
+{
+  daily = {}; localStorage.removeItem('glyphshift.daily');
+  const key = todayKey();
+  W = H = 5; SIZE = 25; buildDom(); forcedAbilities = null; types = 4;
+  let now = 0; clockNow = () => now;
+  const saved = () => (JSON.parse(localStorage.getItem('glyphshift.daily') || '{}')[key] || {});
+  goHome(); dailyKey = null;
+  // まだ始めていない日は、確認を出してから始める。やめれば何も起きない
+  startDaily();
+  ok(!confirmEl.hidden && /時間を計ります/.test(confirmTextEl.innerHTML) && dailyKey === null && !saved().state, `始める前の確認: ${confirmTextEl.innerHTML}`);
+  closeConfirm(); ok(dailyKey === null && !saved().state, 'やめたのに始まった');
+  startDaily(); confirmAction();
+  ok(confirmEl.hidden && dailyKey === key && saved().state === 'playing' && dailySince !== null, `始まらない: ${JSON.stringify(saved())}`);
+  // プレイ時間の表示
+  const clockEl = document.getElementById('dailyClock'), clockText = document.getElementById('dailyClockText');
+  now = 65000; renderDailyClock();
+  ok(!clockEl.hidden && clockText.textContent === '1:05', `プレイ時間: ${clockEl.hidden} ${clockText.textContent}`);
+  // 途中の記録がある日（アプリを開き直した）は確認なしで続ける
+  show(titleEl); dailyKey = null; daily = loadDaily();
+  startDaily(); ok(confirmEl.hidden && dailyKey === key, '途中の日に始める確認が出た');
+  // ホームへ戻る: 確認 → いいえなら続ける、はいなら記録なしで閉じる
+  goHome();
+  ok(!confirmEl.hidden && /記録は残りません/.test(confirmTextEl.innerHTML) && !playEl.hidden, `やめる確認: ${confirmTextEl.innerHTML}`);
+  closeConfirm(); ok(saved().state === 'playing' && !playEl.hidden, 'いいえでやめた');
+  now = 90000; goHome(); confirmAction();
+  ok(saved().state === 'abandoned' && saved().ms === 90000 && playEl.hidden && dailySince === null, `やめた記録: ${JSON.stringify(saved())}`);
+  ok(!dailyIsCleared(daily[key]) && dailyIsClosed(daily[key]) && dailyStreak(daily, key) === 0, 'やめた日がクリア扱い');
+  // もう挑戦できない。結果の画面だけ、時間は出さない
+  startDaily();
+  ok(confirmEl.hidden && locked && dailyReview && logEl.textContent === '途中でやめた（記録なし）' && clockEl.hidden, `やめた日の画面: ${logEl.textContent}`);
+  // 結果の画面・クリアのあとは確認なしでホームへ戻れる
+  goHome(); ok(confirmEl.hidden && playEl.hidden, '結果の画面から戻るのに確認が出た');
+  ok(stageListEl.querySelector('.daily-item').children[1].children[1].textContent === '記録なし', 'カードにやめた印がない');
+  // クリアした日は時間が止まって表示される
+  daily = {}; localStorage.removeItem('glyphshift.daily'); now = 0; dailyKey = null;
+  startDaily({ confirmed: true }); now = 42000;
+  board = Array.from({ length: SIZE }, (_, i) => i); par = { cost: 4, optimal: true }; autoSolvedFlag = false; moves = 4; showClear();
+  now = 99000; renderDailyClock();
+  ok(!clockEl.hidden && clockText.textContent === '0:42', `クリアの時間: ${clockText.textContent}`);
+  goHome(); ok(confirmEl.hidden, 'クリアのあとに確認が出た');
+  // 通常の盤では出さない
+  newPuzzle(); show(playEl); ok(clockEl.hidden, '通常の盤でプレイ時間が出た');
+  daily = {}; localStorage.removeItem('glyphshift.daily');
+  clockNow = () => performance.now();
+  console.log('  始める確認・プレイ時間・途中でやめる  OK');
 }
 
 // カードの表示: 未挑戦・途中・クリア（時間つき）・解説を見た
