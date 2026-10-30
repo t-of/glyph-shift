@@ -382,6 +382,7 @@ function buildDom() {
     slot.dataset.i = String(i);
     slot.setAttribute('role', 'button');
     slot.tabIndex = i === 0 ? 0 : -1;
+    slot.style.setProperty('--d', String(Math.floor(i / W) + i % W));   // クリアの波の遅れ（左上から右下へ）
     gridEl.append(slot);
     slots[i] = slot;
   }
@@ -1920,6 +1921,14 @@ let pressHandled = true;
 
 function endPress() {
   if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  setPressing(null);
+}
+// 指が触れているマスに印を付けて、タイルを沈める（iOS は :active が効かないことがあるので JS で付ける）
+let pressingSlot = null;
+function setPressing(slot) {
+  if (pressingSlot && pressingSlot !== slot) pressingSlot.classList.remove('pressing');
+  pressingSlot = slot;
+  if (slot) slot.classList.add('pressing');
 }
 
 // この押下でまだ発動していなければ 1 回だけ発動する
@@ -1937,6 +1946,7 @@ gridEl.addEventListener('pointerdown', (e) => {
   endPress();
   pressCell = Number(slot.dataset.i);
   pressHandled = false;              // ここから 1 回だけ発動できる
+  if (!locked) setPressing(slot);
   if (e.button !== 0) return;        // 右クリックは contextmenu 側で扱う
   pressTimer = setTimeout(() => {
     pressTimer = null;
@@ -1975,6 +1985,7 @@ gridEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
     if (autoSolving || e.repeat) return;
+    if (!locked) { setPressing(slots[i]); setTimeout(() => { if (pressingSlot === slots[i]) setPressing(null); }, 110); }
     fire(i, e.shiftKey ? -1 : 1);
   }
 });
