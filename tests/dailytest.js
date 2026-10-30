@@ -340,7 +340,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(!!card && stageListEl.children[0].children[0] === card, '今日の 1 問のカードが一番上にない');
   stageListEl.fire('click', { target: card });   // 実ブラウザではカードの click が一覧へ泡立つ
   ok(opened === 0, 'カードの click で完全版の案内が開いた');
-  ok(/今日の 1 問/.test(card.children[1].children[0].textContent), 'カードの題');
+  ok(card.children[1].children[0].children.map((t) => t.children[0].textContent).join('') === 'TODAY', 'カードの題（タイルの TODAY）');
   Entitlement._override(null);
   console.log('  ホームのカード  OK');
 }

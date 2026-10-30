@@ -2590,7 +2590,18 @@ function renderDailyCard() {
   body.className = 'daily-body';
   const title = document.createElement('span');
   title.className = 'daily-title';
-  title.textContent = L('今日の 1 問', 'Daily puzzle');
+  // 見出しは名前のロゴと同じ 1 字 1 タイルの「TODAY」（日英共通。2026-10-30 オーナー「今日の 1 問は格好よくない」）
+  title.classList.add('wm');
+  title.setAttribute('aria-hidden', 'true');
+  for (const [ch, cls, c] of [['T'], ['O'], ['D', 'wm-on wm-t1', '#65c77a'], ['A'], ['Y']]) {
+    const t = document.createElement('span');
+    t.className = 'wm-ch' + (cls ? ' ' + cls : '');
+    if (c) t.style.setProperty('--c', c);
+    const i = document.createElement('i');
+    i.textContent = ch;
+    t.append(i);
+    title.append(t);
+  }
   const state = document.createElement('span');
   state.className = 'stage-stars';
   // 途中・未挑戦は文字を出さず、途中はカードの縁（resume）で見せる（2026-10-30 オーナー）。読み上げには残す。
@@ -2639,7 +2650,8 @@ function renderStageList() {
     sec.className = 'stage-size';
     const head = document.createElement('h2');
     head.className = 'stage-size-head';
-    head.append(`${s}×${s}`);   // 見出しはサイズだけ（「れんしゅう」「これまで n 回」は出さない。2026-10-30 オーナー）
+    head.append(`${s}×${s}`);   // サイズの見出しは画面には出さない（ミニ盤で分かる。2026-10-30 オーナー）。読み上げ用に残す
+    head.classList.add('sr-only');
 
     const row = document.createElement('div');
     row.className = 'stage-row';

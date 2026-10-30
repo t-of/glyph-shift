@@ -295,6 +295,8 @@ body.no-rail .rail { display: none; }
   font-weight: 600;
   color: var(--text);
 }
+/* 画面には出さず読み上げだけに残す */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .stage-row {
   /* 1 行に 3 枚を幅いっぱいに並べ、横スクロールさせない（2026-10-30 オーナー）。ミニ盤はカードの幅に合わせて縮む */
   display: grid;
@@ -350,9 +352,10 @@ body.no-rail .rail { display: none; }
 /* 今日の 1 問: 一覧の一番上に 1 枚、横長のカード */
 .daily-item { flex-direction: row; align-items: center; gap: 14px; width: 100%; padding: 10px 12px; text-align: left; }
 .daily-item .stage-mini { flex: none; }
-.daily-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-.daily-title { font-size: 14px; font-weight: 600; }
-.daily-streak { font-size: 11px; font-weight: 600; color: var(--accent); }
+.daily-body { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 1; text-align: center; }
+.daily-title.wm { font-size: clamp(24px, 7.5vw, 34px); }
+.daily-streak { font-size: 13px; font-weight: 600; color: var(--accent); }
+.daily-item .stage-stars { font-size: 13px; }
 .share-daily { margin-top: 4px; }
 .share-daily[hidden] { display: none; }
 /* 広告のある画面の下のプライバシーポリシー。目立たせず、クリアの表示のときだけ */
