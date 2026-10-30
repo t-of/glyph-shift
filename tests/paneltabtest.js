@@ -54,7 +54,7 @@ ok(onlyShown('config'), '端から ← キーで反対の端に回らない');
   ok(!secRule.includes('class="howto"'), '遊び方の箇条書きがパネルに残っている（本体はシート 1 つ）');
   ok(secBlock.includes('id="panelBody"'), 'ブロックの区画に一覧が無い');
   ok(secBlock.includes('id="glyphLegend"'), 'ブロックの区画に絵柄の読み方が無い');
-  ok(secConfig.includes('id="glyphSeg"'), '設定の区画に絵柄の選びが無い');
+  ok(!secConfig.includes('id="glyphSeg"'), '設定の区画に絵柄の選びが残っている（1 種だけにした）');
   ok(secConfig.includes('id="soundChk"'), '設定の区画に効果音が無い');
   ok(!setup.includes('id="glyphSeg"'), '盤面の設定にまだ絵柄が残っている');
   ok(setup.includes('id="sideA"') && setup.includes('id="createBtn"'), '盤面の設定から辺の項目が消えている');
@@ -68,11 +68,6 @@ const sameAs = (id) => {
   return got.length === want.length && got.every((v, i) => v === want[i]);
 };
 ok(sameAs('dots'), '最初の読み方が点図の説明になっていない');
-el('glyphSeg').fire('click', { target: [...el('glyphSeg').children].find((b) => b.dataset.v === 'line') });
-ok(sameAs('line'), '絵柄を変えても読み方が点図のまま');
-ok(!legendText().some((t) => t.includes('薄い点')), '直線なのに点の説明が残っている');
-el('glyphSeg').fire('click', { target: [...el('glyphSeg').children].find((b) => b.dataset.v === 'dots') });
-ok(sameAs('dots'), '戻したときに読み方が戻らない');
 
 // 7. 効果音の入切は設定タブにだけあり、上のバーからは無くなっている
 const wasOn = Sfx.enabled;

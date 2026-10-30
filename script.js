@@ -153,13 +153,9 @@ function cyclesOf(abIndex, x, y) {
 // ---- アイコン描画 ----
 // 描き方そのものは glyphs.js が持つ。ここは「今どれを使うか」だけを覚える。
 const Glyphs = glyphStyles();
-const GLYPH_KEY = 'glyphshift.glyph';
 
-let glyphStyle = Glyphs.DEFAULT;
-try {
-  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(GLYPH_KEY) : null;
-  if (saved && Glyphs.has(saved)) glyphStyle = saved;
-} catch (e) { /* localStorage が使えない環境では既定のまま */ }
+// 絵柄は点図の 1 種だけ（2026-10-30 オーナー。設定から選ぶのをやめた）。前に選んでいた人の保存値は読まない
+const glyphStyle = Glyphs.DEFAULT;
 
 // 能力そのものから描く。cells(0, 0) が「中身をどう送るか」を relative に返す。
 const iconSvg = (abIndex) => Glyphs.draw(glyphStyle, ABILITIES[abIndex].cells(0, 0), bgOf(abIndex));
@@ -1838,32 +1834,7 @@ panelTabsEl.addEventListener('keydown', (e) => {
   setPanelTab(TABS[(at + step + TABS.length) % TABS.length].key, true);
 });
 
-// ---- 絵柄の選び ----
-// 盤のサイズやブロック数と違い、これは見た目だけの設定なので
-// 「作成」を待たずにその場で切り替える。選んだものは次回も覚えている。
-const glyphSegEl = document.getElementById('glyphSeg');
-// 見本には回転を使う。描き方ごとの差がいちばん大きく出る。
-const GLYPH_SAMPLE = ABILITIES.findIndex((ab) => ab.id === 'crossCW');
-
-function fillGlyphSeg() {
-  glyphSegEl.replaceChildren();
-  for (const st of Glyphs.STYLES) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.dataset.v = st.id;
-    b.title = st.note;
-    const box = document.createElement('span');
-    box.className = 'sample';
-    box.style.background = bgOf(GLYPH_SAMPLE);
-    box.style.color = INK;
-    box.innerHTML = Glyphs.draw(st.id, ABILITIES[GLYPH_SAMPLE].cells(0, 0), bgOf(GLYPH_SAMPLE));
-    const name = document.createElement('span');
-    name.textContent = st.name;
-    b.append(box, name);
-    glyphSegEl.append(b);
-  }
-}
-
+// ---- 絵柄の読み方 ----
 // 「絵柄の読み方」は描き方ごとに変わる。選んでいるものの説明に差し替える。
 function renderGlyphLegend() {
   const ul = document.getElementById('glyphLegend');
@@ -1875,36 +1846,6 @@ function renderGlyphLegend() {
   }
 }
 
-function markGlyphSeg() {
-  for (const b of glyphSegEl.querySelectorAll('button')) {
-    b.setAttribute('aria-pressed', String(b.dataset.v === glyphStyle));
-  }
-}
-
-// 絵柄が出てくるところを全部描き直す。盤面そのものは触らない。
-function setGlyphStyle(id) {
-  if (!Glyphs.has(id) || id === glyphStyle) return;
-  glyphStyle = id;
-  try { if (typeof localStorage !== 'undefined') localStorage.setItem(GLYPH_KEY, id); }
-  catch (e) { /* 覚えられない環境でも、その場では切り替わる */ }
-  paintTiles();
-  renderGoal();
-  renderLegend();
-  renderPanel();
-  fillPicker();
-  refreshPicker();
-  renderGlyphLegend();
-  renderDemos();
-  markGlyphSeg();
-}
-
-glyphSegEl.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (b) setGlyphStyle(b.dataset.v);
-});
-
-fillGlyphSeg();
-markGlyphSeg();
 renderGlyphLegend();
 
 // ---- 見本の盤（スタートと遊び方） ----
