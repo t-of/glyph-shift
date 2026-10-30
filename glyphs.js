@@ -9,6 +9,8 @@
 // どの描き方も viewBox 0 0 24 24。線も塗りも currentColor（＝タイル上のインク）。
 // 3×3 の相対座標 -1 / 0 / 1 は、それぞれ 6 / 12 / 18 に対応する。
 function glyphStyles() {
+  // 画面の言葉（i18n.js）。読まない場所では日本語のまま
+  const L = typeof I18n !== 'undefined' ? I18n.L : (ja) => ja;
   const P = (d) => 12 + d * 6;
   const rad = (a) => (a * Math.PI) / 180;
   const ang = ([x, y]) => (Math.atan2(y, x) * 180) / Math.PI;
@@ -320,44 +322,76 @@ function glyphStyles() {
   // legend は説明パネルの「絵柄の読み方」。描き方を変えたら読み方も変わるので、
   // 文章もここに一緒に置いて取り違えないようにする。
   const STYLES = [
-    { id: 'dots', name: '点図', note: '3×3 の模式図', draw: drawDots, legend: [
+    { id: 'dots', name: L('点図', 'Dots'), note: L('3×3 の模式図', '3×3 diagram'), draw: drawDots, legend: L([
       '薄い点＝周囲のマス、輪＝<strong>自分</strong>（動かない）。',
       '濃い点＝効果を受けるマス。',
       '線で結ばれた 2 点は<strong>入れ替え</strong>。',
       '矢印つきの弧は、その順に<strong>1 つ回す</strong>。',
       '短い線が 2 本ずつ重なっているものは、<strong>向かい合う組が同時に入れ替わる</strong>（回転の半分ぶん）。',
-    ] },
-    { id: 'grid', name: '升目', note: 'マスと行き先の矢印', draw: drawGrid, legend: [
+    ], [
+      "Faint dots = surrounding cells; ring = <strong>itself</strong> (doesn't move).",
+      'Solid dots = cells that are affected.',
+      'Two dots joined by a line <strong>swap</strong>.',
+      'An arc with an arrow <strong>rotates one step</strong> in that order.',
+      'Pairs of short double lines mean <strong>opposite pairs swap at the same time</strong> (half a rotation).',
+    ]) },
+    { id: 'grid', name: L('升目', 'Grid'), note: L('マスと行き先の矢印', 'Cells with arrows to where they go'), draw: drawGrid, legend: L([
       '薄い枠＝周囲のマス、太い枠＝<strong>自分</strong>（動かない）。',
       '塗られたマスが<strong>効果を受けるマス</strong>。',
       'マスの中の三角は、その中身が<strong>向かう先</strong>。',
       '三角が互いを指していれば入れ替え、ぐるりと同じ向きなら回転。',
-    ] },
-    { id: 'wire', name: '結線', note: '置換の図', draw: drawWire, legend: [
+    ], [
+      "Faint frames = surrounding cells; thick frame = <strong>itself</strong> (doesn't move).",
+      'Filled cells are the <strong>affected cells</strong>.',
+      'The triangle in a cell shows <strong>where its content goes</strong>.',
+      'Triangles pointing at each other mean a swap; all turning the same way mean a rotation.',
+    ]) },
+    { id: 'wire', name: L('結線', 'Wires'), note: L('置換の図', 'Permutation diagram'), draw: drawWire, legend: L([
       '薄い点＝周囲のマス、輪＝<strong>自分</strong>（動かない）。',
       '濃い点＝効果を受けるマス。',
       '閉じた輪（菱形・正方形・八角）は、その順に<strong>1 つ回す</strong>。',
       '2 点を回る細長い輪は<strong>入れ替え</strong>。',
       '自分をまたぐ直線は、向かい合う組が<strong>同時に入れ替わる</strong>。',
-    ] },
-    { id: 'sign', name: '標識', note: '矢印と車輪', draw: drawSign, legend: [
+    ], [
+      "Faint dots = surrounding cells; ring = <strong>itself</strong> (doesn't move).",
+      'Solid dots = cells that are affected.',
+      'A closed loop (diamond, square, octagon) <strong>rotates one step</strong> in that order.',
+      'A long thin loop around two dots is a <strong>swap</strong>.',
+      'A straight line across itself means opposite pairs <strong>swap at the same time</strong>.',
+    ]) },
+    { id: 'sign', name: L('標識', 'Signs'), note: L('矢印と車輪', 'Arrows and wheels'), draw: drawSign, legend: L([
       '輪＝<strong>自分</strong>（動かない）。周囲のマスは描かない。',
       '両向きの矢印は、その線の<strong>両端が入れ替わる</strong>。矢印の本数だけ同時に起きる。',
       '車輪は<strong>時計回り</strong>。輻が伸びている方角のマスが動く。',
       '輻が上下左右なら ⊕、斜めなら ⊗、8 本なら周囲ぜんぶ。',
-    ] },
-    { id: 'solid', name: '単形', note: '塗りの形だけ', draw: drawSolid, legend: [
+    ], [
+      "Ring = <strong>itself</strong> (doesn't move). Surrounding cells aren't drawn.",
+      'A double-headed arrow <strong>swaps its two ends</strong>. All arrows happen at once.',
+      'A wheel turns <strong>clockwise</strong>. The cells its spokes point to move.',
+      'Spokes up/down/left/right: ⊕; diagonal: ⊗; 8 spokes: all around.',
+    ]) },
+    { id: 'solid', name: L('単形', 'Shapes'), note: L('塗りの形だけ', 'Filled shapes only'), draw: drawSolid, legend: L([
       '輪＝<strong>自分</strong>（動かない）。',
       '腕の<strong>数</strong>が動くマスの数、<strong>向き</strong>がその方角、<strong>長さ</strong>が距離（斜めは √2 倍長い）。',
       'まっすぐな腕は<strong>入れ替え</strong>。2 本以上あれば同時に起きる。',
       '寝かせた花びらは<strong>時計回り</strong>の回転。',
-    ] },
-    { id: 'line', name: '直線', note: '線と多角形だけ', draw: drawLine, legend: [
+    ], [
+      "Ring = <strong>itself</strong> (doesn't move).",
+      'The <strong>number</strong> of arms is how many cells move, their <strong>direction</strong> is where, their <strong>length</strong> the distance (diagonals are √2 longer).',
+      'Straight arms <strong>swap</strong>. Two or more happen at once.',
+      'Leaning petals rotate <strong>clockwise</strong>.',
+    ]) },
+    { id: 'line', name: L('直線', 'Lines'), note: L('線と多角形だけ', 'Lines and polygons only'), draw: drawLine, legend: L([
       '直線 1 本が 1 組の<strong>入れ替え</strong>。本数だけ同時に起きる。',
       '多角形は<strong>時計回り</strong>の回転。頂点の数が動くマスの数。',
       '菱形＝上下左右の 4 マス、正方形＝斜めの 4 マス、八角形＝周囲 8 マス。',
       '自分は描かない。押したマス自身はいつも動かない。',
-    ] },
+    ], [
+      'Each straight line is one <strong>swap</strong>. All lines happen at once.',
+      'A polygon rotates <strong>clockwise</strong>. Its corners are the cells that move.',
+      'Diamond = the 4 sides; square = the 4 corners; octagon = all 8 around.',
+      "Itself isn't drawn. The tile you press never moves.",
+    ]) },
   ];
   const DEFAULT = 'dots';
 

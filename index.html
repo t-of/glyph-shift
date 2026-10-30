@@ -41,7 +41,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 </head>
 <body>
   <header class="rail">
-    <button id="logoBtn" class="mark" type="button" aria-label="ホームへ戻る" title="ホームへ戻る">
+    <button id="logoBtn" class="mark" type="button" data-i18n-aria="home" aria-label="ホームへ戻る" title="ホームへ戻る">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
         <circle cx="6" cy="6" r="1.7" fill="currentColor" stroke="none"/>
         <circle cx="12" cy="6" r="1.7" fill="currentColor" stroke="none"/>
@@ -59,12 +59,12 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </button>
 
     <div class="rail-actions">
-      <button id="homeBtn" class="icon" type="button" aria-label="ホームへ戻る" title="ホームへ戻る" hidden>
+      <button id="homeBtn" class="icon" type="button" data-i18n-aria="home" aria-label="ホームへ戻る" title="ホームへ戻る" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>
         </svg>
       </button>
-      <button id="menuBtn" class="icon menu-btn" type="button" aria-expanded="false" aria-controls="panel" aria-label="遊び方と設定を開く" title="遊び方と設定" hidden>
+      <button id="menuBtn" class="icon menu-btn" type="button" aria-expanded="false" aria-controls="panel" data-i18n-aria="menuOpen" aria-label="遊び方と設定を開く" title="遊び方と設定" hidden>
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -72,73 +72,73 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
   <div class="panel-backdrop" id="panelBackdrop" hidden></div>
 
-  <aside class="panel" id="setup" aria-hidden="true" aria-label="盤面の設定">
+  <aside class="panel" id="setup" aria-hidden="true" data-i18n-aria="setupTitle" aria-label="盤面の設定">
     <div class="panel-head">
-      <h2>盤面の設定</h2>
-      <button id="setupClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+      <h2 data-i18n="setupTitle">盤面の設定</h2>
+      <button id="setupClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
     </div>
     <div class="setup-body">
       <label class="switch">
         <input type="checkbox" id="customChk">
-        <span>カスタム<span class="lock-tag" id="customLock" hidden>完全版</span></span>
-        <span class="switch-note">盤を長方形にして、使うブロックも自分で選ぶ</span>
+        <span data-i18n="custom">カスタム<span class="lock-tag" id="customLock" hidden>完全版</span></span>
+        <span class="switch-note" data-i18n="customNote">盤を長方形にして、使うブロックも自分で選ぶ</span>
       </label>
 
       <div class="field" id="plainSize">
-        <span class="label">サイズ</span>
-        <div class="seg" id="sizeSeg" role="group" aria-label="盤のサイズ"></div>
+        <span class="label" data-i18n="size">サイズ</span>
+        <div class="seg" id="sizeSeg" role="group" data-i18n-aria="sizeAria" aria-label="盤のサイズ"></div>
       </div>
 
       <div class="field" id="customSize" hidden>
-        <span class="label">一辺</span>
-        <div class="seg" id="sideA" role="group" aria-label="辺の長さ"></div>
-        <span class="label spaced">もう一辺</span>
-        <div class="seg" id="sideB" role="group" aria-label="もう一方の辺の長さ"></div>
+        <span class="label" data-i18n="sideA">一辺</span>
+        <div class="seg" id="sideA" role="group" data-i18n-aria="sideAAria" aria-label="辺の長さ"></div>
+        <span class="label spaced" data-i18n="sideB">もう一辺</span>
+        <div class="seg" id="sideB" role="group" data-i18n-aria="sideBAria" aria-label="もう一方の辺の長さ"></div>
         <p class="note" id="sizeNote"></p>
       </div>
       <div class="field" id="customBlocks" hidden>
-        <span class="label">使うブロック</span>
+        <span class="label" data-i18n="useBlocks">使うブロック</span>
         <div class="picker" id="blockPicker"></div>
         <p class="note" id="pickNote"></p>
       </div>
       <div class="field" id="diffField">
-        <span class="label">難しさ</span>
-        <div class="seg" id="diffSeg" role="group" aria-label="難しさ"></div>
+        <span class="label" data-i18n="difficulty">難しさ</span>
+        <div class="seg" id="diffSeg" role="group" data-i18n-aria="difficulty" aria-label="難しさ"></div>
         <p class="note" id="diffNote"></p>
       </div>
       <div class="field">
         <span class="label">SEED</span>
-        <input id="seedIn" type="text" inputmode="numeric" placeholder="空ならランダム" aria-label="SEED">
-        <p class="note">同じ SEED を入れると、同じ盤面がもう一度出ます。</p>
+        <input id="seedIn" type="text" inputmode="numeric" data-i18n-ph="seedPh" placeholder="空ならランダム" aria-label="SEED">
+        <p class="note" data-i18n="seedNote">同じ SEED を入れると、同じ盤面がもう一度出ます。</p>
       </div>
     </div>
-    <button id="createBtn" class="primary wide" type="button">この設定で作成</button>
+    <button id="createBtn" class="primary wide" type="button" data-i18n="create">この設定で作成</button>
   </aside>
 
-  <aside class="panel" id="panel" aria-hidden="true" aria-label="遊び方と設定">
+  <aside class="panel" id="panel" aria-hidden="true" data-i18n-aria="panelTitle" aria-label="遊び方と設定">
     <div class="panel-head">
-      <h2>遊び方と設定</h2>
-      <button id="panelClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+      <h2 data-i18n="panelTitle">遊び方と設定</h2>
+      <button id="panelClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
     </div>
 
-    <div class="panel-tabs" id="panelTabs" role="tablist" aria-label="表示を切り替える"></div>
+    <div class="panel-tabs" id="panelTabs" role="tablist" data-i18n-aria="panelTabs" aria-label="表示を切り替える"></div>
 
     <section class="panel-sec" id="secRule" role="tabpanel" aria-labelledby="tabRule" tabindex="0">
-      <ol class="howto">
+      <ol class="howto" data-i18n="rules">
         <li>絵柄がそのタイルの<strong>能力</strong>。押すと発動し、能力はタイルに付いて一緒に動く。</li>
         <li>使ったタイル自身は動かない。動くのはまわりのマス。</li>
         <li>回転は<strong>長押し</strong>（右クリックでも可）で<strong>逆回り</strong>。</li>
         <li>盤の端はつながっていない。効果が盤の外に出る位置では<strong>使えない</strong>。</li>
         <li><strong>目標の柄</strong>と同じ並びにすればクリア。同じ絵柄どうしは入れ替え可能。</li>
       </ol>
-      <p class="howto-note">手数は差し引きで数える。回転を 3 回押して元に戻れば 0 手、
+      <p class="howto-note" data-i18n="rulesNote">手数は差し引きで数える。回転を 3 回押して元に戻れば 0 手、
         逆回りに 1 つぶんなら 1 手。</p>
-      <button id="panelTutorial" class="ghost-btn" type="button">チュートリアルをもう一度</button>
+      <button id="panelTutorial" class="ghost-btn" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>
     </section>
 
     <section class="panel-sec" id="secBlock" role="tabpanel" aria-labelledby="tabBlock" tabindex="0" hidden>
       <details class="howto-more">
-        <summary>絵柄の読み方</summary>
+        <summary data-i18n="glyphLegendSum">絵柄の読み方</summary>
         <ul id="glyphLegend"></ul>
       </details>
       <p class="label panel-sub" id="blockTotal"></p>
@@ -147,15 +147,22 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
     <section class="panel-sec" id="secConfig" role="tabpanel" aria-labelledby="tabConfig" tabindex="0" hidden>
       <div class="field">
-        <span class="label">絵柄</span>
-        <div class="glyph-seg" id="glyphSeg" role="group" aria-label="絵柄の描き方"></div>
-        <p class="note">同じブロックを別の描き方で表します。選ぶとすぐ切り替わり、盤面はそのままです。</p>
+        <span class="label" data-i18n="glyphLabel">絵柄</span>
+        <div class="glyph-seg" id="glyphSeg" role="group" data-i18n-aria="glyphAria" aria-label="絵柄の描き方"></div>
+        <p class="note" data-i18n="glyphNote">同じブロックを別の描き方で表します。選ぶとすぐ切り替わり、盤面はそのままです。</p>
       </div>
       <label class="switch sound-switch">
         <input type="checkbox" id="soundChk" checked>
-        <span>効果音</span>
-        <span class="switch-note">押したとき・揃ったとき・完成したときに短い音が鳴る</span>
+        <span data-i18n="sound">効果音</span>
+        <span class="switch-note" data-i18n="soundNote">押したとき・揃ったとき・完成したときに短い音が鳴る</span>
       </label>
+      <div class="field">
+        <span class="label" data-i18n="langLabel">言語 / Language</span>
+        <div class="seg" id="langSeg" role="group" data-i18n-aria="langLabel" aria-label="言語 / Language">
+          <button type="button" data-v="ja" lang="ja">日本語</button>
+          <button type="button" data-v="en" lang="en">English</button>
+        </div>
+      </div>
     </section>
   </aside>
 
@@ -178,81 +185,81 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         </svg>
       </div>
       <h1 class="title-name">ABILITILE</h1>
-      <p class="title-catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
+      <p class="title-catch" data-i18n="catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
     </header>
     <div class="stage-mini demo-grid" id="startDemo" aria-hidden="true"></div>
     <div class="start-actions">
-      <button id="startBtn" class="primary" type="button">はじめる</button>
-      <button id="startHowtoBtn" class="ghost-btn" type="button">遊び方</button>
+      <button id="startBtn" class="primary" type="button" data-i18n="start">はじめる</button>
+      <button id="startHowtoBtn" class="ghost-btn" type="button" data-i18n="howto">遊び方</button>
     </div>
     <footer class="home-foot">
       <div class="home-foot-actions">
-        <button class="pill" type="button" data-wak="install" hidden>アプリにする</button>
-        <button class="pill" type="button" data-wak="share">共有</button>
+        <button class="pill" type="button" data-wak="install" hidden data-i18n="install">アプリにする</button>
+        <button class="pill" type="button" data-wak="share" data-i18n="share">共有</button>
       </div>
-      <p class="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
+      <p class="credit" data-i18n="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
     </footer>
   </main>
 
   <!-- 遊び方（スタートとホームから開く。プレイ中はパネルの「ルール」） -->
   <dialog class="howto-sheet" id="howto" aria-labelledby="howtoTitle">
     <div class="panel-head">
-      <h2 id="howtoTitle">遊び方</h2>
-      <button id="howtoClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+      <h2 id="howtoTitle" data-i18n="howto">遊び方</h2>
+      <button id="howtoClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
     </div>
     <ol class="howto-steps">
       <li>
-        <h3>絵柄が能力</h3>
-        <p>タイルを押すと、その絵柄の効果が発動して<strong>まわりのマス</strong>が動く。押したタイル自身は動かない。</p>
+        <h3 data-i18n="h1t">絵柄が能力</h3>
+        <p data-i18n="h1p">タイルを押すと、その絵柄の効果が発動して<strong>まわりのマス</strong>が動く。押したタイル自身は動かない。</p>
         <div class="howto-demo" aria-hidden="true">
           <div class="stage-mini demo-grid" id="howtoBefore"></div>
           <span class="howto-arrow">→</span>
           <div class="stage-mini demo-grid" id="howtoAfter"></div>
         </div>
-        <p class="howto-cap">まん中の「上下左右の 4 マスを時計回り」を押したところ</p>
+        <p class="howto-cap" data-i18n="h1cap">まん中の「上下左右の 4 マスを時計回り」を押したところ</p>
       </li>
       <li>
-        <h3>能力はタイルと一緒に動く</h3>
-        <p>動かされたタイルは能力を持ったまま移る。同じ場所を押しても、次は別の効果になる。</p>
+        <h3 data-i18n="h2t">能力はタイルと一緒に動く</h3>
+        <p data-i18n="h2p">動かされたタイルは能力を持ったまま移る。同じ場所を押しても、次は別の効果になる。</p>
       </li>
       <li>
-        <h3>長押しで逆回り</h3>
-        <p>回転は<strong>長押し</strong>（右クリックでも可）で逆向き。盤の端はつながっていないので、効果が盤の外に出る位置では使えない。</p>
+        <h3 data-i18n="h3t">長押しで逆回り</h3>
+        <p data-i18n="h3p">回転は<strong>長押し</strong>（右クリックでも可）で逆向き。盤の端はつながっていないので、効果が盤の外に出る位置では使えない。</p>
       </li>
       <li>
-        <h3>目標の柄にそろえる</h3>
-        <p>プレイ画面の「目標の柄」と同じ色の並びにすればクリア。同じ絵柄どうしはどれでもよい。</p>
+        <h3 data-i18n="h4t">目標の柄にそろえる</h3>
+        <p data-i18n="h4p">プレイ画面の「目標の柄」と同じ色の並びにすればクリア。同じ絵柄どうしはどれでもよい。</p>
       </li>
       <li>
-        <h3>ステージを選ぶ</h3>
-        <p>ホームの一覧は<strong>盤のサイズ × 難しさ</strong>（難しいほど、混ぜた手数もブロックの種類も増えます）。カードを押すと始まり、★はクリアした回数。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
+        <h3 data-i18n="h5t">ステージを選ぶ</h3>
+        <p data-i18n="h5p">ホームの一覧は<strong>盤のサイズ × 難しさ</strong>（難しいほど、混ぜた手数もブロックの種類も増えます）。カードを押すと始まり、★はクリアした回数。途中でやめた盤は「続きから」。行き詰まったら「ヒント」と「解説」。</p>
       </li>
     </ol>
-    <button id="howtoTutorial" class="ghost-btn wide" type="button">チュートリアルをもう一度</button>
-    <button id="howtoOk" class="primary wide" type="button">わかった</button>
+    <button id="howtoTutorial" class="ghost-btn wide" type="button" data-i18n="tutorialAgain">チュートリアルをもう一度</button>
+    <button id="howtoOk" class="primary wide" type="button" data-i18n="gotIt">わかった</button>
   </dialog>
 
   <!-- 完全版の案内（無料版で鍵つきを押したとき） -->
   <dialog class="howto-sheet" id="lockSheet" aria-labelledby="lockTitle">
     <div class="panel-head">
-      <h2 id="lockTitle">完全版で遊べます</h2>
-      <button id="lockClose" class="panel-close" type="button" aria-label="閉じる">&times;</button>
+      <h2 id="lockTitle" data-i18n="lockTitle">完全版で遊べます</h2>
+      <button id="lockClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
     </div>
-    <p class="lock-price">¥500・1 回の買い切り</p>
-    <ul class="lock-list">
+    <p class="lock-price" data-i18n="lockPrice">¥500・1 回の買い切り</p>
+    <ul class="lock-list" data-i18n="lockList">
       <li>ブロック 13 種すべて</li>
       <li>6×6 のふつう・むずかしい、7×7・8×8 の盤</li>
       <li>カスタム盤（10×10 まで）</li>
       <li>広告なし</li>
     </ul>
-    <p class="lock-note" id="lockNote">購入すると上の内容がすぐに開きます。支払いは Apple の購入画面で行い、返金は Apple の決まりに従います。</p>
-    <p class="lock-status" id="lockStatus" role="status" aria-live="polite">iPhone のアプリで購入できます。</p>
-    <button class="primary wide" id="lockBuy" type="button" disabled>購入（iPhone のアプリで）</button>
-    <button class="pill wide" id="lockRestore" type="button" disabled>購入を復元（iPhone のアプリで）</button>
-    <p class="lock-note" id="lockRewardNote" hidden>広告を見ると、<span id="lockRewardWhat">このステージ</span>を 1 回遊べます。</p>
-    <button class="pill wide" id="lockReward" type="button" hidden>広告を見て 1 回遊ぶ</button>
-    <a class="privacy-link" id="lockPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden>プライバシーポリシー</a>
-    <button id="lockOk" class="pill wide" type="button">閉じる</button>
+    <p class="lock-note" id="lockNote" data-i18n="lockNote">購入すると上の内容がすぐに開きます。支払いは Apple の購入画面で行い、返金は Apple の決まりに従います。</p>
+    <p class="lock-status" id="lockStatus" role="status" aria-live="polite" data-i18n="lockStatus">iPhone のアプリで購入できます。</p>
+    <button class="primary wide" id="lockBuy" type="button" disabled data-i18n="lockBuy">購入（iPhone のアプリで）</button>
+    <button class="pill wide" id="lockRestore" type="button" disabled data-i18n="lockRestore">購入を復元（iPhone のアプリで）</button>
+    <p class="lock-note" id="lockRewardNote" hidden data-i18n="lockRewardNote">広告を見ると、<span id="lockRewardWhat">このステージ</span>を 1 回遊べます。</p>
+    <button class="pill wide" id="lockReward" type="button" hidden data-i18n="lockReward">広告を見て 1 回遊ぶ</button>
+    <a class="privacy-link" id="lockPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden data-i18n="privacy">プライバシーポリシー</a>
+    <button id="lockOk" class="pill wide" type="button" data-i18n="close">閉じる</button>
   </dialog>
 
   <!-- ホーム -->
@@ -274,23 +281,23 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         </svg>
       </div>
       <h1 class="title-name">ABILITILE</h1>
-      <p class="title-catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
+      <p class="title-catch" data-i18n="catch">絵柄が能力を表すパズル。押すとその絵柄の効果が発動する。</p>
     </header>
 
     <section class="home-pick">
-      <div id="stageList" class="stage-list" role="group" aria-label="ステージ"></div>
+      <div id="stageList" class="stage-list" role="group" data-i18n-aria="stages" aria-label="ステージ"></div>
       <div class="home-links">
-        <button id="homeCustomBtn" class="ghost-btn" type="button">カスタムで作る</button>
-        <button id="homeHowtoBtn" class="ghost-btn" type="button">遊び方</button>
+        <button id="homeCustomBtn" class="ghost-btn" type="button" data-i18n="homeCustom">カスタムで作る</button>
+        <button id="homeHowtoBtn" class="ghost-btn" type="button" data-i18n="howto">遊び方</button>
       </div>
     </section>
 
     <footer class="home-foot">
       <div class="home-foot-actions">
-        <button class="pill" type="button" data-wak="install" hidden>アプリにする</button>
-        <button class="pill" type="button" data-wak="share">共有</button>
+        <button class="pill" type="button" data-wak="install" hidden data-i18n="install">アプリにする</button>
+        <button class="pill" type="button" data-wak="share" data-i18n="share">共有</button>
       </div>
-      <p class="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
+      <p class="credit" data-i18n="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
     </footer>
   </main>
 
@@ -298,9 +305,9 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <section class="play">
       <div class="tut-bar" id="tutBar" hidden>
         <span class="tut-step" id="tutStep">1 / 5</span>
-        <button id="tutSkip" class="ghost-btn tut-skip" type="button">スキップ</button>
+        <button id="tutSkip" class="ghost-btn tut-skip" type="button" data-i18n="skip">スキップ</button>
         <p class="tut-text" id="tutText"></p>
-        <div class="tut-goal" id="tutGoalWrap"><span class="tut-goal-label">目標</span><div class="stage-mini" id="tutGoal" aria-label="目標の柄"></div></div>
+        <div class="tut-goal" id="tutGoalWrap"><span class="tut-goal-label" data-i18n="goal">目標</span><div class="stage-mini" id="tutGoal" data-i18n-aria="goalAria" aria-label="目標の柄"></div></div>
       </div>
       <div class="board-frame">
         <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>
@@ -310,58 +317,58 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         </div>
       </div>
 
-      <p class="message" id="log">タイルを押して動かす</p>
-      <button id="shareDailyBtn" class="pill share-daily" type="button" hidden>結果を共有</button>
+      <p class="message" id="log" data-i18n="logStart">タイルを押して動かす</p>
+      <button id="shareDailyBtn" class="pill share-daily" type="button" hidden data-i18n="shareResult">結果を共有</button>
       <!-- 広告のある画面の下からのリンク（RULES §13）。広告が出る人だけ、クリアの表示のあいだ。iOS 版では Safari で開く -->
-      <a class="privacy-link" id="adPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden>プライバシーポリシー</a>
+      <a class="privacy-link" id="adPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden data-i18n="privacy">プライバシーポリシー</a>
 
       <div class="actions">
-        <button id="hintBtn" class="action" type="button" aria-label="次に押すブロックを教える">
+        <button id="hintBtn" class="action" type="button" data-i18n-aria="hintAria" aria-label="次に押すブロックを教える">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18h6M10 21h4"/>
             <path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .9 1.7l.1.5h5.2l.1-.5c.1-.7.4-1.3.9-1.7A6 6 0 0 0 12 3z"/>
           </svg>
-          ヒント
+          <span data-i18n="hint">ヒント</span>
         </button>
-        <button id="solveBtn" class="action" type="button" aria-label="解説を見る（自動で揃える）">
+        <button id="solveBtn" class="action" type="button" data-i18n-aria="solveAria" aria-label="解説を見る（自動で揃える）">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
             <path d="M7 5.9v12.2a.9.9 0 0 0 1.4.75l9.1-6.1a.9.9 0 0 0 0-1.5L8.4 5.15A.9.9 0 0 0 7 5.9z" fill="currentColor" stroke="none"/>
           </svg>
-          解説
+          <span data-i18n="solve">解説</span>
         </button>
-        <button id="newBtn" class="action" type="button" aria-label="同じ設定で新しい盤面を作る">
+        <button id="newBtn" class="action" type="button" data-i18n-aria="newAria" aria-label="同じ設定で新しい盤面を作る">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 11a8 8 0 1 0-.6 4"/>
             <path d="M20 5.5V11h-5.5"/>
           </svg>
-          再生成
+          <span data-i18n="newBoard">再生成</span>
         </button>
       </div>
     </section>
 
     <aside class="side">
       <section class="card" id="goalCard">
-        <h2 class="label">目標の柄</h2>
+        <h2 class="label" data-i18n="goalCard">目標の柄</h2>
         <div class="grid mini" id="goalGrid"></div>
       </section>
       <section class="card">
-        <h2 class="label">使うブロック</h2>
+        <h2 class="label" data-i18n="useBlocks">使うブロック</h2>
         <ul class="legend" id="legend"></ul>
       </section>
       <p class="seed">SEED <code id="seedOut">-</code></p>
-      <p class="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
+      <p class="credit" data-i18n="credit"><a href="/">T.OF...</a> のアプリ・<a href="https://t-of.github.io/contact/">問い合わせ</a></p>
       <div class="kit">
         <button class="kit-btn" type="button" data-wak="install" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/>
           </svg>
-          アプリにする
+          <span data-i18n="install">アプリにする</span>
         </button>
         <button class="kit-btn" type="button" data-wak="share">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 3.5v11M8 7.5l4-4 4 4M7 11H5.5v9.5h13V11H17"/>
           </svg>
-          共有
+          <span data-i18n="share">共有</span>
         </button>
       </div>
     </aside>
@@ -369,24 +376,24 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
   <div class="modal" id="confirmOverlay" hidden>
     <div class="modal-card">
-      <h2 id="confirmTitle">自動で揃える</h2>
-      <p id="confirmText">盤面が動いて目標の柄まで揃います。<br>この盤面は自分で解けなくなります。</p>
+      <h2 id="confirmTitle" data-i18n="confirmTitle">自動で揃える</h2>
+      <p id="confirmText" data-i18n="confirmText">盤面が動いて目標の柄まで揃います。<br>この盤面は自分で解けなくなります。</p>
       <div class="modal-row">
-        <button id="confirmNo" class="ghost-btn" type="button">やめる</button>
-        <button id="confirmYes" class="primary" type="button">揃える</button>
+        <button id="confirmNo" class="ghost-btn" type="button" data-i18n="cancel">やめる</button>
+        <button id="confirmYes" class="primary" type="button" data-i18n="confirmYes">揃える</button>
       </div>
     </div>
   </div>
 
   <div class="auto-bar" id="autoBar" hidden>
-    <div class="transport" role="group" aria-label="解説の再生">
-      <button id="autoBack" type="button" aria-label="一手戻す" title="一手戻す">
+    <div class="transport" role="group" data-i18n-aria="transport" aria-label="解説の再生">
+      <button id="autoBack" type="button" data-i18n-aria="stepBack" aria-label="一手戻す" title="一手戻す">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="5" y="5.5" width="2.6" height="13" rx="1.1"/>
           <path d="M19.5 6.4v11.2a.9.9 0 0 1-1.4.75l-8.4-5.6a.9.9 0 0 1 0-1.5l8.4-5.6a.9.9 0 0 1 1.4.75z"/>
         </svg>
       </button>
-      <button id="autoPlay" type="button" aria-label="一時停止" title="一時停止">
+      <button id="autoPlay" type="button" data-i18n-aria="pause" aria-label="一時停止" title="一時停止">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-pause">
           <rect x="7.6" y="5.5" width="3.4" height="13" rx="1.3"/>
           <rect x="13" y="5.5" width="3.4" height="13" rx="1.3"/>
@@ -395,17 +402,18 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
           <path d="M7.5 5.9v12.2a.9.9 0 0 0 1.4.75l9.1-6.1a.9.9 0 0 0 0-1.5L8.9 5.15a.9.9 0 0 0-1.4.75z"/>
         </svg>
       </button>
-      <button id="autoNext" type="button" aria-label="一手進む" title="一手進む">
+      <button id="autoNext" type="button" data-i18n-aria="stepNext" aria-label="一手進む" title="一手進む">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4.5 6.4v11.2a.9.9 0 0 0 1.4.75l8.4-5.6a.9.9 0 0 0 0-1.5L5.9 5.65a.9.9 0 0 0-1.4.75z"/>
           <rect x="16.4" y="5.5" width="2.6" height="13" rx="1.1"/>
         </svg>
       </button>
     </div>
-    <span id="autoText">揃えています…</span>
-    <button id="autoStop" class="auto-quit" type="button">やめる</button>
+    <span id="autoText" data-i18n="autoText">揃えています…</span>
+    <button id="autoStop" class="auto-quit" type="button" data-i18n="quit">やめる</button>
   </div>
 
+  <script src="./i18n.js"></script>
   <script src="./sound.js"></script>
   <script src="./patterns.js"></script>
   <script src="./glyphs.js"></script>
@@ -414,6 +422,12 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
   <script src="./rewards.js"></script>
   <script src="./script.js"></script>
   <script src="./webapp-kit/webapp-kit.js"></script>
+  <script>
+    // webapp-kit の案内の言葉（共有したときの「コピーしました」など）
+    if (window.WebAppKit && I18n.lang === 'en') {
+      WebAppKit.init({ labels: { copied: 'Link copied', guideTitle: 'Add to Home Screen', close: 'Close' } });
+    }
+  </script>
   <script>
     // Service Worker はインストールの条件であり、通信が無くても遊べるようにするもの。
     // file:// で開いたときは登録できないので、その場合は黙って見送る。

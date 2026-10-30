@@ -13,6 +13,12 @@
 //   完成状態から合法手だけで崩して初期盤面を作るので、完成へ戻る手順が必ず存在する。
 //   同時に「直前に打った手がそのまま残る」ので、手詰まり（合法手ゼロ）にもならない。
 
+// 画面の言葉。I18n.L('日本語', 'English') で、起動時に決めた言語のほうを使う（i18n.js）。
+// 計測の道具など i18n.js を読まない場所では日本語のまま。
+const L = typeof I18n !== 'undefined' ? I18n.L : (ja) => ja;
+// index.html の文言を、要素を拾う前に替えておく（中に id つきの要素を含むものがある）
+if (typeof I18n !== 'undefined') I18n.apply();
+
 // 盤は長方形にできる。W が横、H が縦のマス数。正方形はその特別な場合。
 let W = 4;
 let H = 4;
@@ -38,45 +44,45 @@ function mulberry32(seed) {
 //        [a, b, c] は a の中身 → b、b → c、c → a という移動（2 個なら入れ替え）。
 //        1 マスでも盤の外に出るか、自分のマスを含む場合は「使えない」と判定される。
 const ABILITIES = [
-  { id: 'swapLR', color: 'hsl(352 38% 74%)', name: '左右の隣どうしを入れ替え',
+  { id: 'swapLR', color: 'hsl(352 38% 74%)', name: L('左右の隣どうしを入れ替え', 'Swap left & right neighbors'),
     cells: (x, y) => [[[x - 1, y], [x + 1, y]]] },
 
-  { id: 'swapUD', color: 'hsl(22 64% 50%)', name: '上下の隣どうしを入れ替え',
+  { id: 'swapUD', color: 'hsl(22 64% 50%)', name: L('上下の隣どうしを入れ替え', 'Swap upper & lower neighbors'),
     cells: (x, y) => [[[x, y - 1], [x, y + 1]]] },
 
-  { id: 'swapD1', color: 'hsl(42 38% 51%)', name: '左上と右下を入れ替え',
+  { id: 'swapD1', color: 'hsl(42 38% 51%)', name: L('左上と右下を入れ替え', 'Swap upper-left & lower-right'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]]] },
 
-  { id: 'swapD2', color: 'hsl(62 56% 50%)', name: '右上と左下を入れ替え',
+  { id: 'swapD2', color: 'hsl(62 56% 50%)', name: L('右上と左下を入れ替え', 'Swap upper-right & lower-left'),
     cells: (x, y) => [[[x + 1, y - 1], [x - 1, y + 1]]] },
 
-  { id: 'crossCW', color: 'hsl(92 59% 76%)', name: '上下左右の 4 マスを時計回り',
+  { id: 'crossCW', color: 'hsl(92 59% 76%)', name: L('上下左右の 4 マスを時計回り', 'Rotate the 4 sides clockwise'),
     cells: (x, y) => [[[x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y]]] },
 
-  { id: 'diagCW', color: 'hsl(135 54% 50%)', name: '斜め 4 マスを時計回り',
+  { id: 'diagCW', color: 'hsl(135 54% 50%)', name: L('斜め 4 マスを時計回り', 'Rotate the 4 corners clockwise'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y - 1], [x + 1, y + 1], [x - 1, y + 1]]] },
 
-  { id: 'ringCW', color: 'hsl(168 68% 50%)', name: '周囲 8 マスを時計回り',
+  { id: 'ringCW', color: 'hsl(168 68% 50%)', name: L('周囲 8 マスを時計回り', 'Rotate all 8 neighbors clockwise'),
     cells: (x, y) => [[[x - 1, y - 1], [x, y - 1], [x + 1, y - 1], [x + 1, y],
                        [x + 1, y + 1], [x, y + 1], [x - 1, y + 1], [x - 1, y]]] },
 
   // 以下は回転の半分ぶん。向かい合うマスどうしが同時に入れ替わる。
   // それぞれ crossCW を 2 回、diagCW を 2 回、ringCW を 4 回使ったのと同じ動き。
-  { id: 'crossHalf', color: 'hsl(192 46% 73%)', name: '上下と左右を同時に入れ替え',
+  { id: 'crossHalf', color: 'hsl(192 46% 73%)', name: L('上下と左右を同時に入れ替え', 'Swap up/down and left/right at once'),
     cells: (x, y) => [[[x, y - 1], [x, y + 1]], [[x + 1, y], [x - 1, y]]] },
 
-  { id: 'diagHalf', color: 'hsl(215 43% 55%)', name: '斜めの対角どうしを同時に入れ替え',
+  { id: 'diagHalf', color: 'hsl(215 43% 55%)', name: L('斜めの対角どうしを同時に入れ替え', 'Swap both diagonal pairs at once'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]], [[x + 1, y - 1], [x - 1, y + 1]]] },
 
   // 斜め 4 マス（四角の 4 すみ）の、上下どうし・左右どうし。
   // 「斜めの対角どうし」と合わせて、4 すみの入れ替え 3 通りが揃う。
-  { id: 'sqUD', color: 'hsl(354 68% 64%)', name: '四角のすみを上下で入れ替え',
+  { id: 'sqUD', color: 'hsl(354 68% 64%)', name: L('四角のすみを上下で入れ替え', 'Swap the corners top ↔ bottom'),
     cells: (x, y) => [[[x - 1, y - 1], [x - 1, y + 1]], [[x + 1, y - 1], [x + 1, y + 1]]] },
 
-  { id: 'sqLR', color: 'hsl(300 68% 58%)', name: '四角のすみを左右で入れ替え',
+  { id: 'sqLR', color: 'hsl(300 68% 58%)', name: L('四角のすみを左右で入れ替え', 'Swap the corners left ↔ right'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y - 1]], [[x - 1, y + 1], [x + 1, y + 1]]] },
 
-  { id: 'ringHalf', color: 'hsl(315 40% 57%)', name: '周囲 8 マスを向かいどうしで入れ替え',
+  { id: 'ringHalf', color: 'hsl(315 40% 57%)', name: L('周囲 8 マスを向かいどうしで入れ替え', 'Swap all 8 neighbors with their opposites'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]], [[x, y - 1], [x, y + 1]],
                       [[x + 1, y - 1], [x - 1, y + 1]], [[x + 1, y], [x - 1, y]]] },
 
@@ -84,33 +90,46 @@ const ABILITIES = [
   // 色だけは持つので、目標の柄の一色として数えられる。
   // 見分けの手がかりは色相の遠さではなく「盤でただひとつの無彩色」であること
   // （彩度 C*=2.0、既存 12 色は最小でも 17.8）と、いちばん明るいこと。
-  { id: 'none', color: 'hsl(48 8% 88%)', name: '何も起きない',
+  { id: 'none', color: 'hsl(48 8% 88%)', name: L('何も起きない', 'Does nothing'),
     cells: () => [] },
 
 ];
 
 // 説明パネル用。系統と、効果および使える条件のくわしい説明。
 const FAMILIES = [
-  { key: 'swap', label: '入れ替え' },
-  { key: 'rot',  label: '回転' },
-  { key: 'half', label: '半回転' },
-  { key: 'none', label: '能力なし' },
+  { key: 'swap', label: L('入れ替え', 'Swap') },
+  { key: 'rot',  label: L('回転', 'Rotate') },
+  { key: 'half', label: L('半回転', 'Half turn') },
+  { key: 'none', label: L('能力なし', 'No ability') },
 ];
 
 const INFO = {
-  swapLR: { fam: 'swap', text: '自分の左隣と右隣を入れ替える。自分は真ん中に残る。左右どちらかの隣が盤の外になる左端・右端の列では使えない。' },
-  swapUD: { fam: 'swap', text: '自分の上と下を入れ替える。自分は真ん中に残る。上下どちらかが盤の外になる最上段・最下段では使えない。' },
-  swapD1: { fam: 'swap', text: '自分の左上と右下を入れ替える。左端・右端の列と、最上段・最下段では使えない。' },
-  swapD2: { fam: 'swap', text: '自分の右上と左下を入れ替える。左端・右端の列と、最上段・最下段では使えない。' },
-  crossCW: { fam: 'rot', text: '上・右・下・左の 4 マスを、その順に 1 つずつ送る。上の中身が右へ、右が下へ、下が左へ、左が上へ。4 方向すべてが盤内である必要がある。' },
-  diagCW: { fam: 'rot', text: '左上・右上・右下・左下の 4 マスを、その順に 1 つずつ送る。斜め 4 方向すべてが盤内である必要がある。' },
-  ringCW: { fam: 'rot', text: '自分を囲む 8 マス全部を時計回りに 1 つずつ送る。一度に動く数が最も多い。盤の内側でしか使えない。' },
-  crossHalf: { fam: 'half', text: '上と下、右と左を同時に入れ替える。上下左右を時計回りに 2 回送ったのと同じ動き。4 方向すべてが盤内である必要がある。' },
-  diagHalf: { fam: 'half', text: '左上と右下、右上と左下を同時に入れ替える。斜め 4 マスを時計回りに 2 回送ったのと同じ動き。斜め 4 方向すべてが盤内である必要がある。' },
-  sqUD: { fam: 'half', text: '斜め 4 マス（四角の 4 すみ）を、上下どうしで入れ替える。左上と左下、右上と右下。斜め 4 方向すべてが盤内である必要がある。' },
-  sqLR: { fam: 'half', text: '斜め 4 マス（四角の 4 すみ）を、左右どうしで入れ替える。左上と右上、左下と右下。斜め 4 方向すべてが盤内である必要がある。' },
-  none: { fam: 'none', text: '押しても何も起きない。まわりのマスから動かされるだけ。盤のどこにあっても使えない。' },
-  ringHalf: { fam: 'half', text: '自分を囲む 8 マスを、向かい合うものどうしで一斉に入れ替える。周囲 8 マスを時計回りに 4 回送ったのと同じ動き。盤の内側でしか使えない。' },
+  swapLR: { fam: 'swap', text: L('自分の左隣と右隣を入れ替える。自分は真ん中に残る。左右どちらかの隣が盤の外になる左端・右端の列では使えない。',
+    "Swaps the tiles to its left and right. It stays in the middle. Can't be used in the leftmost or rightmost column, where one neighbor is off the board.") },
+  swapUD: { fam: 'swap', text: L('自分の上と下を入れ替える。自分は真ん中に残る。上下どちらかが盤の外になる最上段・最下段では使えない。',
+    "Swaps the tiles above and below. It stays in the middle. Can't be used in the top or bottom row, where one of them is off the board.") },
+  swapD1: { fam: 'swap', text: L('自分の左上と右下を入れ替える。左端・右端の列と、最上段・最下段では使えない。',
+    "Swaps the tiles at its upper left and lower right. Can't be used in the leftmost or rightmost column, or the top or bottom row.") },
+  swapD2: { fam: 'swap', text: L('自分の右上と左下を入れ替える。左端・右端の列と、最上段・最下段では使えない。',
+    "Swaps the tiles at its upper right and lower left. Can't be used in the leftmost or rightmost column, or the top or bottom row.") },
+  crossCW: { fam: 'rot', text: L('上・右・下・左の 4 マスを、その順に 1 つずつ送る。上の中身が右へ、右が下へ、下が左へ、左が上へ。4 方向すべてが盤内である必要がある。',
+    'Moves the 4 tiles above, right, below and left one step in that order: top goes right, right goes down, bottom goes left, left goes up. All 4 directions must be on the board.') },
+  diagCW: { fam: 'rot', text: L('左上・右上・右下・左下の 4 マスを、その順に 1 つずつ送る。斜め 4 方向すべてが盤内である必要がある。',
+    'Moves the 4 diagonal tiles (upper left, upper right, lower right, lower left) one step in that order. All 4 diagonals must be on the board.') },
+  ringCW: { fam: 'rot', text: L('自分を囲む 8 マス全部を時計回りに 1 つずつ送る。一度に動く数が最も多い。盤の内側でしか使えない。',
+    'Moves all 8 surrounding tiles one step clockwise. Moves the most tiles at once. Works only away from the edges.') },
+  crossHalf: { fam: 'half', text: L('上と下、右と左を同時に入れ替える。上下左右を時計回りに 2 回送ったのと同じ動き。4 方向すべてが盤内である必要がある。',
+    'Swaps top with bottom and right with left at the same time. Same as rotating the 4 sides clockwise twice. All 4 directions must be on the board.') },
+  diagHalf: { fam: 'half', text: L('左上と右下、右上と左下を同時に入れ替える。斜め 4 マスを時計回りに 2 回送ったのと同じ動き。斜め 4 方向すべてが盤内である必要がある。',
+    'Swaps upper left with lower right and upper right with lower left at the same time. Same as rotating the 4 corners clockwise twice. All 4 diagonals must be on the board.') },
+  sqUD: { fam: 'half', text: L('斜め 4 マス（四角の 4 すみ）を、上下どうしで入れ替える。左上と左下、右上と右下。斜め 4 方向すべてが盤内である必要がある。',
+    'Swaps the 4 diagonal tiles (the corners of the square) top with bottom: upper left with lower left, upper right with lower right. All 4 diagonals must be on the board.') },
+  sqLR: { fam: 'half', text: L('斜め 4 マス（四角の 4 すみ）を、左右どうしで入れ替える。左上と右上、左下と右下。斜め 4 方向すべてが盤内である必要がある。',
+    'Swaps the 4 diagonal tiles (the corners of the square) left with right: upper left with upper right, lower left with lower right. All 4 diagonals must be on the board.') },
+  none: { fam: 'none', text: L('押しても何も起きない。まわりのマスから動かされるだけ。盤のどこにあっても使えない。',
+    "Nothing happens when pressed. It only gets moved by the tiles around it. Can't be used anywhere on the board.") },
+  ringHalf: { fam: 'half', text: L('自分を囲む 8 マスを、向かい合うものどうしで一斉に入れ替える。周囲 8 マスを時計回りに 4 回送ったのと同じ動き。盤の内側でしか使えない。',
+    'Swaps each of the 8 surrounding tiles with the one opposite it, all at once. Same as rotating all 8 neighbors clockwise 4 times. Works only away from the edges.') },
 };
 
 // 能力が使えるなら影響するマスのサイクルを、使えないなら null を返す。
@@ -262,7 +281,11 @@ const TYPE_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 // 手数を決めて混ぜるので、答えの手数はおよそ n（大きさによらない）。
 // 大きさ 3 は練習（一覧では 1 行）。9×9・10×10 はカスタムだけで選べる。
 // 数字は tools/stagebench.js の計測（アプリのヒントと同じ 3 秒の探索で見つかる手数）で決めた。
-const DIFFS = ['やさしい', 'ふつう', 'むずかしい'];
+// 英語の数え方（日本語は「手」「回」をそのまま付ける）
+const movesEn = (n) => `${n} move${n === 1 ? '' : 's'}`;
+const timesEn = (n) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
+const monthDayEn = (m, d) => `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${d}`;
+const DIFFS = L(['やさしい', 'ふつう', 'むずかしい'], ['Easy', 'Normal', 'Hard']);
 const STAGE_TABLE = {
   3: [{ n: 3, k: 2, min: 2 }, { n: 5, k: 3, min: 3 }, { n: 7, k: 4, min: 4 }],
   4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }],
@@ -408,7 +431,7 @@ function markUsable() {
     } else {
       t.classList.remove('blank');
       t.classList.add('off');
-      t.title = `${ABILITIES[ab].name}（この位置では盤の外に出るので使えない）`;
+      t.title = ABILITIES[ab].name + L('（この位置では盤の外に出るので使えない）', ' (unusable here: it would go off the board)');
     }
   }
   return usable;
@@ -464,8 +487,8 @@ function blinkHint() {
   slots[r.i].classList.add('hinted');
   const back = r.order - r.n;
   const how = r.n <= back
-    ? `光っているマスを ${r.n} 回押す`
-    : `光っているマスを ${back} 回長押し（逆回り）`;
+    ? L(`光っているマスを ${r.n} 回押す`, `Press the glowing tile ${timesEn(r.n)}`)
+    : L(`光っているマスを ${back} 回長押し（逆回り）`, `Long-press the glowing tile ${timesEn(back)} (reverse)`);
   // 残りの手数は、短い手順のときだけ意味がある。
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
@@ -473,16 +496,16 @@ function blinkHint() {
   const real = planCost(plan) <= HINT_SHOW_MAX;
   const quality = real
     ? (hintPlan && hintPlan.optimal && planCost(hintPlan.runs) <= planCost(plan)   // 探索が最短と保証した長さと同じ
-      ? ` / ここから最短 ${planCost(plan)} 手`
-      : ` / 残り ${planCost(plan)} 手（最短とはかぎりません）`)
-    : hintBusy ? HINT_SEARCHING_NOTE : ' / まだ短い手順が見つかっていません';
+      ? L(` / ここから最短 ${planCost(plan)} 手`, ` / ${movesEn(planCost(plan))} to go (shortest)`)
+      : L(` / 残り ${planCost(plan)} 手（最短とはかぎりません）`, ` / ${movesEn(planCost(plan))} to go (may not be shortest)`))
+    : hintBusy ? HINT_SEARCHING_NOTE : L(' / まだ短い手順が見つかっていません', ' / no short solution found yet');
   logEl.textContent = how + quality;
   hintTimer = setTimeout(clearHint, HINT_BLINK_MS);
 }
 
 // 1 回押したら光るのは 1 か所きり。あとから別のマスへ飛ばさない。
-const HINT_SEARCHING = '手を探しています…';
-const HINT_SEARCHING_NOTE = ' / 短い手順を探しています…';
+const HINT_SEARCHING = L('手を探しています…', 'Looking for a move…');
+const HINT_SEARCHING_NOTE = L(' / 短い手順を探しています…', ' / looking for a shorter solution…');
 
 function hintAfterSolve() {
   blinkHint();
@@ -512,7 +535,7 @@ function showHint() {
 
 // ---- 説明パネル ----
 function renderPanel() {
-  document.getElementById('blockTotal').textContent = `全 ${ABILITIES.length} 種`;
+  document.getElementById('blockTotal').textContent = L(`全 ${ABILITIES.length} 種`, `${ABILITIES.length} blocks in all`);
   const body = document.getElementById('panelBody');
   const used = new Set(tileAbility);
   body.replaceChildren();
@@ -522,7 +545,7 @@ function renderPanel() {
     const sec = document.createElement('section');
     const h = document.createElement('p');
     h.className = 'fam-title';
-    h.textContent = `${fam.label}（${ids.length} 種）`;
+    h.textContent = L(`${fam.label}（${ids.length} 種）`, `${fam.label} (${ids.length})`);
     const list = document.createElement('div');
     list.className = 'fam-list';
 
@@ -545,7 +568,7 @@ function renderPanel() {
       if (used.has(k)) {
         const tag = document.createElement('span');
         tag.className = 'used';
-        tag.textContent = 'このパズルで使用中';
+        tag.textContent = L('このパズルで使用中', 'In this puzzle');
         name.append(tag);
       }
 
@@ -566,9 +589,9 @@ function renderPanel() {
         map.append(cell);
       }
       const note = document.createElement('span');
-      note.textContent = `使える位置 ${on} / ${SIZE}`;
+      note.textContent = L(`使える位置 ${on} / ${SIZE}`, `Usable on ${on} / ${SIZE}`);
       map.setAttribute('role', 'img');
-      map.setAttribute('aria-label', `${W}×${H} の盤で使える位置は ${on} マス`);
+      map.setAttribute('aria-label', L(`${W}×${H} の盤で使える位置は ${on} マス`, `Usable on ${on} cells of a ${W}×${H} board`));
       where.append(map, note);
 
       main.append(name, detail, where);
@@ -736,7 +759,7 @@ let clearPending = null;    // par を待ったままクリアしたときの { 
 function readyLine() {
   let touch = false;
   try { touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches; } catch (e) { /* 判定できなければクリック */ }
-  return touch ? 'タイルをタップ' : 'タイルをクリック';
+  return touch ? L('タイルをタップ', 'Tap a tile') : L('タイルをクリック', 'Click a tile');
 }
 
 // ---- 今日の 1 問 ----
@@ -800,14 +823,14 @@ function dailyShareText({ key, moves, stars, par, hint, goal, w }) {
   const [, m, d] = key.split('-').map(Number);
   let line = '';
   if (par && stars) line += `${'★'.repeat(stars)} `;
-  line += `${moves}手`;
-  if (par) line += `（${par.optimal ? '最短' : '目安'} ${par.cost}手）`;
-  if (hint) line += '（ヒントあり）';
+  line += L(`${moves}手`, movesEn(moves));
+  if (par) line += L(`（${par.optimal ? '最短' : '目安'} ${par.cost}手）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost})`);
+  if (hint) line += L('（ヒントあり）', ' (with hint)');
   const rows = [];
   for (let y = 0; y * w < goal.length; y++) {
     rows.push(Array.from(goal.slice(y * w, y * w + w), (a) => SHARE_EMOJI[ABILITIES[a].id] || '⬛').join(''));
   }
-  return [`ABILITILE 今日の1問 ${m}/${d}`, line, ...rows].join('\n');
+  return [L(`ABILITILE 今日の1問 ${m}/${d}`, `ABILITILE Daily ${m}/${d}`), line, ...rows].join('\n');
 }
 function loadDaily() {
   try {
@@ -932,7 +955,8 @@ function finishSolve(id, res, partial = false) {
     // 探し直しで短い手順が見つかったら、出したままの案内を新しくする。
     // 光らせる場所は動かさない（押した時点で決めたものを尊重する）。
     if (hintPlan && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
-      logEl.textContent = `短い手順が見つかりました（残り ${planCost(activeRuns())} 手）。もう一度ヒントを押してください`;
+      logEl.textContent = L(`短い手順が見つかりました（残り ${planCost(activeRuns())} 手）。もう一度ヒントを押してください`,
+        `Found a shorter solution (${movesEn(planCost(activeRuns()))} to go). Press Hint again`);
     }
     scheduleImprove(res);
   }
@@ -1037,15 +1061,15 @@ function fire(i, dir = 1) {
     shakeTile(i);
     Sfx.blocked();
     logEl.textContent = isBlank(abilityAt(i))
-      ? 'このマスには能力がない。まわりのマスから動かすしかない'
-      : '盤の外に出てしまうので、この位置では使えない';
+      ? L('このマスには能力がない。まわりのマスから動かすしかない', 'This tile has no ability. Move it from the tiles around it')
+      : L('盤の外に出てしまうので、この位置では使えない', 'Can\'t be used here: it would go off the board');
     return;
   }
   const ab = abilityAt(i);   // 使ったタイルは動かないので、前後で変わらない
   animatePlacement(() => applyMoveState(i, dir));
   flashSlot(i, dir);
   Sfx.move(ab, dir);
-  logEl.textContent = ABILITIES[ab].name + (dir < 0 ? '（逆回り）' : '');
+  logEl.textContent = ABILITIES[ab].name + (dir < 0 ? L('（逆回り）', ' (reverse)') : '');
   clearHint(); // 示した手はもう古いので消す
   if (isSolved()) showClear();
   else if (tutorial) tutMark();
@@ -1065,14 +1089,14 @@ function unClear() {
 
 // クリアの行。par があれば最短（目安）と★を付ける。
 function clearLine(n, used) {
-  let t = `そろった！ ${n} 手`;
-  if (par === undefined) t += '（評価中…）';
+  let t = L(`そろった！ ${n} 手`, `Solved! ${movesEn(n)}`);
+  if (par === undefined) t += L('（評価中…）', ' (rating…)');
   else if (par) {
     const r = starRating(n, par.cost, used);
-    t += `（${par.optimal ? '最短' : '目安'} ${par.cost} 手）${'★'.repeat(r)}`;
-    if (n < par.cost) t += ' 目安より短い！';
+    t += L(`（${par.optimal ? '最短' : '目安'} ${par.cost} 手）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost}) `) + '★'.repeat(r);
+    if (n < par.cost) t += L(' 目安より短い！', ' Beat the target!');
   }
-  return `${t} — 設定から次の盤面を作れます`;
+  return t + L(' — 設定から次の盤面を作れます', ' — make the next board from the settings');
 }
 
 // par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
@@ -1116,7 +1140,7 @@ function showClear() {
 
   logEl.classList.add('done');
   logEl.textContent = autoSolvedFlag
-    ? 'そろった！（自動で揃えました） — 設定から次の盤面を作れます'
+    ? L('そろった！（自動で揃えました） — 設定から次の盤面を作れます', 'Solved! (automatically) — make the next board from the settings')
     : clearLine(moves, hintUsed);
   clearPending = (!autoSolvedFlag && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag);
@@ -1198,10 +1222,12 @@ const autoNextEl = document.getElementById('autoNext');
 
 function askAutoSolve() {
   if (autoSolving || locked) return;
-  askConfirm('解説を見る',
-    '目標の柄まで盤面が動きます。止めて <strong>1 手ずつ進める・戻す</strong> こともできます。'
-    + '<br>この盤面は自分で解けなくなります。',
-    '見る', startAutoSolve);
+  askConfirm(L('解説を見る', 'Show the solution'),
+    L('目標の柄まで盤面が動きます。止めて <strong>1 手ずつ進める・戻す</strong> こともできます。'
+      + '<br>この盤面は自分で解けなくなります。',
+      'The board will move until it matches the goal. You can pause and <strong>step forward or back</strong>.'
+      + '<br>You won\'t be able to solve this board yourself.'),
+    L('見る', 'Show'), startAutoSolve);
 }
 
 // 盤面を作り直す。サイズとブロック数の設定は据え置きで、
@@ -1209,10 +1235,11 @@ function askAutoSolve() {
 // 揃えたあとに次へ進む手段でもあるので、完成していても押せる。
 function askRegenerate() {
   if (autoSolving) return;
-  askConfirm('新しい盤面を作る',
-    'サイズと難しさはそのままで、'
-    + '<strong>使うブロックも目標の柄も</strong>選び直します。<br>今の盤面は元に戻せません。',
-    '作る', () => { closeConfirm(); newPuzzle(); });
+  askConfirm(L('新しい盤面を作る', 'Make a new board'),
+    L('サイズと難しさはそのままで、'
+      + '<strong>使うブロックも目標の柄も</strong>選び直します。<br>今の盤面は元に戻せません。',
+      'Keeps the size and difficulty, and picks <strong>new blocks and a new goal</strong>.<br>The current board can\'t be brought back.'),
+    L('作る', 'Make'), () => { closeConfirm(); newPuzzle(); });
 }
 
 function startAutoSolve() {
@@ -1239,7 +1266,7 @@ function startAutoSolve() {
   };
   // 使える短い手順がもうあれば、探索の終わりを待たずにそれで始める（裏の探索はそのまま続く）
   if (activeRuns().length && planCost(activeRuns()) <= HINT_SHOW_MAX) { go(); return; }
-  autoTextEl.textContent = '手順を計算しています…';
+  autoTextEl.textContent = L('手順を計算しています…', 'Working out the moves…');
   requestSolve(go, true);
 }
 
@@ -1318,18 +1345,19 @@ const toggleAuto = () => (autoPlaying ? pauseAuto() : playAuto());
 function markAuto() {
   if (!autoSolving) return;
   autoBarEl.classList.toggle('paused', !autoPlaying);
-  autoPlayEl.setAttribute('aria-label', autoPlaying ? '一時停止' : '再生');
-  autoPlayEl.title = autoPlaying ? '一時停止' : '再生';
+  const playLabel = autoPlaying ? L('一時停止', 'Pause') : L('再生', 'Play');
+  autoPlayEl.setAttribute('aria-label', playLabel);
+  autoPlayEl.title = playLabel;
   autoBackEl.disabled = !autoHist.length;
   const done = locked || isSolved() || !activeRuns().length;
   autoNextEl.disabled = done;
   autoPlayEl.disabled = done;
   const left = planCost(activeRuns());
   autoTextEl.textContent = done
-    ? (isSolved() ? 'そろいました — 戻って見直せます' : '進める手がありません')
+    ? (isSolved() ? L('そろいました — 戻って見直せます', 'Solved — step back to review') : L('進める手がありません', 'No more moves'))
     : autoPlaying
-      ? `揃えています… 残り ${left} 手`
-      : `止まっています — 残り ${left} 手`;
+      ? L(`揃えています… 残り ${left} 手`, `Solving… ${movesEn(left)} to go`)
+      : L(`止まっています — 残り ${left} 手`, `Paused — ${movesEn(left)} to go`);
 }
 
 function stepAuto() {
@@ -1722,9 +1750,9 @@ document.getElementById('hintBtn').addEventListener('click', showHint);
 // ブロックの一覧が長いので、ルール・ブロック・設定は積まずに切り替える。
 const panelTabsEl = document.getElementById('panelTabs');
 const TABS = [
-  { key: 'rule', label: 'ルール', sec: 'secRule' },
-  { key: 'block', label: 'ブロック', sec: 'secBlock' },
-  { key: 'config', label: '設定', sec: 'secConfig' },
+  { key: 'rule', label: L('ルール', 'Rules'), sec: 'secRule' },
+  { key: 'block', label: L('ブロック', 'Blocks'), sec: 'secBlock' },
+  { key: 'config', label: L('設定', 'Settings'), sec: 'secConfig' },
 ];
 let panelTab = TABS[0].key;
 
@@ -1867,6 +1895,16 @@ const soundChk = document.getElementById('soundChk');
 
 function markSound() { soundChk.checked = Sfx.enabled; }
 soundChk.addEventListener('change', () => { Sfx.set(soundChk.checked); markSound(); });
+
+// 言語。選ぶと覚えて読み込み直す（i18n.js。途中で言葉が混ざらないように）
+const langSegEl = document.getElementById('langSeg');
+if (typeof I18n !== 'undefined') {
+  for (const b of langSegEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === I18n.lang));
+  langSegEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) I18n.set(b.dataset.v);
+  });
+}
 markSound();
 
 
@@ -1888,14 +1926,14 @@ const PANELS = {
     el: document.getElementById('setup'),
     btn: document.getElementById('homeCustomBtn'),
     close: document.getElementById('setupClose'),
-    label: '盤面の設定',
+    label: L('盤面の設定', 'board settings'),
     onOpen: syncSetup,
   },
   panel: {
     el: document.getElementById('panel'),
     btn: document.getElementById('menuBtn'),
     close: document.getElementById('panelClose'),
-    label: '遊び方と設定',
+    label: L('遊び方と設定', 'how to play and settings'),
   },
 };
 
@@ -1907,7 +1945,7 @@ function setPanel(key, open) {
     p.el.classList.toggle('open', on);
     p.el.setAttribute('aria-hidden', String(!on));
     p.btn.setAttribute('aria-expanded', String(on));
-    p.btn.setAttribute('aria-label', `${p.label}を${on ? '閉じる' : '開く'}`);
+    p.btn.setAttribute('aria-label', L(`${p.label}を${on ? '閉じる' : '開く'}`, `${on ? 'Close' : 'Open'} ${p.label}`));
   }
   backdropEl.hidden = !open;
   document.body.classList.toggle('no-scroll', open); // 背景のスクロールを止める
@@ -1980,10 +2018,10 @@ function refreshDiffSeg() {
   markSeg(diffSegEl, pendDiff);
   syncLocks();
   if (pendCustom) {
-    diffNoteEl.textContent = `${movesFor(pendW, pendH, pendDiff)} 手ほど混ぜます。`;
+    diffNoteEl.textContent = L(`${movesFor(pendW, pendH, pendDiff)} 手ほど混ぜます。`, `Scrambles about ${movesFor(pendW, pendH, pendDiff)} moves.`);
   } else {
     const def = stageDef(pendW, pendDiff);
-    diffNoteEl.textContent = def ? `${def.n} 手ほど混ぜます。ブロックは ${def.k} 種類です。` : '';
+    diffNoteEl.textContent = def ? L(`${def.n} 手ほど混ぜます。ブロックは ${def.k} 種類です。`, `Scrambles about ${def.n} moves with ${def.k} kinds of blocks.`) : '';
   }
 }
 
@@ -2010,10 +2048,10 @@ function refreshPicker() {
   const n = pendPicked.size;
   const max = Math.min(ABILITIES.length, pendW * pendH);
   pickNoteEl.textContent = n < 2
-    ? '2 種類以上えらんでください。'
+    ? L('2 種類以上えらんでください。', 'Choose at least 2 kinds.')
     : n > max
-      ? `${pendW}×${pendH} には ${max} 種類までしか置けません。`
-      : `${n} 種類をえらんでいます。`;
+      ? L(`${pendW}×${pendH} には ${max} 種類までしか置けません。`, `A ${pendW}×${pendH} board fits at most ${max} kinds.`)
+      : L(`${n} 種類をえらんでいます。`, `${n} kinds selected.`);
 }
 
 // カスタムの表示を切り替える
@@ -2037,8 +2075,8 @@ function applySides() {
   markSeg(sideAEl, pendA);
   markSeg(sideBEl, pendB);
   sizeNoteEl.textContent = pendW === pendH
-    ? `${pendW}×${pendW} の正方形になります。`
-    : `長いほうが横になります。→ 横 ${pendW} × 縦 ${pendH}`;
+    ? L(`${pendW}×${pendW} の正方形になります。`, `A ${pendW}×${pendW} square.`)
+    : L(`長いほうが横になります。→ 横 ${pendW} × 縦 ${pendH}`, `The longer side runs across → ${pendW} wide × ${pendH} tall`);
 }
 
 // パネルを開くたびに、今の盤面の設定に合わせ直す
@@ -2223,7 +2261,9 @@ const inProgress = (s, d) =>
 
 // 一覧のカードの記録。★は「評価」の意味だけに使い、クリア回数は文字で出す。
 const clearsLabel = (st) =>
-  st.clears ? `クリア ${st.clears} 回${st.perfect ? ` ★★★ ${st.perfect} 回` : ''}` : '未クリア';
+  st.clears
+    ? L(`クリア ${st.clears} 回${st.perfect ? ` ★★★ ${st.perfect} 回` : ''}`, `cleared ${timesEn(st.clears)}${st.perfect ? `, ★★★ ${timesEn(st.perfect)}` : ''}`)
+    : L('未クリア', 'not cleared');
 
 // ---- ステージのミニ盤（カードの絵柄）----
 // ゲーム画面と同じ .slot/.tile（立体タイル・アイコン）で描く。カードごとに
@@ -2287,7 +2327,7 @@ function openLockSheet(what = 'setting') {
   const can = Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
   lockRewardEl.hidden = lockRewardNoteEl.hidden = !can;
   lockPrivacyEl.hidden = !Entitlement.adsActive();
-  document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? 'このステージ' : 'この設定の盤';
+  document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? L('このステージ', 'this stage') : L('この設定の盤', 'a board with these settings');
   lockSheetEl.showModal?.();
 }
 function closeLockSheet() { lockSheetEl.close?.(); }
@@ -2315,7 +2355,9 @@ lockRewardEl.addEventListener('click', async () => {
       if (typeof what === 'object') playStage(what.s, what.d);
     } else {
       const st = document.getElementById('lockStatus');
-      if (st) st.textContent = r === 'failed' ? '広告を読み込めませんでした。時間をおいてもう一度お試しください。' : '広告を最後まで見ると遊べます。';
+      if (st) st.textContent = r === 'failed'
+        ? L('広告を読み込めませんでした。時間をおいてもう一度お試しください。', 'Couldn\'t load the ad. Please try again later.')
+        : L('広告を最後まで見ると遊べます。', 'Watch the ad to the end to play.');
     }
   } finally { rewardBusy = false; lockRewardEl.disabled = false; }
 });
@@ -2369,31 +2411,33 @@ function renderDailyCard() {
   body.className = 'daily-body';
   const title = document.createElement('span');
   title.className = 'daily-title';
-  title.textContent = '今日の 1 問';
+  title.textContent = L('今日の 1 問', 'Daily puzzle');
   const date = document.createElement('span');
   date.className = 'stage-meta';
-  date.textContent = `${m}月${d}日・5×5・${DAILY_MOVES} 手・${DAILY_TYPES} 種（全ブロックから）`;
+  date.textContent = L(`${m}月${d}日・5×5・${DAILY_MOVES} 手・${DAILY_TYPES} 種（全ブロックから）`,
+    `${monthDayEn(m, d)} · 5×5 · ${DAILY_MOVES} moves · ${DAILY_TYPES} kinds (from all blocks)`);
   const state = document.createElement('span');
   state.className = 'stage-stars';
   state.textContent = rec
-    ? `${rec.stars ? '★'.repeat(rec.stars) + ' ' : ''}${rec.moves} 手${rec.hint ? '（ヒントあり）' : ''}`
-    : resume ? '途中' : '未挑戦';
+    ? (rec.stars ? '★'.repeat(rec.stars) + ' ' : '') + L(`${rec.moves} 手${rec.hint ? '（ヒントあり）' : ''}`, `${movesEn(rec.moves)}${rec.hint ? ' (with hint)' : ''}`)
+    : resume ? L('途中', 'in progress') : L('未挑戦', 'not played');
   body.append(title, date, state);
   const streak = dailyStreak(daily, key);
   if (streak >= 2) {
     const sk = document.createElement('span');
     sk.className = 'daily-streak';
-    sk.textContent = `${streak} 日連続`;
+    sk.textContent = L(`${streak} 日連続`, `${streak}-day streak`);
     body.append(sk);
   }
   if (resume) {
     const tag = document.createElement('span');
     tag.className = 'stage-resume';
-    tag.textContent = '続きから';
+    tag.textContent = L('続きから', 'Continue');
     body.append(tag);
   }
   item.append(mini, body);
-  item.setAttribute('aria-label', `今日の 1 問、${m}月${d}日、${state.textContent}${streak >= 2 ? `、${streak} 日連続` : ''}`);
+  item.setAttribute('aria-label', L(`今日の 1 問、${m}月${d}日、${state.textContent}${streak >= 2 ? `、${streak} 日連続` : ''}`,
+    `Daily puzzle, ${monthDayEn(m, d)}, ${state.textContent}${streak >= 2 ? `, ${streak}-day streak` : ''}`));
   item.addEventListener('click', startDaily);
   return item;
 }
@@ -2424,13 +2468,13 @@ function renderStageList() {
     if (s === 3) {
       const tag = document.createElement('span');
       tag.className = 'stage-legacy';
-      tag.textContent = 'れんしゅう';
+      tag.textContent = L('れんしゅう', 'Practice');
       head.append(tag);
     }
     if (clears[s]) {
       const legacy = document.createElement('span');
       legacy.className = 'stage-legacy';
-      legacy.textContent = `これまで ${clears[s]} 回`;
+      legacy.textContent = L(`これまで ${clears[s]} 回`, `${timesEn(clears[s])} before`);
       head.append(legacy);
     }
 
@@ -2449,8 +2493,10 @@ function renderStageList() {
       const resume = !locked && inProgress(s, d);
       if (resume) item.classList.add('resume');
       if (locked) item.classList.add('locked');
-      const name = `${s}×${s}、${DIFFS[d]}（${def.n} 手・${def.k} 種）`;
-      item.setAttribute('aria-label', locked ? `${name}、完全版で遊べます` : `${name}、${clearsLabel(st)}${resume ? '、続きから' : ''}`);
+      const name = L(`${s}×${s}、${DIFFS[d]}（${def.n} 手・${def.k} 種）`, `${s}×${s}, ${DIFFS[d]} (${def.n} moves, ${def.k} kinds)`);
+      item.setAttribute('aria-label', locked
+        ? name + L('、完全版で遊べます', ', in the full version')
+        : name + L('、', ', ') + clearsLabel(st) + (resume ? L('、続きから', ', continue') : ''));
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -2465,7 +2511,7 @@ function renderStageList() {
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
-      meta.textContent = `${DIFFS[d]}・${def.n} 手`;
+      meta.textContent = L(`${DIFFS[d]}・${def.n} 手`, `${DIFFS[d]} · ${movesEn(def.n)}`);
 
       const stars = document.createElement('span');
       stars.className = 'stage-stars';
@@ -2476,13 +2522,13 @@ function renderStageList() {
         stars.hidden = true;
         const lock = document.createElement('span');
         lock.className = 'stage-lock';
-        lock.textContent = '完全版';
+        lock.textContent = L('完全版', 'Full');
         item.append(lock);
       }
       if (resume) {
         const tag = document.createElement('span');
         tag.className = 'stage-resume';
-        tag.textContent = '続きから';
+        tag.textContent = L('続きから', 'Continue');
         item.append(tag);
       }
       row.append(item);
@@ -2572,19 +2618,19 @@ const TUTORIAL_KEY = 'glyphshift.tutorial';
 const TUT_CHAR = { N: 'none', L: 'swapLR', U: 'swapUD', C: 'crossCW', a: 'swapD1', b: 'swapD2', d: 'diagCW' };
 const TUTORIAL_STAGES = [
   // 1 押す: 1 手
-  { w: 3, h: 3, text: '光っているタイルを押そう', mark: 'auto', moves: 1,
+  { w: 3, h: 3, text: L('光っているタイルを押そう', 'Press the glowing tile'), mark: 'auto', moves: 1,
     goal: 'NNNaLdNNN', start: 'NNNdLaNNN' },
   // 2 能力はタイルと一緒に動く: 2 手（上下の入れ替えで左右の入れ替えのタイルが下へ動き、動いた先で使う）
-  { w: 3, h: 3, text: '能力は、タイルと一緒に動く', mark: 'auto', moves: 2,
+  { w: 3, h: 3, text: L('能力は、タイルと一緒に動く', 'Abilities move with their tiles'), mark: 'auto', moves: 2,
     goal: 'NNNNUNaLb', start: 'NLNNUNbNa' },
   // 3 長押しで逆回し: 押すと 3 回、長押しなら 1 回
-  { w: 3, h: 3, text: '長押しで、逆向きに回る', mark: 'auto', moves: 1,
+  { w: 3, h: 3, text: L('長押しで、逆向きに回る', 'Long-press to turn the other way'), mark: 'auto', moves: 1,
     goal: 'NaNdCbNNN', start: 'NdNNCaNbN' },
   // 4 組み合わせる: 2 種のブロック、3 手
-  { w: 3, h: 3, text: '目標の柄に揃えよう', mark: 'goal', moves: 3,
+  { w: 3, h: 3, text: L('目標の柄に揃えよう', 'Match the goal pattern'), mark: 'goal', moves: 3,
     goal: 'aLbNCNNNN', start: 'bNaNCNNLN' },
   // 5 困ったらヒント: 4×4、2 種のブロック、4 手
-  { w: 4, h: 4, text: '迷ったら、ヒント', mark: 'hint', moves: 4,
+  { w: 4, h: 4, text: L('迷ったら、ヒント', 'Stuck? Try a hint'), mark: 'hint', moves: 4,
     goal: 'aNNbNCLNNNNNdNNa', start: 'NNabNCNNNLNNdNNa' },
 ];
 
@@ -2659,8 +2705,8 @@ function tutMark() {
   slots[r.i].classList.add('hinted');
   const back = r.order - r.n;
   logEl.textContent = r.n <= back
-    ? (r.n === 1 ? '光っているタイルを押す' : `光っているタイルを ${r.n} 回押す`)
-    : (back === 1 ? '光っているタイルを長押し' : `光っているタイルを ${back} 回長押し`);
+    ? L(r.n === 1 ? '光っているタイルを押す' : `光っているタイルを ${r.n} 回押す`, `Press the glowing tile${r.n === 1 ? '' : ' ' + timesEn(r.n)}`)
+    : L(back === 1 ? '光っているタイルを長押し' : `光っているタイルを ${back} 回長押し`, `Long-press the glowing tile${back === 1 ? '' : ' ' + timesEn(back)}`);
 }
 
 function startTutorial() {
@@ -2685,7 +2731,7 @@ function tutorialCleared() {
   void gridEl.offsetWidth;
   gridEl.classList.add('cleared');
   logEl.classList.add('done');
-  logEl.textContent = 'できた！';
+  logEl.textContent = L('できた！', 'Nice!');
   tutorial.timer = setTimeout(tutorialNext, 1100);
 }
 
@@ -2717,7 +2763,7 @@ function endTutorial() {
 function replayTutorial() {
   if (!tutorial && !playEl.hidden && run.i >= 0 && !isSolved()) {
     setPanel('panel', false);
-    askConfirm('チュートリアルをもう一度', '今の盤は消えます。', 'はじめる', () => { closeConfirm(); startTutorial(); });
+    askConfirm(L('チュートリアルをもう一度', 'Replay the tutorial'), L('今の盤は消えます。', 'The current board will be lost.'), L('はじめる', 'Start'), () => { closeConfirm(); startTutorial(); });
     return;
   }
   startTutorial();
