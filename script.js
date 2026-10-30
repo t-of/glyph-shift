@@ -2280,11 +2280,13 @@ const lockSheetEl = document.getElementById('lockSheet');
 let lockWhat = 'setting';
 const lockRewardEl = document.getElementById('lockReward');
 const lockRewardNoteEl = document.getElementById('lockRewardNote');
+const lockPrivacyEl = document.getElementById('lockPrivacy');
 function openLockSheet(what = 'setting') {
   lockWhat = what;
   // ごほうび広告の口は、iOS 版で広告が使えるときだけ（Web 版・完全版・広告が使えない間は出さない）
   const can = Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
   lockRewardEl.hidden = lockRewardNoteEl.hidden = !can;
+  lockPrivacyEl.hidden = !Entitlement.adsActive();
   document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? 'このステージ' : 'この設定の盤';
   lockSheetEl.showModal?.();
 }
@@ -2293,7 +2295,11 @@ document.getElementById('lockClose').addEventListener('click', closeLockSheet);
 document.getElementById('lockOk').addEventListener('click', closeLockSheet);
 lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) closeLockSheet(); });
 // 完全版になったら、一覧の鍵をその場で外す（案内も閉じる）
-Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); });
+// クリアの画面の下のプライバシーポリシー。広告が出る人だけ（表示そのものは #log.done のあいだだけ、CSS で決める）
+const adPrivacyEl = document.getElementById('adPrivacy');
+const syncAdPrivacy = () => { adPrivacyEl.hidden = !Entitlement.adsActive(); };
+syncAdPrivacy();
+Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); });
 
 // ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）
 let rewardBusy = false;

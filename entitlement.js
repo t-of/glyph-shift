@@ -92,6 +92,8 @@ const Entitlement = (() => {
   function useTicket() { if (!ticket) return; ticket = false; notify(); }
   const dropTicket = useTicket;
 
+  // 広告が出る人か（iOS 版で、完全版でない）。プライバシーポリシーへのリンクの出し分けもこれで決める（RULES §13）
+  const adsActive = () => locksActive() && !isFull();
   const restricted = () => locksActive() && !isFull() && !ticket;
   const blockOpen = (id) => !restricted() || FREE_BLOCKS.includes(id);
   // s: 盤の一辺、d: 難しさ（0 やさしい / 1 ふつう / 2 むずかしい）
@@ -101,7 +103,7 @@ const Entitlement = (() => {
   const poolTag = () => (restricted() ? 'free' : 'all');
 
   return {
-    FREE_BLOCKS, locksActive, isFull, onChange, setFull,
+    FREE_BLOCKS, locksActive, isFull, adsActive, onChange, setFull,
     hasTicket, grantTicket, useTicket, dropTicket,
     attachStore, hasStore, storePrice, refreshFromStore, purchase, restore,
     blockOpen, stageOpen, customOpen, poolTag,

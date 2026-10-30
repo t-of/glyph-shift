@@ -77,4 +77,15 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   Entitlement._override(null);
   console.log('  ごほうびの 1 回きり  OK');
 }
+// 広告が出る人だけ（プライバシーポリシーのリンクの出し分け）: iOS 版で完全版でないとき
+{
+  Entitlement._override({ locks: false, full: false });
+  ok(!Entitlement.adsActive(), 'Web 版で広告が出る');
+  Entitlement._override({ locks: true, full: false });
+  ok(Entitlement.adsActive(), '無料版で広告が出ない');
+  Entitlement._override({ locks: true, full: true });
+  ok(!Entitlement.adsActive(), '完全版で広告が出る');
+  Entitlement._override(null);
+  console.log('  広告が出る人の判定  OK');
+}
 console.log(fail ? `失敗 ${fail} 件` : '全チェック通過');

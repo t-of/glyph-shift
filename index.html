@@ -251,6 +251,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     <button class="pill wide" id="lockRestore" type="button" disabled>購入を復元（iPhone のアプリで）</button>
     <p class="lock-note" id="lockRewardNote" hidden>広告を見ると、<span id="lockRewardWhat">このステージ</span>を 1 回遊べます。</p>
     <button class="pill wide" id="lockReward" type="button" hidden>広告を見て 1 回遊ぶ</button>
+    <a class="privacy-link" id="lockPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden>プライバシーポリシー</a>
     <button id="lockOk" class="pill wide" type="button">閉じる</button>
   </dialog>
 
@@ -311,6 +312,8 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 
       <p class="message" id="log">タイルを押して動かす</p>
       <button id="shareDailyBtn" class="pill share-daily" type="button" hidden>結果を共有</button>
+      <!-- 広告のある画面の下からのリンク（RULES §13）。広告が出る人だけ、クリアの表示のあいだ。iOS 版では Safari で開く -->
+      <a class="privacy-link" id="adPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden>プライバシーポリシー</a>
 
       <div class="actions">
         <button id="hintBtn" class="action" type="button" aria-label="次に押すブロックを教える">
