@@ -1942,6 +1942,19 @@ const soundChk = document.getElementById('soundChk');
 function markSound() { soundChk.checked = Sfx.enabled; }
 soundChk.addEventListener('change', () => { Sfx.set(soundChk.checked); markSound(); });
 
+// 振動の入切（iOS アプリの中だけ。振動そのものは native.js が、鳴らす直前にこの保存を見て決める）
+const hapticsRowEl = document.getElementById('hapticsRow');
+const hapticsChk = document.getElementById('hapticsChk');
+const HAPTICS_KEY = 'glyphshift.haptics';   // '0' で切。無ければ入
+const inNativeApp = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+if (inNativeApp) {
+  hapticsRowEl.hidden = false;
+  try { hapticsChk.checked = localStorage.getItem(HAPTICS_KEY) !== '0'; } catch (e) { /* 読めなければ入のまま */ }
+  hapticsChk.addEventListener('change', () => {
+    try { localStorage.setItem(HAPTICS_KEY, hapticsChk.checked ? '1' : '0'); } catch (e) { /* 保存できなくても今回は効く */ }
+  });
+}
+
 // 言語。選ぶと覚えて読み込み直す（i18n.js。途中で言葉が混ざらないように）
 const langSegEl = document.getElementById('langSeg');
 if (typeof I18n !== 'undefined') {
@@ -2371,13 +2384,30 @@ const lockPrivacyEl = document.getElementById('lockPrivacy');
 function openLockSheet(what = 'setting') {
   lockWhat = what;
   // ごほうび広告の口は、iOS 版で広告が使えるときだけ（Web 版・完全版・広告が使えない間は出さない）
-  const can = Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
+  // 設定の「完全版について」から開いたとき（'info'）は、遊ぶ盤が無いので出さない
+  const can = what !== 'info' && Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
   lockRewardEl.hidden = lockRewardNoteEl.hidden = !can;
   lockPrivacyEl.hidden = !Entitlement.adsActive();
   document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? L('このステージ', 'this stage') : L('この設定の盤', 'a board with these settings');
+  syncLockOwned();
   lockSheetEl.showModal?.();
 }
 function closeLockSheet() { lockSheetEl.close?.(); }
+// 購入済みなら、案内シートの購入ボタンは隠して「購入済み」を出す（復元は残す）
+function syncLockOwned() {
+  const full = Entitlement.isFull();
+  document.getElementById('lockOwned').hidden = !full;
+  document.getElementById('lockBuy').hidden = full;
+}
+// 設定タブの「完全版」の欄。鍵が効くとき（iOS 版）だけ出す
+const fullFieldEl = document.getElementById('fullField');
+function syncFullField() {
+  fullFieldEl.hidden = !Entitlement.locksActive();
+  document.getElementById('fullState').textContent = Entitlement.isFull()
+    ? L('購入済み。ありがとうございます', 'Purchased. Thank you!')
+    : L('¥500・1 回の買い切り', '¥500 · one-time purchase');
+}
+document.getElementById('fullAbout').addEventListener('click', () => { openLockSheet('info'); });
 document.getElementById('lockClose').addEventListener('click', closeLockSheet);
 document.getElementById('lockOk').addEventListener('click', closeLockSheet);
 lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) closeLockSheet(); });
@@ -2386,7 +2416,8 @@ lockSheetEl.addEventListener('click', (e) => { if (e.target === lockSheetEl) clo
 const adPrivacyEl = document.getElementById('adPrivacy');
 const syncAdPrivacy = () => { adPrivacyEl.hidden = !Entitlement.adsActive(); };
 syncAdPrivacy();
-Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); });
+syncFullField();
+Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); });
 
 // ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）
 let rewardBusy = false;

@@ -144,6 +144,11 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </section>
 
     <section class="panel-sec" id="secConfig" role="tabpanel" aria-labelledby="tabConfig" tabindex="0" hidden>
+      <div class="field full-field" id="fullField" hidden>
+        <span class="label" data-i18n="fullLabel">完全版</span>
+        <p class="full-state" id="fullState" role="status" aria-live="polite"></p>
+        <button class="pill wide" id="fullAbout" type="button" data-i18n="fullAbout">完全版について</button>
+      </div>
       <div class="field">
         <span class="label" data-i18n="glyphLabel">絵柄</span>
         <div class="glyph-seg" id="glyphSeg" role="group" data-i18n-aria="glyphAria" aria-label="絵柄の描き方"></div>
@@ -153,6 +158,11 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         <input type="checkbox" id="soundChk" checked>
         <span data-i18n="sound">効果音</span>
         <span class="switch-note" data-i18n="soundNote">押したとき・揃ったとき・完成したときに短い音が鳴る</span>
+      </label>
+      <label class="switch haptics-switch" id="hapticsRow" hidden>
+        <input type="checkbox" id="hapticsChk" checked>
+        <span data-i18n="haptics">振動</span>
+        <span class="switch-note" data-i18n="hapticsNote">押したとき・揃ったときに端末が振動する</span>
       </label>
       <div class="field">
         <span class="label" data-i18n="langLabel">言語 / Language</span>
@@ -260,6 +270,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
     </ul>
     <p class="lock-note" id="lockNote" data-i18n="lockNote">購入すると上の内容がすぐに開きます。支払いは Apple の購入画面で行い、返金は Apple の決まりに従います。</p>
     <p class="lock-status" id="lockStatus" role="status" aria-live="polite" data-i18n="lockStatus">iPhone のアプリで購入できます。</p>
+    <p class="lock-owned" id="lockOwned" role="status" hidden data-i18n="lockOwned">購入済みです。ありがとうございます。</p>
     <button class="primary wide" id="lockBuy" type="button" disabled data-i18n="lockBuy">購入（iPhone のアプリで）</button>
     <button class="pill wide" id="lockRestore" type="button" disabled data-i18n="lockRestore">購入を復元（iPhone のアプリで）</button>
     <p class="lock-note" id="lockRewardNote" hidden data-i18n="lockRewardNote">広告を見ると、<span id="lockRewardWhat">このステージ</span>を 1 回遊べます。</p>
