@@ -98,10 +98,12 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  解説で揃えたときは数えない  OK');
 }
 
-// クリアの回数は ✓ の数（5 回まで並べ、6 回から ✓×N。未クリアは空）。難しさは ★ の数
-ok(clearsMark(0) === '' && clearsMark(undefined) === '', '未クリアで何か出る');
-ok(clearsMark(1) === '✓' && clearsMark(5) === '✓✓✓✓✓', `✓ の並び: ${clearsMark(5)}`);
-ok(clearsMark(6) === '✓×6' && clearsMark(23) === '✓×23', `6 回から: ${clearsMark(6)}`);
-ok(diffMark(0) === '★' && diffMark(2) === '★★★', `難しさ: ${diffMark(2)}`);
+// 難しさはサイズによらない通しの ★1〜5（混ぜる手数で決める）。クリアの回数は 2 回目から数字
+ok(clearsMark(0) === '' && clearsMark(1) === '' && clearsMark(undefined) === '', '1 回までで数字が出る');
+ok(clearsMark(2) === '2' && clearsMark(23) === '23', `回数: ${clearsMark(23)}`);
+ok(starsForMoves(3) === 1 && starsForMoves(5) === 1 && starsForMoves(6) === 2 && starsForMoves(30) === 5, '★ の線引き');
+for (const s of STAGE_SIZES) for (let d = 1; d < 3; d++) {
+  ok(starsForMoves(stageDef(s, d).n) >= starsForMoves(stageDef(s, d - 1).n), `${s}×${s} で難しいほうの ★ が少ない`);
+}
 
 console.log(fail === 0 ? '\nステージ一覧: 全チェック通過' : `\n失敗 ${fail} 件`);

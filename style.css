@@ -313,7 +313,14 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   cursor: pointer;
   touch-action: manipulation;
   scroll-snap-align: start;
+  position: relative;
 }
+/* 未クリアのミニ盤は灰色に沈め、クリアすると駒の色で見せる（クリアの印の代わり） */
+.stage-item:not(.cleared) .stage-mini { filter: grayscale(1); opacity: .6; }
+.stage-item:not(.cleared):hover .stage-mini { opacity: .8; }
+/* 2 回目からのクリア回数。カードの右上に小さく */
+.stage-count { position: absolute; top: 4px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+  background: var(--accent); color: var(--accent-ink); font: 600 10px/16px var(--mono); text-align: center; }
 .stage-item:hover { border-color: var(--accent); }
 .stage-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* 実際の盤と同じ .slot/.tile（立体タイル・絵柄）で描く。--nx/--ny/--cell/--gap は
@@ -330,7 +337,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   background: var(--well);
 }
 .stage-meta { font-size: 10.5px; color: var(--dim); }
-.stage-diff { font-size: 12px; letter-spacing: .08em; }   /* 難しさの ★ */
+.stage-diff { font-size: 12px; letter-spacing: .08em; color: var(--warn); }   /* 難しさの ★（通しの 1〜5） */
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; min-height: 1.4em; }   /* 未クリアで空でも、カードの高さをそろえる */
 .stage-item.resume { border-color: var(--accent); }
 /* 今日の 1 問: 一覧の一番上に 1 枚、横長のカード */
