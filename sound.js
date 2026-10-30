@@ -17,23 +17,37 @@ const Sfx = (() => {
     : typeof webkitAudioContext !== 'undefined' ? webkitAudioContext
     : null;
 
-  // iPhone のマナーモードでも鳴らす（Safari 16.4 以降）。
-  // 'playback' にすると音楽アプリの曲が止まるので、音がオンのときだけにする。
-  function setAudioSession(soundOn) {
+  // 音の種類はゲームの効果音として 'ambient'（Safari 16.4 以降）。
+  // 'playback' だと音楽プレーヤー扱いになり、鳴るたびにダイナミックアイランドに音の印が出て、
+  // ほかのアプリの曲も止まる（2026-10-30 オーナーの指摘で変えた）。'ambient' はマナーモードでは鳴らない。
+  function setAudioSession() {
     try {
-      if (typeof navigator !== 'undefined' && navigator.audioSession) {
-        navigator.audioSession.type = soundOn ? 'playback' : 'auto';
-      }
+      if (typeof navigator !== 'undefined' && navigator.audioSession) navigator.audioSession.type = 'ambient';
     } catch (e) { /* 対応していない */ }
   }
-  setAudioSession(on);
+  setAudioSession();
 
+  // 鳴らす前に毎回、使える状態か確かめる。iPhone では裏に回る・電話・Siri などで
+  // 'suspended' や 'interrupted' になり、そのままだと音が出ない（読み直すまで鳴らなかった）。
+  // 戻せなければ作り直す。押した操作の中で呼ばれるので、再開も作り直しも許される。
   function ready() {
     if (!on || !Ctor) return null;
-    setAudioSession(true);
+    if (ctx && ctx.state === 'closed') ctx = null;
     if (!ctx) ctx = new Ctor();
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state !== 'running') {
+      const c = ctx;
+      try {
+        const p = c.resume();
+        if (p && typeof p.catch === 'function') p.catch(() => { if (ctx === c) { try { c.close(); } catch (e) { /* 閉じられなくてよい */ } ctx = null; } });
+      } catch (e) { ctx = null; }
+    }
     return ctx;
+  }
+  // 裏に回るときは止めておき、次に鳴らすときに再開する（iPhone で、戻ったあと無音のまま動き続けるのを防ぐ）
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && ctx && ctx.state === 'running') { try { ctx.suspend(); } catch (e) { /* 止められなくてよい */ } }
+    });
   }
 
   // 短い音をひとつ鳴らす。bend は終わりの周波数の倍率。
@@ -64,7 +78,6 @@ const Sfx = (() => {
       on = !!v;
       try { if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, on ? 'on' : 'off'); }
       catch (e) { /* 保存できなくても動作は変えない */ }
-      setAudioSession(on);
       if (on) blip(NOTES[3], { dur: 0.08, gain: 0.08 });
     },
 
