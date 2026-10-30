@@ -108,6 +108,7 @@ const I18n = (() => {
     newAria: 'Make a new board with the same settings',
     newBoard: 'New board',
     goalCard: 'Goal pattern',
+    next: 'Next',
     confirmTitle: 'Solve automatically',
     confirmText: 'The board will move until it matches the goal.<br>You won\'t be able to solve this board yourself.',
     cancel: 'Cancel',

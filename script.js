@@ -1098,6 +1098,7 @@ function unClear() {
   locked = false;
   gridEl.classList.remove('cleared');
   logEl.classList.remove('done');
+  setClearBar(false);
   logEl.textContent = readyLine();
   shareBtnEl.hidden = true;
   clearPending = null;
@@ -1149,6 +1150,7 @@ function showClear() {
   gridEl.classList.add('cleared');
 
   logEl.classList.add('done');
+  setClearBar(true);
   logEl.textContent = autoSolvedFlag
     ? L('自動で揃えました', 'Solved automatically')
     : clearLine(moves, hintUsed);
@@ -1176,6 +1178,30 @@ function showClear() {
     saveStages();
   }
 }
+
+// クリアのあとの「次へ」「ホーム」。ボタンの列（ヒント・解説・再生成）と入れ替える。
+// 今日の 1 問は次の盤が無いので「次へ」を出さない（共有とホーム）。
+const clearBarEl = document.getElementById('clearBar');
+const nextBtnEl = document.getElementById('nextBtn');
+function setClearBar(on) {
+  document.getElementById('play').classList.toggle('is-clear', on);   // playEl はこの下で決まるので直接引く
+  nextBtnEl.hidden = on && !!dailyKey;
+}
+// 次の盤。ステージなら同じステージの次の柄（鍵つきなら完全版の案内）、カスタムなら同じ設定で作り直す。
+function goNext() {
+  if (dailyKey) { goHome(); return; }
+  if (W === H && !forcedAbilities && stageDef(W, curDiff)) {
+    if (!Entitlement.stageOpen(W, curDiff)) { openLockSheet({ s: W, d: curDiff }); return; }
+    const st = stageFor(W, curDiff);
+    if (autoSolvedFlag) { st.seed = Math.floor(Math.random() * 1e9); delete st.goal; saveStages(); }   // 解説で揃えた盤も次は別の柄
+    playStage(W, curDiff);
+    return;
+  }
+  if (forcedAbilities && !Entitlement.customOpen()) { openLockSheet(); return; }
+  newPuzzle();
+}
+nextBtnEl.addEventListener('click', goNext);
+document.getElementById('clearHomeBtn').addEventListener('click', goHome);
 
 // ---- 解説（自動で揃える） ----
 // 手順どおりに 1 手ずつ押していく。1 手ごとに手順を読み直すので、
@@ -1656,6 +1682,7 @@ function beginBoard() {
   closeConfirm();
   gridEl.classList.remove('cleared');
   logEl.classList.remove('done');
+  setClearBar(false);
   moves = 0;
   run = { i: -1, d: 0, order: 1 };
   hintPlan = null;

@@ -357,6 +357,18 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
           <span data-i18n="newBoard">再生成</span>
         </button>
       </div>
+      <!-- クリアしたら .actions の代わりに出す。次の盤へ 1 タップで進める／ホームへ戻る -->
+      <div class="clear-bar" id="clearBar">
+        <button id="clearHomeBtn" class="action" type="button" data-i18n-aria="home" aria-label="ホームへ戻る">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>
+          </svg>
+        </button>
+        <button id="nextBtn" class="action next-btn" type="button">
+          <span data-i18n="next">次へ</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
     </section>
 
     <aside class="side">

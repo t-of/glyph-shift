@@ -528,6 +528,18 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .actions .action { padding: 12px 24px; }
 .actions .action svg { width: 21px; height: 21px; }
 .actions .action span { display: none; }
+/* クリアのあと: ボタンの列を「ホーム」「次へ」に入れ替える */
+.clear-bar { display: none; gap: 10px; margin-top: 6px; }
+.is-clear .actions { display: none; }
+.is-clear .clear-bar { display: flex; }
+.clear-bar .action svg { width: 21px; height: 21px; }
+.clear-bar #clearHomeBtn { padding: 12px 20px; }
+.next-btn { padding: 12px 30px; font-size: 15px; font-weight: 600; color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.next-btn svg, .next-btn:hover svg { color: var(--accent-ink); }
+.next-btn:hover { color: var(--accent-ink); filter: brightness(1.08); }
+.is-clear .clear-bar .next-btn { animation: nextIn .35s ease .5s both; }
+@keyframes nextIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.clear-bar [hidden] { display: none; }
 /* 押したブロックの絵柄（メッセージの行） */
 .log-chip { width: 30px; height: 30px; border-radius: 8px; display: inline-grid; place-items: center; position: relative; vertical-align: middle; }
 .log-chip svg { width: 74%; height: 74%; display: block; position: relative; translate: 0 -1px; }
