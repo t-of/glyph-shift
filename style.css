@@ -139,7 +139,7 @@ body {
 button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .mark svg { width: 20px; height: 20px; display: block; }
 /* ロゴはアプリのアイコンそのもの（2026-10-30 オーナー）。角はアイコンと同じ丸み */
-.mark-icon { width: 26px; height: 26px; display: block; border-radius: 22.5%; }
+.mark-icon { width: 26px; height: 26px; display: block; border-radius: 22.5%; box-shadow: 0 0 0 1px var(--line); }   /* 黒地のアイコンが暗い地に溶けないよう細い枠 */
 .wordmark {
   font-family: var(--ui);
   font-size: 13px;
@@ -195,7 +195,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .title-head { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .title-head .mark { color: var(--accent); }
-.title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 6px 18px var(--sh-icon); }
+.title-head .mark-icon { width: 64px; height: 64px; box-shadow: 0 0 0 1px var(--line), 0 6px 18px var(--sh-icon); }
 /* 名前のロゴ（2026-10-30 オーナーが案 2 を選ぶ）。1 字ずつ小さなタイルに載せ、B・T・E の 3 枚だけ駒の色で傾け、
    L は押されて沈んだ形にして、アイコンの「押した瞬間」と響かせる。大きさは font-size で決める（em で縮む） */
 .wm { display: inline-flex; gap: .09em; font-family: var(--ui); font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; white-space: nowrap; vertical-align: middle; }
@@ -832,7 +832,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   cursor: pointer;
   transition: color .12s ease, background .12s ease, border-color .12s ease;
 }
-.seg button:hover:not(:disabled) { color: var(--text); border-color: var(--dim); }
+.seg button:hover:not(:disabled):not([aria-pressed="true"]) { color: var(--text); border-color: var(--dim); }
 .seg button:disabled { opacity: .3; cursor: not-allowed; }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
