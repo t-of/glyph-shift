@@ -75,7 +75,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(L[0] === 'ABILITILE 今日の1問 10/29', L[0]);
   ok(L[1] === 'クリア', L[1]);   // 手数・★は入れない
   ok(L.length === 7 && L.slice(2).every((r) => [...r].length === 5), '絵文字が 5 行 5 列でない');
-  ok(L[2] === '🟥🟧🟣⬜🟥', L[2]);
+  ok(L[2] === '🟥🟧🔴⬜🟥', L[2]);
   const t2 = dailyShareText({ key: '2026-01-05', moves: 14, stars: 2, par: { cost: 10, optimal: false }, hint: true, goal, w: 5 });
   ok(t2.split('\n')[0].endsWith('1/5') && t2.split('\n')[1] === 'クリア', t2.split('\n')[1]);
   const t3 = dailyShareText({ key: '2026-01-05', moves: 14, stars: 0, par: null, hint: false, goal, w: 5 });

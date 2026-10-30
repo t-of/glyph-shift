@@ -1,7 +1,7 @@
 // 柄のなかの色の並び順がランダムになっているか
 let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
-const hueAt = (i) => Number(bgOf(tileAbility[i]).match(/hsl\((\d+)/)[1]);
+const hueAt = (i) => bgOf(tileAbility[i]);   // 色そのものを見分けの印に使う
 
 // 柄を固定して、そのなかの色の並びが散らばるかを見る
 function survey(n, k, patId, cells) {

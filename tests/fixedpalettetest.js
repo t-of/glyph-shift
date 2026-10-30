@@ -22,14 +22,50 @@ function rgb2lab([r, g, b]) {
   const [fx, fy, fz] = [f(X), f(Y), f(Z)];
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
-const labOf = (css) => {
+// 色は #rrggbb（2026-10-30 の案 A から）か hsl() で書く
+const toRgb = (css) => {
+  const hx = css.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (hx) return hx.slice(1).map((v) => parseInt(v, 16) / 255);
   const [h, s, l] = css.match(/hsl\((\d+) (\d+)% (\d+)%\)/).slice(1).map(Number);
-  return rgb2lab(hsl2rgb(h, s, l));
+  return hsl2rgb(h, s, l);
 };
+const labOf = (css) => rgb2lab(toRgb(css));
 const dE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+// CIEDE2000。明るさをそろえた配色（2026-10-30 の案 A）では、CIE76 より見た目の差に近い
+function dE00([L1, a1, b1], [L2, a2, b2]) {
+  const rad = Math.PI / 180, C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), Cb = (C1 + C2) / 2;
+  const G = 0.5 * (1 - Math.sqrt(Cb ** 7 / (Cb ** 7 + 25 ** 7)));
+  const ap1 = a1 * (1 + G), ap2 = a2 * (1 + G);
+  const Cp1 = Math.hypot(ap1, b1), Cp2 = Math.hypot(ap2, b2);
+  const hp = (b, a) => { const h = Math.atan2(b, a) / rad; return h < 0 ? h + 360 : h; };
+  const hp1 = hp(b1, ap1), hp2 = hp(b2, ap2);
+  const dL = L2 - L1, dC = Cp2 - Cp1;
+  let dh = hp2 - hp1;
+  if (Cp1 * Cp2 === 0) dh = 0; else if (dh > 180) dh -= 360; else if (dh < -180) dh += 360;
+  const dH = 2 * Math.sqrt(Cp1 * Cp2) * Math.sin(dh * rad / 2);
+  const Lb = (L1 + L2) / 2, Cpb = (Cp1 + Cp2) / 2;
+  let hb = hp1 + hp2;
+  if (Cp1 * Cp2 !== 0) hb = Math.abs(hp1 - hp2) > 180 ? (hb + (hb < 360 ? 360 : -360)) / 2 : hb / 2;
+  const T = 1 - .17 * Math.cos((hb - 30) * rad) + .24 * Math.cos(2 * hb * rad)
+    + .32 * Math.cos((3 * hb + 6) * rad) - .2 * Math.cos((4 * hb - 63) * rad);
+  const SL = 1 + .015 * (Lb - 50) ** 2 / Math.sqrt(20 + (Lb - 50) ** 2), SC = 1 + .045 * Cpb, SH = 1 + .015 * Cpb * T;
+  const RT = -2 * Math.sqrt(Cpb ** 7 / (Cpb ** 7 + 25 ** 7)) * Math.sin(60 * Math.exp(-(((hb - 275) / 25) ** 2)) * rad);
+  return Math.sqrt((dL / SL) ** 2 + (dC / SC) ** 2 + (dH / SH) ** 2 + RT * (dC / SC) * (dH / SH));
+}
+// OKLCH の色相（アクセントの帯を避けているかを見る）
+function okHue(css) {
+  const lin = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const [r, g, b] = toRgb(css).map(lin);
+  const l = Math.cbrt(.4122214708 * r + .5363325363 * g + .0514459929 * b);
+  const m = Math.cbrt(.2119034982 * r + .6806995451 * g + .1073969566 * b);
+  const q = Math.cbrt(.0883024619 * r + .2817188376 * g + .6299787005 * b);
+  const A = 1.9779984951 * l - 2.4285922050 * m + .4505937099 * q;
+  const B = .0259040371 * l + .7827717662 * m - .8086757660 * q;
+  return (Math.atan2(B, A) * 180 / Math.PI + 360) % 360;
+}
 
 const labs = ABILITIES.map((a) => labOf(a.color));
-const hues = ABILITIES.map((a) => Number(a.color.match(/hsl\((\d+)/)[1]));
+const hues = ABILITIES.map((a) => okHue(a.color));
 
 console.log('10 色の内訳');
 ABILITIES.forEach((a, k) => {
@@ -46,12 +82,12 @@ const tinted = ABILITIES.map((_, k) => k).filter((k) => !grey.includes(k));
 let worst = { d: Infinity };
 for (const i of tinted) for (const j of tinted) {
   if (j <= i) continue;
-  const d = dE(labs[i], labs[j]);
+  const d = dE00(labs[i], labs[j]);
   if (d < worst.d) worst = { d, i, j };
 }
-console.log(`\n最も近い 2 色: ${ABILITIES[worst.i].id} と ${ABILITIES[worst.j].id}  ΔE=${worst.d.toFixed(1)}`);
-// 大きな色面どうしなら ΔE 25 もあれば十分に見分けられる
-ok(worst.d >= 34, `いちばん近い 2 色の差が ΔE=${worst.d.toFixed(1)} しかない`);
+console.log(`\n最も近い 2 色: ${ABILITIES[worst.i].id} と ${ABILITIES[worst.j].id}  ΔE00=${worst.d.toFixed(1)}`);
+// 案 A は 13.0（前の配色は 10.6）。これより下げない
+ok(worst.d >= 12.5, `いちばん近い 2 色の差が ΔE00=${worst.d.toFixed(1)} しかない`);
 
 // 色を持たないマスは、盤でただひとつ色を持たないこと自体が手がかり。
 // 色差だけで測ると淡い色に近く見えるが、彩度の差が大きいので実際には紛れない。
@@ -72,18 +108,17 @@ for (const k of grey) {
 
 // アクセント（菫色）の帯を使っていない
 for (let k = 0; k < hues.length; k++) {
-  ok(hues[k] < 248 || hues[k] > 292, `${ABILITIES[k].id} の色相 ${hues[k]}° がアクセントの帯に入っている`);
+  if (grey.includes(k)) continue;
+  ok(hues[k] < 270 || hues[k] > 316, `${ABILITIES[k].id} の色相 ${hues[k].toFixed(0)}° がアクセントの帯に入っている`);
 }
-console.log('  アクセントの帯（248〜292°）は使っていない');
+console.log('  アクセント（#b39cff、OKLCH 293°）の帯 270〜316° は使っていない');
 
 // アイコンの黒に対して十分な明るさがあるか
-const lum = (css) => { const [h, s, l] = css.match(/hsl\((\d+) (\d+)% (\d+)%\)/).slice(1).map(Number);
-  const [r, g, b] = hsl2rgb(h, s, l).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+const lum = (css) => { const [r, g, b] = toRgb(css).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return .2126 * r + .7152 * g + .0722 * b; };
 // 絵柄と地のコントラスト。インクは全マス共通。半透明なので、地に重ねた色で見る。
 const rgbOf = (css) => {
-  const m = css.match(/hsl\((\d+) (\d+)% (\d+)%\)/);
-  if (m) return hsl2rgb(Number(m[1]), Number(m[2]), Number(m[3]));
+  if (!css.startsWith('rgba')) return toRgb(css);
   const [r, g, b, al] = css.match(/[\d.]+/g).map(Number);
   return [r / 255, g / 255, b / 255, al];
 };

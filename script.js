@@ -44,53 +44,53 @@ function mulberry32(seed) {
 //        [a, b, c] は a の中身 → b、b → c、c → a という移動（2 個なら入れ替え）。
 //        1 マスでも盤の外に出るか、自分のマスを含む場合は「使えない」と判定される。
 const ABILITIES = [
-  { id: 'swapLR', color: 'hsl(352 38% 74%)', name: L('左右の隣どうしを入れ替え', 'Swap left & right neighbors'),
+  { id: 'swapLR', color: '#ffa289', name: L('左右の隣どうしを入れ替え', 'Swap left & right neighbors'),
     cells: (x, y) => [[[x - 1, y], [x + 1, y]]] },
 
-  { id: 'swapUD', color: 'hsl(22 64% 50%)', name: L('上下の隣どうしを入れ替え', 'Swap upper & lower neighbors'),
+  { id: 'swapUD', color: '#fc9000', name: L('上下の隣どうしを入れ替え', 'Swap upper & lower neighbors'),
     cells: (x, y) => [[[x, y - 1], [x, y + 1]]] },
 
-  { id: 'swapD1', color: 'hsl(42 38% 51%)', name: L('左上と右下を入れ替え', 'Swap upper-left & lower-right'),
+  { id: 'swapD1', color: '#f9b800', name: L('左上と右下を入れ替え', 'Swap upper-left & lower-right'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]]] },
 
-  { id: 'swapD2', color: 'hsl(62 56% 50%)', name: L('右上と左下を入れ替え', 'Swap upper-right & lower-left'),
+  { id: 'swapD2', color: '#bab448', name: L('右上と左下を入れ替え', 'Swap upper-right & lower-left'),
     cells: (x, y) => [[[x + 1, y - 1], [x - 1, y + 1]]] },
 
-  { id: 'crossCW', color: 'hsl(92 59% 76%)', name: L('上下左右の 4 マスを時計回り', 'Rotate the 4 sides clockwise'),
+  { id: 'crossCW', color: '#a4d857', name: L('上下左右の 4 マスを時計回り', 'Rotate the 4 sides clockwise'),
     cells: (x, y) => [[[x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y]]] },
 
-  { id: 'diagCW', color: 'hsl(135 54% 50%)', name: L('斜め 4 マスを時計回り', 'Rotate the 4 corners clockwise'),
+  { id: 'diagCW', color: '#65c77a', name: L('斜め 4 マスを時計回り', 'Rotate the 4 corners clockwise'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y - 1], [x + 1, y + 1], [x - 1, y + 1]]] },
 
-  { id: 'ringCW', color: 'hsl(168 68% 50%)', name: L('周囲 8 マスを時計回り', 'Rotate all 8 neighbors clockwise'),
+  { id: 'ringCW', color: '#00e0bd', name: L('周囲 8 マスを時計回り', 'Rotate all 8 neighbors clockwise'),
     cells: (x, y) => [[[x - 1, y - 1], [x, y - 1], [x + 1, y - 1], [x + 1, y],
                        [x + 1, y + 1], [x, y + 1], [x - 1, y + 1], [x - 1, y]]] },
 
   // 以下は回転の半分ぶん。向かい合うマスどうしが同時に入れ替わる。
   // それぞれ crossCW を 2 回、diagCW を 2 回、ringCW を 4 回使ったのと同じ動き。
-  { id: 'crossHalf', color: 'hsl(192 46% 73%)', name: L('上下と左右を同時に入れ替え', 'Swap up/down and left/right at once'),
+  { id: 'crossHalf', color: '#00c5d3', name: L('上下と左右を同時に入れ替え', 'Swap up/down and left/right at once'),
     cells: (x, y) => [[[x, y - 1], [x, y + 1]], [[x + 1, y], [x - 1, y]]] },
 
-  { id: 'diagHalf', color: 'hsl(215 43% 55%)', name: L('斜めの対角どうしを同時に入れ替え', 'Swap both diagonal pairs at once'),
+  { id: 'diagHalf', color: '#a5c1ff', name: L('斜めの対角どうしを同時に入れ替え', 'Swap both diagonal pairs at once'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]], [[x + 1, y - 1], [x - 1, y + 1]]] },
 
   // 斜め 4 マス（四角の 4 すみ）の、上下どうし・左右どうし。
   // 「斜めの対角どうし」と合わせて、4 すみの入れ替え 3 通りが揃う。
-  { id: 'sqUD', color: 'hsl(354 68% 64%)', name: L('四角のすみを上下で入れ替え', 'Swap the corners top ↔ bottom'),
+  { id: 'sqUD', color: '#df82fb', name: L('四角のすみを上下で入れ替え', 'Swap the corners top ↔ bottom'),
     cells: (x, y) => [[[x - 1, y - 1], [x - 1, y + 1]], [[x + 1, y - 1], [x + 1, y + 1]]] },
 
-  { id: 'sqLR', color: 'hsl(300 68% 58%)', name: L('四角のすみを左右で入れ替え', 'Swap the corners left ↔ right'),
+  { id: 'sqLR', color: '#ffa0dd', name: L('四角のすみを左右で入れ替え', 'Swap the corners left ↔ right'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y - 1]], [[x - 1, y + 1], [x + 1, y + 1]]] },
 
-  { id: 'ringHalf', color: 'hsl(315 40% 57%)', name: L('周囲 8 マスを向かいどうしで入れ替え', 'Swap all 8 neighbors with their opposites'),
+  { id: 'ringHalf', color: '#ff7f9e', name: L('周囲 8 マスを向かいどうしで入れ替え', 'Swap all 8 neighbors with their opposites'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]], [[x, y - 1], [x, y + 1]],
                       [[x + 1, y - 1], [x - 1, y + 1]], [[x + 1, y], [x - 1, y]]] },
 
   // 何も起きないマス。押しても動かないが、まわりのマスからは動かされる。
   // 色だけは持つので、目標の柄の一色として数えられる。
   // 見分けの手がかりは色相の遠さではなく「盤でただひとつの無彩色」であること
-  // （彩度 C*=2.0、既存 12 色は最小でも 17.8）と、いちばん明るいこと。
-  { id: 'none', color: 'hsl(48 8% 88%)', name: L('何も起きない', 'Does nothing'),
+  // （OKLCH の彩度 0.005、ほかの 12 色は最小でも 0.09）と、いちばん明るいこと。
+  { id: 'none', color: '#f1f1ed', name: L('何も起きない', 'Does nothing'),
     cells: () => [] },
 
 ];
@@ -820,8 +820,8 @@ function dailyStreak(map, todayKey) {
 }
 // 共有用の絵文字。ブロックごとに色の近い四角を割り当てる（13 種で重ならない）。
 const SHARE_EMOJI = {
-  swapLR: '🟥', swapUD: '🟧', swapD1: '🟫', swapD2: '🟨', crossCW: '🟩', diagCW: '🟢', ringCW: '🔷',
-  crossHalf: '🔹', diagHalf: '🟦', sqUD: '🔴', sqLR: '🟪', ringHalf: '🟣', none: '⬜',
+  swapLR: '🟥', swapUD: '🟧', swapD1: '🟨', swapD2: '🟫', crossCW: '🟩', diagCW: '🟢', ringCW: '🔷',
+  crossHalf: '🔹', diagHalf: '🟦', sqUD: '🟪', sqLR: '🟣', ringHalf: '🔴', none: '⬜',
 };
 // 共有の文（純粋）。答えの手順は入れない。引数の moves・stars・par・hint は前の形のまま受けて、使わない。
 function dailyShareText({ key, moves, stars, par, hint, goal, w }) {
