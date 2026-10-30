@@ -1,6 +1,7 @@
 // ソルバーの計測。Node で実行する。
-//   node tools/bench.js <幅>x<高さ> <ブロック数> <盤面数> [予算ms] [最初のSEED]
-//   node tools/bench.js <一辺>      <ブロック数> <盤面数> [予算ms] [最初のSEED]
+//   node tools/bench.js <幅>x<高さ> <ブロック数> <盤面数> [予算ms] [最初のSEED] [混ぜる手数]
+//   node tools/bench.js <一辺>      <ブロック数> <盤面数> [予算ms] [最初のSEED] [混ぜる手数]
+// 混ぜる手数を省くと 30 手（ステージの表で測るなら tools/stagebench.js）。
 // 例: node tools/bench.js 6    4 10 3000    (6×6)
 //     node tools/bench.js 4x8  3 10 3000    (横4×縦8)
 //
@@ -37,7 +38,7 @@ vm.createContext(ctx);
 for (const f of ['sound.js', 'glyphs.js', 'entitlement.js', 'rewards.js', 'script.js']) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
 
 vm.runInContext(`
-  globalThis.__setup = (w, h, k) => { W = w; H = h; SIZE = w * h; types = k; buildDom(); };
+  globalThis.__setup = (w, h, k, n) => { W = w; H = h; SIZE = w * h; types = k; scrambleN = n; buildDom(); };
   globalThis.__new = (s) => {
     newPuzzle(s);
     return {
@@ -55,12 +56,12 @@ const dim = String(args[0] || '4');
 const mm = dim.match(/^(\d+)[xX\u00d7](\d+)$/);
 const bw = mm ? Number(mm[1]) : Number(dim);
 const bh = mm ? Number(mm[2]) : Number(dim);
-const [k, trials, budgetArg, seedArg] = args.slice(1).map(Number);
+const [k, trials, budgetArg, seedArg, movesArg] = args.slice(1).map(Number);
 const budget = budgetArg || 3000;
 const seed0 = seedArg || 1000;
 const api = solverModule();
 
-ctx.__setup(bw, bh, k);
+ctx.__setup(bw, bh, k, movesArg || 30);
 const rows = [];
 for (let t = 0; t < trials; t++) {
   const p = ctx.__new(seed0 + t);
