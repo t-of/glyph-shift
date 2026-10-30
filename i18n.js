@@ -101,7 +101,6 @@ const I18n = (() => {
     skip: 'Skip',
     goal: 'Goal',
     goalAria: 'Goal pattern',
-    logStart: 'Press a tile to move',
     shareResult: 'Share result',
     hintAria: 'Show the next block to press',
     hint: 'Hint',

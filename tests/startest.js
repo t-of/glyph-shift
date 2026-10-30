@@ -26,7 +26,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   moves = 4; hintUsed = false; autoSolvedFlag = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   showClear();
-  ok(/最短 4 手.*★★★/.test(logEl.textContent), `表示: ${logEl.textContent}`);
+  ok(/★★★.*最短 4/.test(logEl.textContent), `表示: ${logEl.textContent}`);
   ok(stageFor(s, k).perfect === before + 1, 'perfect が増えていない');
 
   newPuzzle(stageFor(s, k).seed);
@@ -34,7 +34,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   hintUsed = true; autoSolvedFlag = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 3; showClear();
-  ok(/目安 4 手/.test(logEl.textContent) && /目安より短い/.test(logEl.textContent) && !/★★★/.test(logEl.textContent), `表示: ${logEl.textContent}`);
+  ok(/目安 4/.test(logEl.textContent) && /3 手/.test(logEl.textContent) && !/★★★/.test(logEl.textContent), `表示: ${logEl.textContent}`);
   ok(stageFor(s, k).perfect === before + 1, 'ヒント使用で perfect が増えた');
 
   newPuzzle(stageFor(s, k).seed);
@@ -48,7 +48,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   par = undefined; autoSolvedFlag = false; hintUsed = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 2; showClear();
-  ok(/評価中/.test(logEl.textContent), '評価中が出ない');
+  ok(/…/.test(logEl.textContent) && !/★/.test(logEl.textContent), `評価中の印が出ない: ${logEl.textContent}`);
   resolvePar({ cost: 5, optimal: true });
   ok(/★★★/.test(logEl.textContent) && stageFor(s, k).perfect === before + 2, `届いた後: ${logEl.textContent}`);
 

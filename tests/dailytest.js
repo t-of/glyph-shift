@@ -137,14 +137,9 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   console.log('  ホームのカード  OK');
 }
 
-// タップ／クリックの言い方
+// 遊び始めの案内は出さない（画面の文字を減らした）
 {
-  const mm = globalThis.matchMedia;
-  globalThis.matchMedia = () => ({ matches: true });
-  ok(readyLine() === 'タイルをタップ', 'タッチで「タップ」にならない');
-  globalThis.matchMedia = () => ({ matches: false });
-  ok(readyLine() === 'タイルをクリック', 'マウスで「クリック」にならない');
-  globalThis.matchMedia = mm;
-  console.log('  タップ／クリック  OK');
+  ok(readyLine() === '', `案内が出ている: ${readyLine()}`);
+  console.log('  遊び始めの案内なし  OK');
 }
 console.log(fail ? `失敗 ${fail} 件` : '通過');

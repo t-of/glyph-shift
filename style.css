@@ -524,6 +524,13 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .action:hover { border-color: var(--accent); color: var(--text); }
 .action:hover svg { color: var(--accent); }
 .action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* ボタンは絵だけで見せる（名前は aria-label に残す） */
+.actions .action { padding: 12px 24px; }
+.actions .action svg { width: 21px; height: 21px; }
+.actions .action span { display: none; }
+/* 押したブロックの絵柄（メッセージの行） */
+.log-chip { width: 30px; height: 30px; border-radius: 8px; display: inline-grid; place-items: center; position: relative; vertical-align: middle; }
+.log-chip svg { width: 74%; height: 74%; display: block; position: relative; translate: 0 -1px; }
 
 /* ---- 右の欄 ---- */
 .play-head { display: none; }   /* 狭い画面だけ出す（下の @media 820px） */
@@ -559,7 +566,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .legend .chip svg { width: 74%; height: 74%; display: block; position: relative; translate: 0 -1px; }
 
 /* 使うブロックの一覧・目標の柄・凡例のミニタイルにも同じ立体感を、小さいぶん弱めて付ける */
-.legend .chip, .blk .chip {
+.legend .chip, .blk .chip, .log-chip {
   box-shadow:
     inset 0 -3px 0 rgba(0, 0, 0, .35),
     inset 0 1px 0 rgba(255, 255, 255, .35),
@@ -567,7 +574,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
     0 2px 0 rgba(0, 0, 0, .45),
     0 2px 4px rgba(0, 0, 0, .3);
 }
-.legend .chip::before, .blk .chip::before {
+.legend .chip::before, .blk .chip::before, .log-chip::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -576,7 +583,7 @@ button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: po
   pointer-events: none;
 }
 
-.seed { margin: 0; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; }
+.seed { display: none; margin: 0; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; }
 .seed code { font-family: inherit; color: var(--accent); }
 
 /* 制作元（ポータル）へのリンク。盤から離れた欄の末尾に小さく置く */

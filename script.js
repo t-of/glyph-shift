@@ -494,9 +494,10 @@ function blinkHint() {
   const r = plan[0];
   slots[r.i].classList.add('hinted');
   const back = r.order - r.n;
+  // 押す場所は盤の光で見せるので、文字は回数だけ（画面の文字を減らす）
   const how = r.n <= back
-    ? L(`光っているマスを ${r.n} 回押す`, `Press the glowing tile ${timesEn(r.n)}`)
-    : L(`光っているマスを ${back} 回長押し（逆回り）`, `Long-press the glowing tile ${timesEn(back)} (reverse)`);
+    ? L(`押す ×${r.n}`, `Tap ×${r.n}`)
+    : L(`長押し ×${back}`, `Hold ×${back}`);
   // 残りの手数は、短い手順のときだけ意味がある。
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
@@ -504,16 +505,16 @@ function blinkHint() {
   const real = planCost(plan) <= HINT_SHOW_MAX;
   const quality = real
     ? (hintPlan && hintPlan.optimal && planCost(hintPlan.runs) <= planCost(plan)   // 探索が最短と保証した長さと同じ
-      ? L(` / ここから最短 ${planCost(plan)} 手`, ` / ${movesEn(planCost(plan))} to go (shortest)`)
-      : L(` / 残り ${planCost(plan)} 手（最短とはかぎりません）`, ` / ${movesEn(planCost(plan))} to go (may not be shortest)`))
-    : hintBusy ? HINT_SEARCHING_NOTE : L(' / まだ短い手順が見つかっていません', ' / no short solution found yet');
+      ? L(` ・ 最短 ${planCost(plan)} 手`, ` · ${movesEn(planCost(plan))} left (best)`)
+      : L(` ・ 残り ${planCost(plan)} 手`, ` · ${movesEn(planCost(plan))} left`))
+    : hintBusy ? HINT_SEARCHING_NOTE : '';
   logEl.textContent = how + quality;
   hintTimer = setTimeout(clearHint, HINT_BLINK_MS);
 }
 
 // 1 回押したら光るのは 1 か所きり。あとから別のマスへ飛ばさない。
-const HINT_SEARCHING = L('手を探しています…', 'Looking for a move…');
-const HINT_SEARCHING_NOTE = L(' / 短い手順を探しています…', ' / looking for a shorter solution…');
+const HINT_SEARCHING = L('探しています…', 'Searching…');
+const HINT_SEARCHING_NOTE = L(' ・ 探しています…', ' · searching…');
 
 function hintAfterSolve() {
   blinkHint();
@@ -764,10 +765,9 @@ let hintUsed = false;       // この盤でヒントを使ったか
 let clearPending = null;    // par を待ったままクリアしたときの { moves, hintUsed }
 
 // 盤の下の案内。タッチの端末では「タップ」と言う。
+// 遊び始めの案内は出さない（遊び方は練習で覚える。画面の文字を減らす）
 function readyLine() {
-  let touch = false;
-  try { touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches; } catch (e) { /* 判定できなければクリック */ }
-  return touch ? L('タイルをタップ', 'Tap a tile') : L('タイルをクリック', 'Click a tile');
+  return '';
 }
 
 // ---- 今日の 1 問 ----
@@ -963,8 +963,7 @@ function finishSolve(id, res, partial = false) {
     // 探し直しで短い手順が見つかったら、出したままの案内を新しくする。
     // 光らせる場所は動かさない（押した時点で決めたものを尊重する）。
     if (hintPlan && logEl.textContent.endsWith(HINT_SEARCHING_NOTE)) {
-      logEl.textContent = L(`短い手順が見つかりました（残り ${planCost(activeRuns())} 手）。もう一度ヒントを押してください`,
-        `Found a shorter solution (${movesEn(planCost(activeRuns()))} to go). Press Hint again`);
+      logEl.textContent = L(`短い手順あり（残り ${planCost(activeRuns())} 手）`, `Shorter way found (${movesEn(planCost(activeRuns()))} left)`);
     }
     scheduleImprove(res);
   }
@@ -1069,20 +1068,35 @@ function fire(i, dir = 1) {
     shakeTile(i);
     Sfx.blocked();
     logEl.textContent = isBlank(abilityAt(i))
-      ? L('このマスには能力がない。まわりのマスから動かすしかない', 'This tile has no ability. Move it from the tiles around it')
-      : L('盤の外に出てしまうので、この位置では使えない', 'Can\'t be used here: it would go off the board');
+      ? L('能力のないタイル', 'No ability')
+      : L('ここでは盤の外に出る', 'Would go off the board');
     return;
   }
   const ab = abilityAt(i);   // 使ったタイルは動かないので、前後で変わらない
   animatePlacement(() => applyMoveState(i, dir));
   flashSlot(i, dir);
   Sfx.move(ab, dir);
-  logEl.textContent = ABILITIES[ab].name + (dir < 0 ? L('（逆回り）', ' (reverse)') : '');
+  showMoveChip(ab, dir);
   clearHint(); // 示した手はもう古いので消す
   if (isSolved()) showClear();
   else if (tutorial) tutMark();
 }
 
+
+// 押したブロックを、文字でなく絵柄のチップで見せる（逆回りは ↺ を添える）。名前は読み上げ用に残す。
+function showMoveChip(ab, dir) {
+  const chip = document.createElement('span');
+  chip.className = 'chip log-chip';
+  chip.style.background = bgOf(ab);
+  chip.style.color = INK;
+  chip.innerHTML = iconSvg(ab);
+  chip.title = ABILITIES[ab].name;
+  chip.setAttribute?.('role', 'img');
+  chip.setAttribute?.('aria-label', ABILITIES[ab].name + (dir < 0 ? L('（逆回り）', ' (reverse)') : ''));
+  logEl.textContent = '';
+  logEl.append(chip);
+  if (dir < 0) logEl.append(document.createTextNode(' ↺'));
+}
 
 // 完成の知らせ。盤面を隠さないよう、全画面では出さない。
 // 揃った表示を解く。解説で揃ったところから戻るときに使う。
@@ -1097,14 +1111,14 @@ function unClear() {
 
 // クリアの行。par があれば最短（目安）と★を付ける。
 function clearLine(n, used) {
-  let t = L(`そろった！ ${n} 手`, `Solved! ${movesEn(n)}`);
-  if (par === undefined) t += L('（評価中…）', ' (rating…)');
+  // ★ を先に、あとは手数と基準だけ（揃ったことは盤の光で見せる）
+  let t = L(`${n} 手`, movesEn(n));
+  if (par === undefined) t += ' …';
   else if (par) {
     const r = starRating(n, par.cost, used);
-    t += L(`（${par.optimal ? '最短' : '目安'} ${par.cost} 手）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost}) `) + '★'.repeat(r);
-    if (n < par.cost) t += L(' 目安より短い！', ' Beat the target!');
+    t = '★'.repeat(r) + ' ' + t + L(`（${par.optimal ? '最短' : '目安'} ${par.cost}）`, ` (${par.optimal ? 'best' : 'target'} ${par.cost})`);
   }
-  return t + L(' — 設定から次の盤面を作れます', ' — make the next board from the settings');
+  return t;
 }
 
 // par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
@@ -1148,7 +1162,7 @@ function showClear() {
 
   logEl.classList.add('done');
   logEl.textContent = autoSolvedFlag
-    ? L('そろった！（自動で揃えました） — 設定から次の盤面を作れます', 'Solved! (automatically) — make the next board from the settings')
+    ? L('自動で揃えました', 'Solved automatically')
     : clearLine(moves, hintUsed);
   clearPending = (!autoSolvedFlag && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(dailyKey && !autoSolvedFlag);

@@ -332,7 +332,7 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
         </div>
       </div>
 
-      <p class="message" id="log" data-i18n="logStart">タイルを押して動かす</p>
+      <p class="message" id="log" aria-live="polite"></p>
       <button id="shareDailyBtn" class="pill share-daily" type="button" hidden data-i18n="shareResult">結果を共有</button>
       <!-- 広告のある画面の下からのリンク（RULES §13）。広告が出る人だけ、クリアの表示のあいだ。iOS 版では Safari で開く -->
       <a class="privacy-link" id="adPrivacy" href="https://t-of.github.io/privacy/" target="_blank" rel="noopener" hidden data-i18n="privacy">プライバシーポリシー</a>

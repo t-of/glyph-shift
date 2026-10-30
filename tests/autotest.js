@@ -45,7 +45,7 @@ requestSolve();
 let guard = 0;
 while (!locked && activeRuns().length && guard++ < 400) fire(activeRuns()[0].i);
 ok(isSolved(), '自力で揃えられない');
-ok(el('log').textContent.includes('そろった'), `表示: ${el('log').textContent}`);
+ok(el('log')._cls.has('done'), `表示: ${el('log').textContent}`);
 ok(el('log').textContent.includes(`${moves} 手`), `手数が出ていない: ${el('log').textContent}`);
 ok(!el('log').textContent.includes('自動'), '自力なのに自動と出ている');
 console.log(`  自力クリアでは手数が出る: 「${el('log').textContent}」`);

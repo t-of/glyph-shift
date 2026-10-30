@@ -50,6 +50,6 @@ flushTimers();
 console.log('\n案内の文字');
 flushTimers();
 ok(!logEl.textContent.includes('探し'), `探索中の文字が残っている: ${logEl.textContent}`);
-ok(logEl.textContent.includes('光っているマス'), `案内が出ていない: ${logEl.textContent}`);
+ok(/(押す|長押し) ×\d+/.test(logEl.textContent), `案内が出ていない: ${logEl.textContent}`);
 
 console.log(fail === 0 ? '\nヒントの点滅: 全チェック通過' : `\n失敗 ${fail} 件`);

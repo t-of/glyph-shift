@@ -69,7 +69,7 @@ const fresh = (seed, s = 5) => {
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 1; hintUsed = false; autoSolvedFlag = false;
   showClear();
-  ok(!/評価中/.test(logEl.textContent) && /★/.test(logEl.textContent), `先読み中でも★が付くはず: ${logEl.textContent}`);
+  ok(!/…/.test(logEl.textContent) && /★/.test(logEl.textContent), `先読み中でも★が付くはず: ${logEl.textContent}`);
   const shown = logEl.textContent, p0 = par.cost;
   reply(pm);
   ok(/★/.test(logEl.textContent) && par.cost === p0, `届いたあとで表示や par が動いた: ${logEl.textContent}`);
