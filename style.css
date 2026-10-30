@@ -374,7 +374,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   background: var(--well);
 }
 .stage-meta { font-size: 10.5px; color: var(--dim); }
-.stage-diff { font-size: 12px; letter-spacing: .08em; color: var(--warn); }   /* 難しさの ★（通しの 1〜5） */
+.stage-diff { font-size: 12px; letter-spacing: .08em; color: var(--dim); }   /* 難しさの ★（通しの 1〜5）。無彩色で、盤の色を主役にする（2026-10-30 オーナー） */
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; min-height: 1.4em; }   /* 未クリアで空でも、カードの高さをそろえる */
 .stage-item.resume { border-color: var(--progress); box-shadow: inset 0 0 0 1.5px var(--progress); }   /* 途中。文字の代わりに太めの縁 */
 /* 今日の 1 問: 一覧の一番上に 1 枚、横長のカード */
@@ -619,8 +619,20 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .action:hover svg { color: var(--accent); }
 .action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* ボタンは絵だけで見せる（名前は aria-label に残す） */
-.actions .action { padding: 12px 24px; }
-.actions .action svg { width: 21px; height: 21px; }
+.actions { gap: 14px; margin-top: 14px; }
+/* ヒント・解説はタイルと同じ「下に厚みのある押しボタン」。押すと沈む（2026-10-30 オーナー、比較は docs/private/launch/abilitile-polish/） */
+.actions .action {
+  padding: 14px 30px;
+  border: none;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 88%, #fff 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10), 0 4px 0 color-mix(in srgb, var(--panel) 60%, #000 40%), 0 6px 12px rgba(0, 0, 0, .35);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+:root[data-theme="light"] .actions .action { background: #fff; box-shadow: inset 0 1px 0 #fff, 0 4px 0 #cfccd6, 0 6px 12px rgba(0, 0, 0, .12); }
+.actions .action:active { transform: translateY(3px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10), 0 1px 0 color-mix(in srgb, var(--panel) 60%, #000 40%); }
+:root[data-theme="light"] .actions .action:active { box-shadow: inset 0 1px 0 #fff, 0 1px 0 #cfccd6; }
+.actions .action svg { width: 25px; height: 25px; color: var(--text); }
 .actions .action span { display: none; }
 /* クリアのあと: ボタンの列を「ホーム」「次へ」に入れ替える */
 .clear-bar { display: none; gap: 10px; margin-top: 6px; }
@@ -979,7 +991,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   .play-head { display: flex; align-items: flex-start; justify-content: center; gap: 6px; width: 100%; margin-bottom: 10px; padding-left: 40px; }   /* 左の余白は ⓘ と釣り合わせて目標を中央に */
   .tut-bar:not([hidden]) ~ .play-head { display: none; }
   .play-head .goal-top {
-    --cell: var(--goal-top-cell, 22px); --gap: 3px;
+    --gap: 3px;
     flex: none; width: auto; aspect-ratio: auto;
     grid-template-columns: repeat(var(--nx), var(--cell));
     grid-template-rows: repeat(var(--ny), var(--cell));
@@ -997,6 +1009,11 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
     grid-template-rows: repeat(var(--ny), 1fr);
   }
   .message { max-width: 100%; margin-top: 16px; min-height: 38px; }
+  .message:empty { min-height: 0; margin-top: 10px; }   /* 何も出ていないときは詰める */
+  /* 目標・盤・ボタンを 1 つのかたまりにして、画面の縦の真ん中に置く。目標は画面幅の 36%（最大 150px）まで大きく。
+     背の低い画面（SE など）では高さの 17% までにして、1 画面に収める */
+  #play:not([hidden]) { min-height: calc(100dvh - var(--rail-h) - 60px - env(safe-area-inset-bottom)); justify-content: center; }
+  .play-head .goal-top { --cell: calc((min(150px, 36vw, 17dvh) - 12px - (var(--nx) - 1) * 3px) / var(--nx)); }
 
   .side {
     width: 100%;

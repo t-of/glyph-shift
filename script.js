@@ -369,8 +369,6 @@ function buildDom() {
   root.setProperty('--cell', `${cell}px`);
   // 目標の柄はサイドバー（250px）に収める
   root.setProperty('--mini-cell', `${Math.min(30, Math.floor((228 - 4 * (W - 1)) / W))}px`);
-  // 狭い画面の盤の上の目標（.goal-top）は、長い辺を 104px ほどに収める
-  root.setProperty('--goal-top-cell', `${Math.min(24, Math.floor((104 - 3 * (long - 1)) / long))}px`);
   gridEl.replaceChildren();
   slots.length = 0;
   tiles.length = 0;
