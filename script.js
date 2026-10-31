@@ -995,7 +995,10 @@ function renderDailyClock() {
   const dayOn = !!dailyKey && !tutorial && !(rec && rec.state === 'revealed') && !(rec && rec.state === 'abandoned');
   const stageOn = stageTimed() && !autoSolvedFlag;   // 解説で揃えた盤は時間を出さない
   const on = dayOn || stageOn;
-  dailyClockEl.hidden = !on;
+  // 解説で揃えた・答えを見た盤は時間を出さないが、場所は空けたまま残す（消すと盤が上下に動く。2026-10-31）
+  const keepSpace = !on && (stageTimed() || (!!dailyKey && !tutorial));
+  dailyClockEl.hidden = !on && !keepSpace;
+  dailyClockEl.classList.toggle('blank', keepSpace);
   if (!on) return;
   const ms = dayOn ? (dailyIsClosed(rec) ? rec.ms : dailyElapsed()) : stageElapsed();
   dailyClockTextEl.textContent = fmtTime(ms);

@@ -413,6 +413,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .daily-body > :empty { display: none; }   /* 未挑戦・途中は状態の文字が空。空の欄が高さを取って TODAY を押し上げないように */
 .daily-clock { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 0 10px; font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
 .daily-clock[hidden] { display: none; }
+.daily-clock.blank { visibility: hidden; }
 .daily-clock svg { width: 16px; height: 16px; color: var(--dim); }
 .share-daily { margin-top: 4px; }
 .share-daily[hidden] { display: none; }
@@ -995,7 +996,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   .stage { flex-direction: column; align-items: center; gap: 30px; }
 
   /* 盤の上の目標（約 130px）・メッセージ・ボタンと合わせて 1 画面に収まる幅にする。練習中は目標が説明の帯にあるので前のまま */
-  .play { width: 100%; max-width: 520px; max-width: min(520px, calc(100dvh - var(--rail-h) - 295px - env(safe-area-inset-bottom))); }
+  .play { width: 100%; max-width: 520px; max-width: min(520px, calc(100dvh - var(--rail-h) - 367px - env(safe-area-inset-bottom))); }   /* 367px は目標・時計・メッセージの行（常に取る）・ボタン・余白の合計。縦の真ん中寄せの枠（下の #play の min-height）に収める */
   .play:has(.tut-bar:not([hidden])) { max-width: min(520px, calc(100dvh - var(--rail-h) - 400px - env(safe-area-inset-bottom))); }   /* 400px は帯（約 210）・メッセージ・ボタン・余白の合計。説明が 2 行になっても収まる分をみてある */
   .tut-bar { max-width: 100%; }   /* 盤と同じく幅いっぱい。狭いままだと文字が折り返して帯が伸び、ボタンが画面の外に出る（2026-10-31 UI 点検） */
   .play-head { display: flex; align-items: flex-start; justify-content: center; gap: 6px; width: 100%; margin-bottom: 10px; padding-left: 40px; }   /* 左の余白は ⓘ と釣り合わせて目標を中央に */
@@ -1019,7 +1020,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
     grid-template-rows: repeat(var(--ny), 1fr);
   }
   .message { max-width: 100%; margin-top: 16px; min-height: 38px; }
-  .message:empty { min-height: 0; margin-top: 10px; }   /* 何も出ていないときは詰める */
+  /* 何も出ていないときも高さを取っておく。詰めると、文字が出たとき（押したとき・クリアのとき）に盤が上下に動く（2026-10-31） */
   /* 目標・盤・ボタンを 1 つのかたまりにして、画面の縦の真ん中に置く。目標は画面幅の 36%（最大 150px）まで大きく。
      背の低い画面（SE など）では高さの 17% までにして、1 画面に収める */
   #play:not([hidden]) { min-height: calc(100dvh - var(--rail-h) - 60px - env(safe-area-inset-bottom)); justify-content: center; }
