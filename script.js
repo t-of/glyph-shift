@@ -770,14 +770,25 @@ function readyLine() {
 }
 
 // ---- 今日の 1 問 ----
-// 端末の日付（ローカルの年月日）から seed を決める。同じ日は誰でも同じ盤。5×5・ふつう（10 手・4 種）で、
+// 端末の日付（ローカルの年月日）から seed を決める。同じ日は誰でも同じ盤。
 // ブロックは全 13 種から選ぶ（無料版でも完全版のブロックが出る＝試す場）。
 const DAILY_KEY = 'glyphshift.daily';
-// 今日の 1 問は 5×5 の「ふつう」と同じ手数・種類数
-const DAILY_SIZE = 5;
-const DAILY_DIFF = 1;
-const DAILY_TYPES = STAGE_TABLE[DAILY_SIZE][DAILY_DIFF].k;
-const DAILY_MOVES = STAGE_TABLE[DAILY_SIZE][DAILY_DIFF].n;
+// 大きさと難しさは曜日で変える。月曜がいちばんやさしく、週末に向けて大きく・種類が多くなる
+// （2026-10-31 オーナー「サイズと駒の種類の幅を広げて」）。ステージの表の 1 面と同じ手数・種類数
+const DAILY_PLAN = [
+  [7, 3],   // 日 7×7 上級（22 手・9 種）
+  [4, 2],   // 月 4×4 むずかしい（12 手・4 種）
+  [5, 1],   // 火 5×5 ふつう（14 手・4 種）
+  [5, 3],   // 水 5×5 上級（16 手・7 種）
+  [6, 2],   // 木 6×6 むずかしい（20 手・6 種）
+  [6, 3],   // 金 6×6 上級（20 手・8 種）
+  [7, 2],   // 土 7×7 むずかしい（24 手・7 種）
+];
+function dailyDef(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  const [s, diff] = DAILY_PLAN[new Date(y, m - 1, d).getDay()];
+  return stageDef(s, diff);
+}
 const DAILY_KEEP_DAYS = 60;
 const pad2 = (n) => String(n).padStart(2, '0');
 const dateKeyOf = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -2592,7 +2603,7 @@ lockRewardEl.addEventListener('click', async () => {
 // ---- 今日の 1 問（ホームのカードと始め方）----
 const todayKey = () => dateKeyOf(new Date());
 const dailyInProgress = () =>
-  !!dailyKey && dailyKey === todayKey() && W === DAILY_SIZE && H === DAILY_SIZE && run.i >= 0 && !isSolved()
+  !!dailyKey && dailyKey === todayKey() && W === dailyDef(dailyKey).s && H === W && run.i >= 0 && !isSolved()
   && !dailyReview && (!daily[dailyKey] || daily[dailyKey].state === 'playing');
 
 function startDaily(opts = {}) {
@@ -2606,14 +2617,15 @@ function startDaily(opts = {}) {
       L('始める', 'Start'), () => { closeConfirm(); startDaily({ confirmed: true }); });
     return;
   }
-  pendA = pendB = pendW = pendH = DAILY_SIZE;
-  pendDiff = DAILY_DIFF;
+  const def = dailyDef(key);
+  pendA = pendB = pendW = pendH = def.s;
+  pendDiff = def.d;
   pendCustom = false;
-  if (W !== DAILY_SIZE || H !== DAILY_SIZE) { W = H = DAILY_SIZE; SIZE = W * H; buildDom(); }
+  if (W !== def.s || H !== def.s) { W = H = def.s; SIZE = W * H; buildDom(); }
   forcedAbilities = null;
-  types = DAILY_TYPES;
-  scrambleN = DAILY_MOVES;
-  curDiff = DAILY_DIFF;
+  types = def.k;
+  scrambleN = def.n;
+  curDiff = def.d;
   newPuzzle(dailySeed(key), key);
   // 1 日 1 回。解いた日・解説を見た日は、揃った盤と結果を見るだけ
   if (dailyIsClosed(daily[key]) && !dailyFree()) showDailyResult(daily[key]);   // やめた日はそのまま遊べる（記録なし）
@@ -2643,7 +2655,8 @@ function showDailyResult(rec) {
 let dailyGoalCache = null;
 function dailyGoal(key) {
   if (!dailyGoalCache || dailyGoalCache.key !== key) {
-    dailyGoalCache = { key, goal: stageGoalPreview(DAILY_SIZE, DAILY_DIFF, dailySeed(key), true) };
+    const def = dailyDef(key);
+    dailyGoalCache = { key, goal: stageGoalPreview(def.s, def.d, dailySeed(key), true) };
   }
   return dailyGoalCache.goal;
 }
@@ -2661,7 +2674,7 @@ function renderDailyCard() {
 
   const mini = document.createElement('div');
   mini.className = 'stage-mini';
-  buildStageMini(mini, DAILY_SIZE, dailyGoal(key));
+  buildStageMini(mini, dailyDef(key).s, dailyGoal(key));
 
   const body = document.createElement('span');
   body.className = 'daily-body';

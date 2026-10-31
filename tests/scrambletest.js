@@ -109,13 +109,19 @@ console.log('長方形・カスタム（指定のブロック）・今日の 1 �
   forcedAbilities = null;
 
   // 今日の 1 問: 同じ日なら同じ盤。5×5 ふつうと同じ手数・種類数。全ブロックから
-  W = H = DAILY_SIZE; SIZE = DAILY_SIZE * DAILY_SIZE; buildDom(); types = DAILY_TYPES; scrambleN = DAILY_MOVES; curDiff = DAILY_DIFF;
-  newPuzzle(dailySeed('2026-10-30'), '2026-10-30');
-  const d1 = layoutKey() + '|' + tileAbility.join();
-  newPuzzle(dailySeed('2026-10-30'), '2026-10-30');
-  ok(d1 === layoutKey() + '|' + tileAbility.join(), '今日の 1 問が同じ日で変わる');
-  ok(scrambleMoves.length === DAILY_MOVES && new Set(tileAbility).size === DAILY_TYPES, `今日の 1 問: ${scrambleMoves.length} 手 / ${new Set(tileAbility).size} 種`);
-  ok(DAILY_SIZE === 5 && DAILY_MOVES === stageDef(5, 1).n && DAILY_TYPES === stageDef(5, 1).k, '今日の 1 問が 5×5 ふつうと違う');
+  // 曜日で大きさと難しさが変わる（2026-10-31）。1 週間ぶん、同じ日は同じ盤・表どおりの手数と種類数
+  const week = ['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07'];   // 日〜土
+  const sizes = week.map((k) => dailyDef(k).s).join();
+  ok(sizes === '7,4,5,5,6,6,7', `曜日ごとの大きさ: ${sizes}`);
+  for (const k of week) {
+    const def = dailyDef(k);
+    W = H = def.s; SIZE = W * H; buildDom(); types = def.k; scrambleN = def.n; curDiff = def.d;
+    newPuzzle(dailySeed(k), k);
+    const d1 = layoutKey() + '|' + tileAbility.join();
+    newPuzzle(dailySeed(k), k);
+    ok(d1 === layoutKey() + '|' + tileAbility.join(), `今日の 1 問が同じ日で変わる: ${k}`);
+    ok(scrambleMoves.length === def.n && new Set(tileAbility).size === def.k, `${k}: ${scrambleMoves.length} 手 / ${new Set(tileAbility).size} 種（期待 ${def.n} 手・${def.k} 種）`);
+  }
   console.log('  OK');
 }
 
