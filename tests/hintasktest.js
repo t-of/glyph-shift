@@ -18,27 +18,54 @@ el('hintBtn').fire('click', {});
 ok(confirmEl.hidden, '2 回目のヒントでまた確かめた');
 console.log('  確かめ  OK');
 
-// 札: 長押しの手は「長押し」、2 回以上は「×n」、1 回押すだけは札なし
+// 回数の点: 2 回以上押す手だけ data-hint-n が付く。長押しの手は hold（光の輪とタイルの動きは CSS）
 {
-  const one = { i: 0, n: 1, order: 4 }, two = { i: 0, n: 2, order: 4 }, hold = { i: 0, n: 3, order: 4 }, swap = { i: 0, n: 1, order: 2 };
   const tagFor = (r) => {
     hintPlan = { runs: [r] }; solution = [r];
     locked = false;
     blinkHint();
     const s = slots.find((x) => x._cls.has('hinted'));
-    return s ? (s.dataset.hint || '') : null;
+    return s ? (s.dataset.hintN || '') : null;
   };
-  // 揃っていない盤のまま、手順だけ差し替えて札を見る
-  ok(tagFor(one) === '', `1 回押すだけなのに札: ${tagFor(one)}`);
-  ok(tagFor(two) === '×2', `2 回押すときの札が違う: ${tagFor(two)}`);
-  ok(tagFor(hold) === '長押し', `長押しの札が違う: ${tagFor(hold)}`);
-  ok(slots[0]._cls.has('hold'), '長押しの手で光の色が変わらない');
-  ok(tagFor({ i: 0, n: 2, order: 8 }) === '×2' && tagFor({ i: 0, n: 6, order: 8 }) === '長押し ×2', '8 回で一周する手の札が違う');
-  ok(tagFor(swap) === '', `入れ替えの手に札: ${tagFor(swap)}`);
+  ok(tagFor({ i: 0, n: 1, order: 4 }) === '', '1 回押すだけなのに点が付く');
+  ok(!slots[0]._cls.has('hold'), '押す手が長押しになっている');
+  ok(tagFor({ i: 0, n: 2, order: 4 }) === '2', '2 回押す手の点が 2 でない');
+  ok(tagFor({ i: 0, n: 3, order: 4 }) === '' && slots[0]._cls.has('hold'), '長押し 1 回の手が違う');
+  ok(tagFor({ i: 0, n: 6, order: 8 }) === '2' && slots[0]._cls.has('hold'), '長押し 2 回の手が違う');
+  ok(tagFor({ i: 0, n: 1, order: 2 }) === '', '入れ替えの手に点が付く');
   clearHint();
-  ok(slots.every((s) => s.dataset.hint === undefined), '消したあとも札が残る');
+  ok(slots.every((s) => s.dataset.hintN === undefined), '消したあとも点が残る');
+  ok(!require('fs').readFileSync(require('path').join(__dirname, '..', 'script.js'), 'utf8').includes("L('長押し', 'Hold')"), '長押しの文字の札が残っている');
 }
-console.log('  札  OK');
+console.log('  回数の点  OK');
+
+// 押すたびに点が 1 つ減る: ヒントのマスを続けて押すと光らせ直し、そのマスを押し終えたら次は教えない
+{
+  W = H = 5; SIZE = 25; buildDom(); forcedAbilities = null; types = 4; scrambleN = 14;
+  // 揃った盤から、4 回で一周するマスを 2 回戻して「そのマスを 2 回押せば揃う」盤を作る
+  let found = false;
+  for (let sd = 1; sd < 200 && !found; sd++) {
+    newPuzzle(sd);
+    board = Array.from({ length: SIZE }, (_, k) => k);
+    const i = legalCells().find((c) => orderOf(cyclesAt(c)) >= 4);
+    if (i === undefined) continue;
+    const order = orderOf(cyclesAt(i));
+    applyTo(board, cyclesAt(i), -1); applyTo(board, cyclesAt(i), -1);
+    if (isSolved()) continue;
+    found = true;
+    solution = [{ i, n: 2, order }]; hintPlan = null; hintUsed = true; locked = false;
+    run = { i: -1, d: 0, order: 1 };
+    blinkHint();
+    ok(slots[i].dataset.hintN === '2', `始めの点が ${slots[i].dataset.hintN}（期待 2）`);
+    fire(i, 1);
+    ok(slots[i]._cls.has('hinted'), '続けて押すマスなのに光らせ直さない');
+    ok(slots[i].dataset.hintN === undefined, `残り 1 回なのに点が ${slots[i].dataset.hintN}`);
+    fire(i, 1);
+    ok(isSolved() && !slots.some((s) => s._cls.has('hinted')), '押し終えても揃わないか、光が残る');
+  }
+  ok(found, '4 回で一周するマスのある盤が見つからない');
+}
+console.log('  押すたびに減る  OK');
 
 // 練習・今日の 1 問はこの確かめを出さない（今日の 1 問は別の文の確かめ）
 {

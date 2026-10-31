@@ -593,29 +593,55 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   z-index: 3;
 }
 @keyframes hintPulse { 0%, 100% { opacity: .1; } 50% { opacity: 1; } }
-/* 長押し（逆向き）で押すほうが近いマスは、光の色を変え、上の縁に札を付けて伝える */
-.slot.hinted.hold::before { box-shadow: 0 0 0 2.5px var(--warn), 0 0 22px 5px color-mix(in srgb, var(--warn) 45%, transparent); }
-/* 札（「長押し」「×2」。script.js の blinkHint が data-hint に入れる）。押した印の ::after より強く、全部上書きする */
-.slot.hinted[data-hint]::after {
-  content: attr(data-hint);
+/* 押し方はタイルの動きで見せる（文字は出さない。2026-10-31 オーナー）。
+   押す手: 光っているタイルが短く沈んで戻る。長押しの手: 沈んだまま、まわりの輪が一周たまってから戻る。
+   沈みは押したときの見た目（.pressing）と同じ。タイルの transform は滑らせるのに使うので translate で下げる */
+@property --hold-p { syntax: '<number>'; inherits: false; initial-value: 0; }
+.slot.hinted .tile:not(.off):not(.blank) { animation: hintTap 1.4s ease-in-out infinite; }
+.slot.hinted.hold .tile:not(.off):not(.blank) { animation-name: hintHold; }
+@keyframes hintTap {
+  0%, 22%, 100% { translate: 0 0; filter: none; }
+  9% { translate: 0 calc(var(--th) * .45); filter: brightness(.92); box-shadow: inset 0 calc(var(--th) * -.43) 0 rgba(0, 0, 0, .3), inset 0 2px 4px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .18); }
+}
+@keyframes hintHold {
+  0%, 82%, 100% { translate: 0 0; filter: none; }
+  8%, 70% { translate: 0 calc(var(--th) * .45); filter: brightness(.92); box-shadow: inset 0 calc(var(--th) * -.43) 0 rgba(0, 0, 0, .3), inset 0 2px 4px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 0, 0, .18); }
+}
+/* 長押しの輪: 沈んでいるあいだに、上から時計回りにたまる（--hold-p が 0→1） */
+.slot.hinted.hold::before {
+  padding: 4px;
+  box-shadow: none;
+  background: conic-gradient(var(--warn) calc(var(--hold-p) * 1turn), color-mix(in srgb, var(--warn) 22%, transparent) 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: holdFill 1.4s linear infinite;
+}
+@keyframes holdFill {
+  0%, 8% { --hold-p: 0; opacity: 1; }
+  70%, 84% { --hold-p: 1; opacity: 1; }
+  100% { --hold-p: 1; opacity: .25; }
+}
+/* 2 回以上押す手の回数。タイルの下のほうに点を並べる（script.js の blinkHint が data-hint-n と --hint-n を入れる）。
+   押した印の ::after より強く、全部上書きする */
+.slot.hinted[data-hint-n]::after {
+  --dot: clamp(4px, 9cqw, 7px);
+  content: "";
   position: absolute;
   inset: auto;
   left: 50%;
-  top: 0;
-  transform: translate(-50%, -55%);
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
-  font: 700 max(10px, 17cqw)/1.25 var(--ui);
-  white-space: nowrap;
+  bottom: clamp(3px, 13cqw, 10px);
+  width: calc(var(--hint-n, 2) * var(--dot) * 1.9);
+  height: var(--dot);
+  transform: translateX(-50%);
+  border-radius: 0;
+  background: radial-gradient(circle closest-side, rgb(10, 12, 20) 88%, transparent) 0 0 / calc(var(--dot) * 1.9) var(--dot) repeat-x;
+  box-shadow: none;
   animation: none;
   opacity: 1;
   pointer-events: none;
   z-index: 4;
 }
-.slot.hinted.hold[data-hint]::after { background: var(--warn); color: #131217; }
 
 .grid.cleared { animation: clearedGlow .9s ease; }
 /* 揃ったら、タイルが左上から右下へ波のように跳ねて光る（--d は行＋列。マスごとに 32ms ずつ遅らせる） */
@@ -1069,6 +1095,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
   .slot.hinted::before { animation: none; opacity: 1; }
+  .slot.hinted.hold::before { --hold-p: 1; }
 }
 
 /* ---- カスタム ---- */

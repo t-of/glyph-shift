@@ -486,7 +486,7 @@ let hintTimer = null;
 
 function clearHint() {
   if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-  for (const slot of slots) { slot.classList.remove('hinted', 'hold'); delete slot.dataset.hint; }
+  for (const slot of slots) { slot.classList.remove('hinted', 'hold'); delete slot.dataset.hintN; }
 }
 
 function blinkHint() {
@@ -499,11 +499,11 @@ function blinkHint() {
   // 押す場所は盤の光で見せ、文字は出さない（2026-10-30 オーナー）。長押しのほうが近いときは光の色を変える
   const back = r.order - r.n;
   if (r.n > back) slots[r.i].classList.add('hold');
-  // 光の色だけでは長押しか分かりにくいので、マスに札を付ける（2026-10-31 オーナー）。
-  // 長押しは「長押し」、2 回以上は「×2」。1 回押すだけなら札は付けない
-  const hold = r.n > back, times = hold ? back : r.n;
-  const tag = (hold ? L('長押し', 'Hold') : '') + (times >= 2 ? `${hold ? ' ' : ''}×${times}` : '');
-  if (tag) slots[r.i].dataset.hint = tag;
+  // 押し方は文字でなく、光っているタイルの動きで見せる（2026-10-31 オーナー）。押す手は短く沈み、
+  // 長押しの手は沈んだまま光の輪が一周たまる（style.css）。2 回以上なら、回数をタイルの下の点で見せる。
+  // 点は押すたびに 1 つ減る（fire が同じマスの続きなら光らせ直す）
+  const times = r.n > back ? back : r.n;
+  if (times >= 2) { slots[r.i].dataset.hintN = String(times); slots[r.i].style.setProperty('--hint-n', String(times)); }
   // 残りの手数は、短い手順のときだけ意味がある。
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
@@ -1238,11 +1238,14 @@ function fire(i, dir = 1) {
     return;   // 揺れと音だけで伝え、文字は出さない（2026-10-30 オーナー）
   }
   const ab = abilityAt(i);   // 使ったタイルは動かないので、前後で変わらない
+  const wasHinted = slots[i].classList.contains('hinted');
   animatePlacement(() => applyMoveState(i, dir));
   Sfx.move(ab, dir);
   logEl.textContent = '';   // 押したブロックの表示も、押したマスの縁の合図も出さない（2026-10-30 オーナー）
   clearHint(); // 示した手はもう古いので消す
   if (isSolved()) showClear();
+  // ヒントのマスをまだ押し続ける手なら、残りの回数で光らせ直す（点が 1 つ減る）。別のマスへ進む手は新しく教えない
+  else if (wasHinted && !tutorial && activeRuns().length && activeRuns()[0].i === i) blinkHint();
   else if (tutorial) tutMark();
 }
 
