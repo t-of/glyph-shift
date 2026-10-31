@@ -81,6 +81,17 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
         <div class="picker" id="blockPicker"></div>
         <p class="note" id="pickNote"></p>
       </div>
+      <!-- 目標の柄: おまかせ（柄から選ぶ）か、自分で置く（2026-10-31） -->
+      <div class="field" id="goalField">
+        <span class="label" data-i18n="goalMode">目標の柄</span>
+        <div class="seg" id="goalMode" role="group" data-i18n-aria="goalMode" aria-label="目標の柄"></div>
+        <div id="goalEditWrap" hidden>
+          <span class="label spaced" data-i18n="goalBrush">置くブロック</span>
+          <div class="goal-brush" id="goalBrush" role="group" data-i18n-aria="goalBrush" aria-label="置くブロック"></div>
+          <div class="goal-edit" id="goalEdit" role="group" data-i18n-aria="goalMode" aria-label="目標の柄"></div>
+        </div>
+        <p class="note" id="goalNote"></p>
+      </div>
       <div class="field" id="diffField">
         <span class="label" data-i18n="difficulty">難しさ</span>
         <div class="seg" id="diffSeg" role="group" data-i18n-aria="difficulty" aria-label="難しさ"></div>

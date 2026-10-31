@@ -1076,6 +1076,14 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .picker button:hover { opacity: .75; }
 .picker button[aria-pressed="true"]:hover { opacity: 1; }
 .picker button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 目標の柄を自分で置く（カスタム）。上の列で置くブロックを選び、下の盤をタップ・なぞって塗る */
+.goal-brush { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; }
+.goal-brush button { aspect-ratio: 1; padding: 0; display: grid; place-items: center; border: 2px solid transparent; border-radius: 9px; cursor: pointer; opacity: .55; }
+.goal-brush button[aria-pressed="true"] { opacity: 1; border-color: var(--accent); box-shadow: 0 0 0 2px var(--ground) inset; }
+.goal-brush button svg, .goal-edit button svg { width: 74%; height: 74%; display: block; }
+.goal-edit { display: grid; grid-template-columns: repeat(var(--gw, 4), 1fr); gap: 3px; margin-top: 12px; padding: 6px; border-radius: 12px; background: var(--well); touch-action: none; user-select: none; -webkit-user-select: none; }
+.goal-edit button { aspect-ratio: 1; padding: 0; display: grid; place-items: center; border: 0; border-radius: 5px; cursor: pointer; }
+.goal-edit button svg { pointer-events: none; }
 
 /* ---- 無料版の鍵 ---- */
 .stage-item.locked { background: var(--ground); }

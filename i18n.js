@@ -96,6 +96,8 @@ const I18n = (() => {
     stages: 'Stages',
     homeCustom: 'Custom',
     homeCode: 'Board code',
+    goalMode: 'Goal pattern',
+    goalBrush: 'Block to place',
     codeTitle: 'Play a board code',
     codeNote: 'Paste the message you received from a friend as it is.',
     codePlay: 'Play',

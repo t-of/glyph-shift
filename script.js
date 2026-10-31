@@ -219,6 +219,7 @@ const PATTERNS = [
 // candidatePatterns の「k 色すべてが出るか」に任せる。
 let patternSeed = 0;   // 種つきの柄に渡す。盤面ごとに変える。
 let forcedAbilities = null;   // カスタムで指定されたブロック。null なら毎回ランダムに選ぶ。
+let forcedGoal = null;        // カスタムで手で置いたゴール（マスごとの能力の番号、2026-10-31）。null なら柄から選ぶ
 
 if (typeof tilePatterns === 'function') {
   for (const p of tilePatterns().PATTERNS) {
@@ -1787,7 +1788,7 @@ function generate(seedValue) {
 
   for (let attempt = 0; ; attempt++) {
     // 柄と使うブロックを rng から決める。タイル v の能力 = 完成時にマス v に来る色。
-    tileAbility = pickGoal(W, H, K, cands, rng, forcedAbilities, attempt);
+    tileAbility = forcedGoal ? forcedGoal.slice() : pickGoal(W, H, K, cands, rng, forcedAbilities, attempt);
 
     // 動かせるマスが無い・決めた手数ぶん進めない組（指定の組や小さい盤）は引き直す。
     // 3×3 は通れる盤面が少なく、手数ぶん進める組は 1 ～ 3 割しかない（盤が小さいので引き直しは軽い）。
@@ -2212,6 +2213,9 @@ let pendH = H;
 let pendDiff = curDiff;       // 難しさ（0〜2）。手数（と、カスタムでなければ種類数）が決まる
 let pendCustom = false;
 let pendPicked = new Set();   // カスタムで選んだブロック
+let pendManual = false;       // 目標の柄を自分で置く（2026-10-31 オーナー）
+let pendGoal = null;          // 自分で置く柄。{ w, h, cells }（cells はマスごとの能力の番号）
+let pendBrush = -1;           // 置くブロック
 
 const seedInEl = document.getElementById('seedIn');
 const diffSegEl = document.getElementById('diffSeg');
@@ -2222,6 +2226,11 @@ const sideBEl = document.getElementById('sideB');
 const sizeNoteEl = document.getElementById('sizeNote');
 const pickerEl = document.getElementById('blockPicker');
 const pickNoteEl = document.getElementById('pickNote');
+const goalModeEl = document.getElementById('goalMode');
+const goalEditWrapEl = document.getElementById('goalEditWrap');
+const goalEditEl = document.getElementById('goalEdit');
+const goalBrushEl = document.getElementById('goalBrush');
+const goalNoteEl = document.getElementById('goalNote');
 
 function markSeg(el, value) {
   for (const b of el.querySelectorAll('button')) {
@@ -2246,7 +2255,7 @@ function refreshDiffSeg() {
   markSeg(diffSegEl, pendDiff);
   syncLocks();
   const def = stageDef(pendW, pendDiff);
-  const k = pendCustom ? pendPicked.size : def ? def.k : 0;
+  const k = pendCustom ? (pendManual && pendGoal ? new Set(pendGoal.cells).size : pendPicked.size) : def ? def.k : 0;
   diffNoteEl.textContent = k ? L(`ブロック ${k} 種`, `${k} kinds of blocks`) : '';
 }
 
@@ -2283,11 +2292,124 @@ function refreshPicker() {
 function refreshCustom() {
   applySides();
   refreshPicker();
+  refreshGoalEdit();
   refreshDiffSeg();
   createBtnEl.disabled = pendCustom && !customReady();
 }
 
-const customReady = () => pendPicked.size >= 2 && pendPicked.size <= Math.min(ABILITIES.length, pendW * pendH);
+const customReady = () => (pendManual ? manualReady() === ''
+  : pendPicked.size >= 2 && pendPicked.size <= Math.min(ABILITIES.length, pendW * pendH));
+
+// ---- 目標の柄を自分で置く（2026-10-31 オーナー）----
+// 置くのはゴールだけ。混ぜるのはいつもどおり乱数の手順なので、どう置いても必ず解ける。
+// ただし、どこを押しても色が動かない置き方（同じブロックだけ、など）は混ぜられないので作れない。
+
+// その柄で、色が入れ替わる手が 1 つでもあるか（無ければ混ぜられない）
+function goalMovable(cells, w, h) {
+  const saved = { W, H, SIZE };
+  W = w; H = h; SIZE = w * h;
+  try {
+    const tbl = buildMoveTable();
+    return cells.some((a, i) => (tbl.cyc[a][i] || []).some((c) => c.some((v) => cells[v] !== cells[c[0]])));
+  } finally { ({ W, H, SIZE } = saved); }
+}
+// 作れないわけ（作れるなら ''）
+function manualReady() {
+  if (!pendGoal) return L('ブロックを置いてください。', 'Place some blocks.');
+  if (new Set(pendGoal.cells).size < 2) return L('2 種類以上のブロックを置いてください。', 'Place at least 2 kinds of blocks.');
+  if (!goalMovable(pendGoal.cells, pendGoal.w, pendGoal.h)) return L('この置き方では、どこを押しても色が動きません。', 'With this layout, no tile can move any color.');
+  return '';
+}
+// 今の大きさ・選んだブロックに柄を合わせる。重なるマスは残し、新しいマスと、外したブロックのマスは筆の色で埋める
+function fitPendGoal() {
+  const picked = [...pendPicked].sort((a, b) => a - b);
+  if (!picked.length) return;
+  if (!pendPicked.has(pendBrush)) pendBrush = picked[0];
+  const old = pendGoal;
+  const cells = [];
+  for (let y = 0; y < pendH; y++) for (let x = 0; x < pendW; x++) {
+    const v = old && x < old.w && y < old.h ? old.cells[y * old.w + x] : -1;
+    cells.push(pendPicked.has(v) ? v : picked[(x + y) % picked.length]);   // 新しいマスは選んだブロックを斜めに並べる（そのままでも動かせるように）
+  }
+  pendGoal = { w: pendW, h: pendH, cells };
+}
+function refreshGoalEdit() {
+  markSeg(goalModeEl, pendManual ? 1 : 0);
+  goalEditWrapEl.hidden = !pendManual;
+  if (!pendManual) { goalNoteEl.textContent = ''; return; }
+  fitPendGoal();
+  goalBrushEl.replaceChildren();
+  for (const k of [...pendPicked].sort((a, b) => a - b)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.v = String(k);
+    b.setAttribute('aria-label', ABILITIES[k].name);
+    b.setAttribute('aria-pressed', String(k === pendBrush));
+    b.style.background = bgOf(k);
+    b.style.color = INK;
+    b.innerHTML = iconSvg(k);
+    goalBrushEl.append(b);
+  }
+  paintGoalEdit();
+}
+function paintGoalEdit() {
+  if (!pendGoal) return;
+  goalEditEl.style.setProperty('--gw', String(pendGoal.w));
+  if (goalEditEl.children.length !== pendGoal.cells.length) {
+    goalEditEl.replaceChildren();
+    pendGoal.cells.forEach((_, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.i = String(i);
+      goalEditEl.append(b);
+    });
+  }
+  pendGoal.cells.forEach((a, i) => {
+    const b = goalEditEl.children[i];
+    if (b.dataset.a === String(a)) return;   // 変わったマスだけ描き直す
+    b.dataset.a = String(a);
+    b.style.background = bgOf(a);
+    b.style.color = INK;
+    b.innerHTML = iconSvg(a);
+    b.setAttribute('aria-label', L(`${i % pendGoal.w + 1} 列 ${Math.floor(i / pendGoal.w) + 1} 行: ${ABILITIES[a].name}`, `Column ${i % pendGoal.w + 1}, row ${Math.floor(i / pendGoal.w) + 1}: ${ABILITIES[a].name}`));
+  });
+  goalNoteEl.textContent = manualReady();
+  refreshDiffSeg();
+  createBtnEl.disabled = !customReady();
+}
+function paintCell(i) {
+  if (!pendGoal || !(i >= 0 && i < pendGoal.cells.length) || pendGoal.cells[i] === pendBrush || !pendPicked.has(pendBrush)) return;
+  pendGoal.cells[i] = pendBrush;
+  paintGoalEdit();
+}
+
+fillSeg(goalModeEl, [0, 1], (v) => (v ? L('自分で置く', 'Place myself') : L('おまかせ', 'Random')));
+goalModeEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  pendManual = Number(b.dataset.v) === 1;
+  refreshCustom();
+});
+goalBrushEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  pendBrush = Number(b.dataset.v);
+  for (const x of goalBrushEl.querySelectorAll('button')) x.setAttribute('aria-pressed', String(Number(x.dataset.v) === pendBrush));
+});
+// なぞって塗れる（指を置いたマスから、通ったマスを全部）。タップは click で塗る
+let goalPainting = false;
+const cellFromPoint = (x, y) => {
+  const t = typeof document.elementFromPoint === 'function' ? document.elementFromPoint(x, y) : null;
+  const b = t && t.closest ? t.closest('button') : null;
+  return b && b.parentNode === goalEditEl ? Number(b.dataset.i) : -1;
+};
+goalEditEl.addEventListener('pointerdown', (e) => { goalPainting = true; paintCell(cellFromPoint(e.clientX, e.clientY)); });
+goalEditEl.addEventListener('pointermove', (e) => { if (goalPainting) paintCell(cellFromPoint(e.clientX, e.clientY)); });
+for (const t of ['pointerup', 'pointercancel', 'pointerleave']) goalEditEl.addEventListener(t, () => { goalPainting = false; });
+goalEditEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) paintCell(Number(b.dataset.i));
+});
 
 // 選んだ 2 辺から盤の形を決める。長いほうが横。
 function applySides() {
@@ -2309,6 +2431,8 @@ function syncSetup() {
   pendDiff = curDiff;
   pendCustom = true;   // パネルはいつもカスタム
   pendPicked = new Set(forcedAbilities || [...new Set(tileAbility)]);
+  pendManual = !!forcedGoal;
+  pendGoal = { w: W, h: H, cells: [...tileAbility] };   // 自分で置くときは、今の盤のゴールから始める
   seedInEl.value = '';
   refreshCustom();
 }
@@ -2339,6 +2463,7 @@ pickerEl.addEventListener('click', (e) => {
   const k = Number(b.dataset.v);
   if (pendPicked.has(k)) pendPicked.delete(k); else pendPicked.add(k);
   refreshPicker();
+  refreshGoalEdit();
   refreshDiffSeg();
   createBtnEl.disabled = !customReady();
 });
@@ -2365,12 +2490,19 @@ function startFromPending() {
     SIZE = W * H;
     buildDom();
   }
-  if (pendCustom) {
+  if (pendCustom && pendManual) {
+    forcedGoal = pendGoal.cells.slice();
+    forcedAbilities = [...new Set(forcedGoal)].sort((a, b) => a - b);
+    types = forcedAbilities.length;
+    scrambleN = movesFor(pendW, pendH, pendDiff);
+  } else if (pendCustom) {
+    forcedGoal = null;
     forcedAbilities = [...pendPicked].sort((a, b) => a - b);
     types = forcedAbilities.length;
     scrambleN = movesFor(pendW, pendH, pendDiff);
   } else {
     forcedAbilities = null;
+    forcedGoal = null;
     const def = stageDef(pendW, pendDiff);
     types = def.k;
     scrambleN = def.n;
@@ -2440,13 +2572,13 @@ function stageFor(s, d) {
 let previewAllBlocks = false;
 function stageGoalPreview(s, d, seed, allBlocks = false) {
   // generate は対局の状態を書き換えるので、今の対局を退避して戻す
-  const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution, curDiff };
+  const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, forcedGoal, patternSeed, tileAbility, board, solution, curDiff };
   const def = stageDef(s, d);
-  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null; curDiff = d;
+  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null; forcedGoal = null; curDiff = d;
   previewAllBlocks = allBlocks;
   try { generate(seed); } finally { previewAllBlocks = false; }
   const goal = tileAbility;
-  ({ W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, patternSeed, tileAbility, board, solution, curDiff } = saved);
+  ({ W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, forcedGoal, patternSeed, tileAbility, board, solution, curDiff } = saved);
   return goal;
 }
 
@@ -2619,6 +2751,7 @@ function startDaily(opts = {}) {
   pendCustom = false;
   if (W !== def.s || H !== def.s) { W = H = def.s; SIZE = W * H; buildDom(); }
   forcedAbilities = null;
+  forcedGoal = null;
   types = def.k;
   scrambleN = def.n;
   curDiff = def.d;
@@ -2945,6 +3078,7 @@ function tutorialBoard(def) {
 function loadFixedPuzzle({ w, h, tileAbility: ta, board: bd, runs }, shared = null) {
   if (w !== W || h !== H) { W = w; H = h; SIZE = w * h; buildDom(); }
   forcedAbilities = null;
+  forcedGoal = null;
   types = new Set(ta).size;
   tileAbility = Array.from(ta);
   board = Array.from(bd);
