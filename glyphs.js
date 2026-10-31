@@ -99,6 +99,20 @@ function glyphStyles() {
   const setTune = (o) => { T = { ...TUNE_DEFAULT }; for (const k of Object.keys(TUNE_DEFAULT)) if (o && Number.isFinite(Number(o[k]))) T[k] = Number(o[k]); };
   const getTune = () => ({ ...T });
 
+  // A から B へ、制御点 C の側へ膨らむ円の弧（2026-10-31 オーナー「円の弧のような滑らかさに」）。
+  // 膨らみの高さは前の 2 次曲線のてっぺんと同じ（弦の中点から C までの半分）にして、形の大きさは変えない
+  function circleArc(A, B, C) {
+    const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+    const vx = C[0] - mx, vy = C[1] - my;
+    const h = Math.hypot(vx, vy) / 2;                                // 弧の高さ（サジッタ）
+    const c = Math.hypot(B[0] - A[0], B[1] - A[1]) / 2;              // 弦の半分
+    const r = (c * c + h * h) / (2 * h);
+    const sweep = (B[0] - A[0]) * vy - (B[1] - A[1]) * vx < 0 ? 1 : 0;   // C の側を回る向き
+    const large = h > c ? 1 : 0;
+    return `M${n2(A[0])} ${n2(A[1])} A${n2(r)} ${n2(r)} 0 ${large} ${sweep} ${n2(B[0])} ${n2(B[1])}`;
+  }
+  const linkArc = (A, B, C) => `<path d="${circleArc(A, B, C)}" stroke-width="${T.linkW}"/>`;
+
   // 回転: 点より外側を回る弧（上から時計回りに arcSweep 度）＋終わりの向きの矢じり。
   // 一周に近いときは、弧を 2 つに分ける（SVG の弧は 1 本で一周を描けない）
   function cwArc() {
@@ -117,10 +131,10 @@ function glyphStyles() {
   const motion = (key) => {
     const b = T.linkBend;
     switch (key) {
-      case 'link-h': return `<path d="M6 12 Q12 ${n2(12 - b)} 18 12" stroke-width="${T.linkW}"/>`;
-      case 'link-v': return `<path d="M12 6 Q${n2(12 + b)} 12 12 18" stroke-width="${T.linkW}"/>`;
-      case 'link-d1': return `<path d="M6 6 Q${n2(12 + b)} ${n2(12 - b)} 18 18" stroke-width="${T.linkW}"/>`;
-      case 'link-d2': return `<path d="M18 6 Q${n2(12 - b)} ${n2(12 - b)} 6 18" stroke-width="${T.linkW}"/>`;
+      case 'link-h': return linkArc([6, 12], [18, 12], [12, 12 - b]);
+      case 'link-v': return linkArc([12, 6], [12, 18], [12 + b, 12]);
+      case 'link-d1': return linkArc([6, 6], [18, 18], [12 + b, 12 - b]);
+      case 'link-d2': return linkArc([18, 6], [6, 18], [12 - b, 12 - b]);
       case 'cw': return cwArc();
       // 半回転: 向かい合う 2 点を中心ごしに結ぶ。中心の輪の手前で切って、
       // 「自分を挟んで反対どうしが入れ替わる」ことを線の向きで示す。
@@ -143,7 +157,8 @@ function glyphStyles() {
     // またぐ対は決め打ちの形、またがない対は 2 マスを直に結ぶ
     if (a.fam === 'half' && !a.anti) {
       for (const [p, q] of a.pairs) {
-        parts.push(`<path d="${bowOf(p, q, T.bowH).d}" stroke-width="${T.halfW}"/>`);
+        const bw = bowOf(p, q, T.bowH);
+        parts.push(`<path d="${circleArc(bw.A, bw.B, bw.C)}" stroke-width="${T.halfW}"/>`);
       }
     } else {
       parts.push(motion(motionOf(a)));   // 弧や矢印は点の下に敷く
