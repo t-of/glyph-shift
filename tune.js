@@ -18,6 +18,7 @@
     ['headW', '矢じりの幅', 1.5, 7, 0.1],
     ['halfW', '半回転の線の太さ', 0.6, 2.5, 0.1],
     ['bowH', '片側どうしの弧の膨らみ', 1, 7, 0.2],
+    ['halo', '点のまわりの抜き', 0, 3, 0.1],
   ];
   const css = document.createElement('style');
   css.textContent = `

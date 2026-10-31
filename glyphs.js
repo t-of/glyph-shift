@@ -75,23 +75,25 @@ function glyphStyles() {
      輪が自分、濃い点が動くマス、弧と線が動き。
      回転の弧は点の外側を通し、点と重ならないようにしている。
      ========================================================= */
-  // 形の数字（2026-10-31、オーナーが ?tune=1 の画面で微調整できるようにした）。既定は前の形と同じ
+  // 形の数字（2026-10-31、オーナーが ?tune=1 の画面で微調整できるようにした）。
+  // 回転の弧・矢じりが動くマスの点に重ならないよう、弧を外へ逃がし、入れ替えの弧を強く曲げた（比較は docs/private/launch/abilitile-glyph/）
   const TUNE_DEFAULT = {
     size: 74,        // タイルに対するマークの大きさ（%）
-    dotR: 2.2,       // 動くマスの点の半径
+    dotR: 2.0,       // 動くマスの点の半径（2.2 → 2.0。回転の弧と重ならないように。2026-10-31）
     selfR: 2.9,      // 中央の輪（自分）の半径
     selfW: 1.5,      // 中央の輪の太さ
     backR: 1.1,      // 動かないマスの目印の点の半径
     backOp: 0.2,     // その濃さ
     linkW: 1.3,      // 入れ替えの弧の太さ
-    linkBend: 7,     // 入れ替えの弧の膨らみ（中心から制御点まで）
-    arcR: 10,        // 回転の弧の半径
-    arcSweep: 270,   // 回転の弧の長さ（度。360 で一周）
-    arcW: 1.3,       // 回転の弧の太さ
-    headLen: 4.4,    // 回転の矢じりの長さ
-    headW: 3.8,      // 回転の矢じりの幅
+    linkBend: 10,    // 入れ替えの弧の膨らみ（中心から制御点まで。7 → 10 で中央の輪をよける）
+    arcR: 11.2,      // 回転の弧の半径（10 → 11.2。角の点の外を通す）
+    arcSweep: 300,   // 回転の弧の長さ（度。360 で一周。300 で矢じりが左上の空いたところに来る）
+    arcW: 1.2,       // 回転の弧の太さ
+    headLen: 4.0,    // 回転の矢じりの長さ
+    headW: 3.6,      // 回転の矢じりの幅
     halfW: 1.5,      // 半回転の線の太さ
     bowH: 4.4,       // 片側どうしで組む対の弧の膨らみ
+    halo: 0,         // 動くマスの点のまわりを地の色で抜く幅（弧や矢じりが点に重なるのを切り離す。0 で抜かない）
   };
   let T = { ...TUNE_DEFAULT };
   const setTune = (o) => { T = { ...TUNE_DEFAULT }; for (const k of Object.keys(TUNE_DEFAULT)) if (o && Number.isFinite(Number(o[k]))) T[k] = Number(o[k]); };
@@ -136,7 +138,7 @@ function glyphStyles() {
     return y === 0 ? 'link-h' : x === 0 ? 'link-v' : x * y > 0 ? 'link-d1' : 'link-d2';
   };
 
-  function drawDots(a) {
+  function drawDots(a, bg) {
     const parts = [dotBack()];
     // またぐ対は決め打ちの形、またがない対は 2 マスを直に結ぶ
     if (a.fam === 'half' && !a.anti) {
@@ -147,6 +149,8 @@ function glyphStyles() {
       parts.push(motion(motionOf(a)));   // 弧や矢印は点の下に敷く
     }
     for (const [dx, dy] of a.cells) {
+      // 点のまわりを地の色で縁取って、下を通る弧・矢じりと切り離す
+      if (T.halo > 0 && bg) parts.push(`<circle cx="${P(dx)}" cy="${P(dy)}" r="${n2(T.dotR + T.halo / 2)}" fill="${bg}" stroke="none"/>`);
       parts.push(`<circle cx="${P(dx)}" cy="${P(dy)}" r="${T.dotR}" fill="currentColor" stroke="none"/>`);
     }
     parts.push(dotSelf());
