@@ -2930,7 +2930,8 @@ function renderStageList() {
       meta.className = 'stage-meta';
       meta.textContent = diffMark(def.n, def.k);
       meta.classList.add('stage-diff');
-      if (st.clears > 0) item.classList.add('cleared');
+      // 金色の枠は、ヒントなしで自分で揃えたことがある印（ベストの時間があること）。ヒントを使ったクリアだけでは付けない（2026-10-31 オーナー）
+      if (Number.isFinite(st.best)) item.classList.add('cleared');
 
       item.append(mini, meta);
       // ★の下の記録の行: ベスト（ヒントなしで揃えたいちばん速い時間）と、2 回目からのクリア回数（✓ 3）。
