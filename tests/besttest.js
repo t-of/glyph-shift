@@ -16,12 +16,12 @@ const line = () => (logEl._cls.has('best-line') ? logEl.children.map((c) => (typ
 {
   delete stages['4d0'];
   solveIn(30000);
-  ok(st().best === 30000 && line() === 'クリア 0:30' && !gridEl._cls.has('best'), `初めて: ${st().best} ${line()}`);
+  ok(st().best === 30000 && line() === 'クリア 0:30.00' && !gridEl._cls.has('best'), `初めて: ${st().best} ${line()}`);
   solveIn(42000);
-  ok(st().best === 30000 && line() === 'クリア 0:42 ・ ベスト 0:30' && !gridEl._cls.has('best'), `遅い回: ${line()}`);
+  ok(st().best === 30000 && line() === 'クリア 0:42.00 ・ ベスト 0:30.00' && !gridEl._cls.has('best'), `遅い回: ${line()}`);
   solveIn(17500);
   ok(st().best === 17500 && gridEl._cls.has('best') && logEl._cls.has('best-line'), '速い回で演出が出ない');
-  ok(/NEW BEST/.test(line()) && /0:17/.test(line()) && /−12\.5 秒/.test(line()), `更新の行: ${line()}`);
+  ok(/NEW BEST/.test(line()) && /0:17\.50/.test(line()) && /−12\.50 秒/.test(line()), `更新の行: ${line()}`);
   solveIn(5000, true);
   ok(st().best === 17500 && /ヒントあり/.test(line()) && !gridEl._cls.has('best'), `ヒントの回がベストに入った: ${st().best}`);
   ok(st().recent.join() === '30000,42000,17500', `直近の記録: ${st().recent}`);

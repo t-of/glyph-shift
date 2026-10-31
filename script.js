@@ -826,7 +826,7 @@ function fmtTimeCs(ms) {
 }
 // 今日の 1 問のクリアの行・共有の 2 行目（純粋）。ms が無い（古い記録）なら時間は出さない。
 function dailyResultLine(ms, hint) {
-  const t = Number.isFinite(ms) ? ` ${fmtTime(ms)}` : '';
+  const t = Number.isFinite(ms) ? ` ${fmtTimeCs(ms)}` : '';   // クリアの行も 100 分の 1 秒まで（ホームと揃える）
   return L(`クリア${t}${hint ? '（ヒントあり）' : ''}`, `Solved${t}${hint ? ' (hint used)' : ''}`);
 }
 // 直近 DAILY_KEEP_DAYS 日（今日を含む）だけ残す。
@@ -1251,11 +1251,11 @@ function clearLine(n, used) {
 // ベスト更新の演出（2026-10-31 オーナー）。大きい時間・金色の NEW BEST の札・縮んだ秒数、
 // 盤の波を金色に（.grid.best）、効果音をもう 1 段。初めてのクリアは更新とみなさない
 function showNewBest(ms, prev) {
-  const sec = ((prev - ms) / 1000).toFixed(1);
+  const sec = ((prev - ms) / 1000).toFixed(2);
   const part = (cls, text) => { const e = document.createElement('span'); e.className = cls; e.textContent = text; return e; };
   logEl.replaceChildren(
     part('best-label', L('クリア', 'Solved')), ' ',
-    part('best-time', fmtTime(ms)), ' ',
+    part('best-time', fmtTimeCs(ms)), ' ',
     part('best-badge', 'NEW BEST'), ' ',
     part('best-delta', L(`−${sec} 秒`, `−${sec}s`)));
   logEl.classList.add('best-line');
@@ -1264,10 +1264,10 @@ function showNewBest(ms, prev) {
 }
 // ステージ・カスタムのクリアの行。時間と、前のベスト（prev。無ければ null）と比べた結果
 function stageResultLine(ms, used, prev) {
-  const t = fmtTime(ms);
+  const t = fmtTimeCs(ms);   // 100 分の 1 秒まで（ホームの記録と揃える。遊んでいるあいだの時計は秒まで）
   if (used) return L(`クリア ${t}（ヒントあり）`, `Solved ${t} (hint used)`);
   if (prev === null) return L(`クリア ${t}`, `Solved ${t}`);
-  return ms < prev ? L(`クリア ${t} ・ ベスト更新`, `Solved ${t} · New best`) : L(`クリア ${t} ・ ベスト ${fmtTime(prev)}`, `Solved ${t} · Best ${fmtTime(prev)}`);
+  return ms < prev ? L(`クリア ${t} ・ ベスト更新`, `Solved ${t} · New best`) : L(`クリア ${t} ・ ベスト ${fmtTimeCs(prev)}`, `Solved ${t} · Best ${fmtTimeCs(prev)}`);
 }
 
 // par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
