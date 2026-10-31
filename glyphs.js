@@ -139,9 +139,10 @@ function glyphStyles() {
       // 半回転: 向かい合う 2 点を中心ごしに結ぶ。中心の輪の手前で切って、
       // 「自分を挟んで反対どうしが入れ替わる」ことを線の向きで示す。
       // 入れ替えの弧（1 本）と見分けがつくよう、こちらは直線で描く。
+      // 外の端は点の中まで入れて、点と線をつなげる（斜めは 7.6 だと点の縁に 0.26 届かなかった。2026-10-31）
       case 'half-cross': return `<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4" stroke-width="${T.halfW}"/>`;
-      case 'half-diag': return `<path d="M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4 M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="${T.halfW}"/>`;
-      default: return `<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4 M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4 M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="${T.halfW}"/>`;
+      case 'half-diag': return `<path d="M7.2 7.2 L9.9 9.9 M14.1 14.1 L16.8 16.8 M16.8 7.2 L14.1 9.9 M9.9 14.1 L7.2 16.8" stroke-width="${T.halfW}"/>`;
+      default: return `<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4 M7.2 7.2 L9.9 9.9 M14.1 14.1 L16.8 16.8 M16.8 7.2 L14.1 9.9 M9.9 14.1 L7.2 16.8" stroke-width="${T.halfW}"/>`;
     }
   };
 
