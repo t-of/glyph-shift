@@ -819,6 +819,11 @@ function fmtTime(ms) {
   const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = t % 60;
   return h ? `${h}:${pad2(m)}:${pad2(sec)}` : `${m}:${pad2(sec)}`;
 }
+// ホームに出す記録は 100 分の 1 秒まで（2026-10-31 オーナー）。1:23.45、1 時間以上は 1:02:03.45
+function fmtTimeCs(ms) {
+  const v = Math.max(0, Math.floor(Number(ms) || 0));
+  return `${fmtTime(v)}.${pad2(Math.floor((v % 1000) / 10))}`;
+}
 // 今日の 1 問のクリアの行・共有の 2 行目（純粋）。ms が無い（古い記録）なら時間は出さない。
 function dailyResultLine(ms, hint) {
   const t = Number.isFinite(ms) ? ` ${fmtTime(ms)}` : '';
@@ -2679,7 +2684,7 @@ function renderDailyCard() {
   // 「続きから」の札も出さない（ステージのカードも同じ）
   const playing = !dailyIsClosed(rec) && (resume || (rec && rec.ms > 0));
   const stateLabel = dailyIsCleared(rec)
-    ? L(`クリア${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`, `cleared${Number.isFinite(rec.ms) ? ' ' + fmtTime(rec.ms) : ''}`)
+    ? L(`クリア${Number.isFinite(rec.ms) ? ' ' + fmtTimeCs(rec.ms) : ''}`, `cleared${Number.isFinite(rec.ms) ? ' ' + fmtTimeCs(rec.ms) : ''}`)
     : rec && rec.state === 'revealed' ? L('解説を見た', 'solution viewed')
     : rec && rec.state === 'abandoned' ? L('記録なし', 'no record')
     : playing ? L('途中', 'in progress') : L('未挑戦', 'not played');
@@ -2744,7 +2749,7 @@ function renderStageList() {
       const name = L(`${s}×${s}、${DIFFS[d]}（${def.n} 手・${def.k} 種）`, `${s}×${s}, ${DIFFS[d]} (${def.n} moves, ${def.k} kinds)`);
       item.setAttribute('aria-label', locked
         ? name + L('、完全版で遊べます', ', in the full version')
-        : name + L('、', ', ') + clearsLabel(st) + (Number.isFinite(st.best) ? L(`、ベスト ${fmtTime(st.best)}`, `, best ${fmtTime(st.best)}`) : '') + (resume ? L('、続きから', ', continue') : ''));
+        : name + L('、', ', ') + clearsLabel(st) + (Number.isFinite(st.best) ? L(`、ベスト ${fmtTimeCs(st.best)}`, `, best ${fmtTimeCs(st.best)}`) : '') + (resume ? L('、続きから', ', continue') : ''));
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -2768,7 +2773,7 @@ function renderStageList() {
       if (Number.isFinite(st.best) && !locked) {
         const best = document.createElement('span');
         best.className = 'stage-best';
-        best.textContent = fmtTime(st.best);
+        best.textContent = fmtTimeCs(st.best);
         item.append(best);
       }
       const count = clearsMark(st.clears);
