@@ -153,6 +153,15 @@ function cyclesOf(abIndex, x, y) {
 // ---- アイコン描画 ----
 // 描き方そのものは glyphs.js が持つ。ここは「今どれを使うか」だけを覚える。
 const Glyphs = glyphStyles();
+// 形の数字の試し（?tune=1 の画面で変えた値）。この端末だけで効く。決まったらコードの既定値に移す
+const TUNE_KEY = 'glyphshift.tune';
+function applyGlyphTune(o) {
+  Glyphs.setTune(o);
+  if (typeof document !== 'undefined' && document.documentElement && document.documentElement.style) {
+    document.documentElement.style.setProperty('--glyph-size', `${Glyphs.getTune().size}%`);
+  }
+}
+try { const t = JSON.parse(localStorage.getItem(TUNE_KEY) || 'null'); if (t) applyGlyphTune(t); } catch (e) { /* 読めなければ既定の形 */ }
 
 // 絵柄は点図の 1 種だけ（2026-10-30 オーナー。設定から選ぶのをやめた）。前に選んでいた人の保存値は読まない
 const glyphStyle = Glyphs.DEFAULT;

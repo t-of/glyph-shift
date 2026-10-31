@@ -75,24 +75,58 @@ function glyphStyles() {
      輪が自分、濃い点が動くマス、弧と線が動き。
      回転の弧は点の外側を通し、点と重ならないようにしている。
      ========================================================= */
-  const MOTION = {
-    'link-h': '<path d="M6 12 Q12 5 18 12" stroke-width="1.3"/>',
-    'link-v': '<path d="M12 6 Q19 12 12 18" stroke-width="1.3"/>',
-    'link-d1': '<path d="M6 6 Q19 5 18 18" stroke-width="1.3"/>',
-    'link-d2': '<path d="M18 6 Q5 5 6 18" stroke-width="1.3"/>',
-    // 回転: 点より外側を回る 3/4 円 + 進行方向の矢じり（時計回りのみ）
-    cw: '<path d="M12 2 A10 10 0 1 1 2 12" stroke-width="1.3"/>'
-      + '<polygon points="2,7.8 0.1,12.2 3.9,12.2" fill="currentColor" stroke="none"/>',
-    // 半回転: 向かい合う 2 点を中心ごしに結ぶ。中心の輪の手前で切って、
-    // 「自分を挟んで反対どうしが入れ替わる」ことを線の向きで示す。
-    // 入れ替えの弧（1 本）と見分けがつくよう、こちらは直線で描く。
-    'half-cross': '<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4"'
-                + ' stroke-width="1.5"/>',
-    'half-diag': '<path d="M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4'
-               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5"/>',
-    'half-ring': '<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4'
-               + ' M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4'
-               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5"/>',
+  // 形の数字（2026-10-31、オーナーが ?tune=1 の画面で微調整できるようにした）。既定は前の形と同じ
+  const TUNE_DEFAULT = {
+    size: 74,        // タイルに対するマークの大きさ（%）
+    dotR: 2.2,       // 動くマスの点の半径
+    selfR: 2.9,      // 中央の輪（自分）の半径
+    selfW: 1.5,      // 中央の輪の太さ
+    backR: 1.1,      // 動かないマスの目印の点の半径
+    backOp: 0.2,     // その濃さ
+    linkW: 1.3,      // 入れ替えの弧の太さ
+    linkBend: 7,     // 入れ替えの弧の膨らみ（中心から制御点まで）
+    arcR: 10,        // 回転の弧の半径
+    arcSweep: 270,   // 回転の弧の長さ（度。360 で一周）
+    arcW: 1.3,       // 回転の弧の太さ
+    headLen: 4.4,    // 回転の矢じりの長さ
+    headW: 3.8,      // 回転の矢じりの幅
+    halfW: 1.5,      // 半回転の線の太さ
+    bowH: 4.4,       // 片側どうしで組む対の弧の膨らみ
+  };
+  let T = { ...TUNE_DEFAULT };
+  const setTune = (o) => { T = { ...TUNE_DEFAULT }; for (const k of Object.keys(TUNE_DEFAULT)) if (o && Number.isFinite(Number(o[k]))) T[k] = Number(o[k]); };
+  const getTune = () => ({ ...T });
+
+  // 回転: 点より外側を回る弧（上から時計回りに arcSweep 度）＋終わりの向きの矢じり。
+  // 一周に近いときは、弧を 2 つに分ける（SVG の弧は 1 本で一周を描けない）
+  function cwArc() {
+    const R = T.arcR, sweep = Math.min(359.5, Math.max(30, T.arcSweep));
+    const at = (deg) => { const r = rad(deg - 90); return [12 + R * Math.cos(r), 12 + R * Math.sin(r)]; };
+    const [sx, sy] = at(0), [mx, my] = at(sweep / 2), [ex, ey] = at(sweep);
+    const d = `M${n2(sx)} ${n2(sy)} A${R} ${R} 0 0 1 ${n2(mx)} ${n2(my)} A${R} ${R} 0 0 1 ${n2(ex)} ${n2(ey)}`;
+    // 矢じり: 弧の終わりで、時計回りの進む向き（接線）へ。根元は弧の端より 0.2 だけ手前（前の形と同じ）
+    const dir = rad(sweep);   // 進む向き。位置の角度（上が 0）からちょうど 90 度ずれるので、そのまま sweep 度
+    const ux = Math.cos(dir), uy = Math.sin(dir), w = T.headW / 2;
+    const bx = ex - ux * 0.2, by = ey - uy * 0.2;
+    const tx = bx + ux * T.headLen, ty = by + uy * T.headLen;
+    return `<path d="${d}" stroke-width="${T.arcW}"/>`
+      + `<polygon points="${n2(tx)},${n2(ty)} ${n2(bx - uy * w)},${n2(by + ux * w)} ${n2(bx + uy * w)},${n2(by - ux * w)}" fill="currentColor" stroke="none"/>`;
+  }
+  const motion = (key) => {
+    const b = T.linkBend;
+    switch (key) {
+      case 'link-h': return `<path d="M6 12 Q12 ${n2(12 - b)} 18 12" stroke-width="${T.linkW}"/>`;
+      case 'link-v': return `<path d="M12 6 Q${n2(12 + b)} 12 12 18" stroke-width="${T.linkW}"/>`;
+      case 'link-d1': return `<path d="M6 6 Q${n2(12 + b)} ${n2(12 - b)} 18 18" stroke-width="${T.linkW}"/>`;
+      case 'link-d2': return `<path d="M18 6 Q${n2(12 - b)} ${n2(12 - b)} 6 18" stroke-width="${T.linkW}"/>`;
+      case 'cw': return cwArc();
+      // 半回転: 向かい合う 2 点を中心ごしに結ぶ。中心の輪の手前で切って、
+      // 「自分を挟んで反対どうしが入れ替わる」ことを線の向きで示す。
+      // 入れ替えの弧（1 本）と見分けがつくよう、こちらは直線で描く。
+      case 'half-cross': return `<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4" stroke-width="${T.halfW}"/>`;
+      case 'half-diag': return `<path d="M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4 M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="${T.halfW}"/>`;
+      default: return `<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4 M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4 M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="${T.halfW}"/>`;
+    }
   };
 
   const motionOf = (a) => {
@@ -103,19 +137,19 @@ function glyphStyles() {
   };
 
   function drawDots(a) {
-    const parts = [DOT_BACK];
+    const parts = [dotBack()];
     // またぐ対は決め打ちの形、またがない対は 2 マスを直に結ぶ
     if (a.fam === 'half' && !a.anti) {
       for (const [p, q] of a.pairs) {
-        parts.push(`<path d="${bowOf(p, q).d}" stroke-width="1.5"/>`);
+        parts.push(`<path d="${bowOf(p, q, T.bowH).d}" stroke-width="${T.halfW}"/>`);
       }
     } else {
-      parts.push(MOTION[motionOf(a)]);   // 弧や矢印は点の下に敷く
+      parts.push(motion(motionOf(a)));   // 弧や矢印は点の下に敷く
     }
     for (const [dx, dy] of a.cells) {
-      parts.push(`<circle cx="${P(dx)}" cy="${P(dy)}" r="2.2" fill="currentColor" stroke="none"/>`);
+      parts.push(`<circle cx="${P(dx)}" cy="${P(dy)}" r="${T.dotR}" fill="currentColor" stroke="none"/>`);
     }
-    parts.push(DOT_SELF);
+    parts.push(dotSelf());
     return svg(parts.join(''));
   }
 
@@ -411,9 +445,9 @@ function glyphStyles() {
     }
     return out.join('');
   };
-  const DOT_BACK = lattice((dx, dy) =>
-    `<circle cx="${P(dx)}" cy="${P(dy)}" r="1.1" fill="currentColor" stroke="none" opacity=".2"/>`);
-  const DOT_SELF = '<circle cx="12" cy="12" r="2.9" fill="none" stroke="currentColor" stroke-width="1.5"/>';
+  const dotBack = () => lattice((dx, dy) =>
+    `<circle cx="${P(dx)}" cy="${P(dy)}" r="${T.backR}" fill="currentColor" stroke="none" opacity="${T.backOp}"/>`);
+  const dotSelf = () => `<circle cx="12" cy="12" r="${T.selfR}" fill="none" stroke="currentColor" stroke-width="${T.selfW}"/>`;
   const GRID_S = 5.1;
   const gridSq = (dx, dy, attr) =>
     `<rect x="${n2(P(dx) - GRID_S / 2)}" y="${n2(P(dy) - GRID_S / 2)}" width="${GRID_S}" height="${GRID_S}" rx="1.2" ${attr}/>`;
@@ -430,7 +464,7 @@ function glyphStyles() {
   // 印は何も付けない。動くマスも、動きの線も、自分の輪も無い。
   // 器そのものは描き方ごとに違うので、見た目もそれぞれの流儀になる。
   const BLANK = {
-    dots: () => svg(DOT_BACK + DOT_SELF),
+    dots: () => svg(dotBack() + dotSelf()),
     grid: () => svg(lattice((dx, dy) => gridSq(dx, dy, GRID_FAINT)) + GRID_SELF),
     wire: () => svg(WIRE_BACK + WIRE_SELF),
     sign: () => svg(SIGN_SELF),
@@ -446,5 +480,5 @@ function glyphStyles() {
     return (BLANK[byId(styleId).id] || BLANK.dots)();
   };
 
-  return { STYLES, DEFAULT, draw, byId, has: (id) => STYLES.some((s) => s.id === id) };
+  return { STYLES, DEFAULT, draw, byId, has: (id) => STYLES.some((s) => s.id === id), TUNE_DEFAULT, setTune, getTune };
 }

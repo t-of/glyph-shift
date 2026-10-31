@@ -376,6 +376,7 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
   <script src="./entitlement.js"></script>
   <script src="./rewards.js"></script>
   <script src="./script.js"></script>
+  <script>/* 形の微調整の画面（?tune=1 のときだけ読む） */ if (/[?&]tune=1/.test(location.search)) { const t = document.createElement('script'); t.src = './tune.js'; document.body.append(t); }</script>
   <script src="./webapp-kit/webapp-kit.js"></script>
   <script>
     // webapp-kit の案内の言葉（共有したときの「コピーしました」など）
