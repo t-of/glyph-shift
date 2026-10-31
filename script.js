@@ -104,32 +104,20 @@ const FAMILIES = [
 ];
 
 const INFO = {
-  swapLR: { fam: 'swap', text: L('自分の左隣と右隣を入れ替える。自分は真ん中に残る。左右どちらかの隣が盤の外になる左端・右端の列では使えない。',
-    "Swaps the tiles to its left and right. It stays in the middle. Can't be used in the leftmost or rightmost column, where one neighbor is off the board.") },
-  swapUD: { fam: 'swap', text: L('自分の上と下を入れ替える。自分は真ん中に残る。上下どちらかが盤の外になる最上段・最下段では使えない。',
-    "Swaps the tiles above and below. It stays in the middle. Can't be used in the top or bottom row, where one of them is off the board.") },
-  swapD1: { fam: 'swap', text: L('自分の左上と右下を入れ替える。左端・右端の列と、最上段・最下段では使えない。',
-    "Swaps the tiles at its upper left and lower right. Can't be used in the leftmost or rightmost column, or the top or bottom row.") },
-  swapD2: { fam: 'swap', text: L('自分の右上と左下を入れ替える。左端・右端の列と、最上段・最下段では使えない。',
-    "Swaps the tiles at its upper right and lower left. Can't be used in the leftmost or rightmost column, or the top or bottom row.") },
-  crossCW: { fam: 'rot', text: L('上・右・下・左の 4 マスを、その順に 1 つずつ送る。上の中身が右へ、右が下へ、下が左へ、左が上へ。4 方向すべてが盤内である必要がある。',
-    'Moves the 4 tiles above, right, below and left one step in that order: top goes right, right goes down, bottom goes left, left goes up. All 4 directions must be on the board.') },
-  diagCW: { fam: 'rot', text: L('左上・右上・右下・左下の 4 マスを、その順に 1 つずつ送る。斜め 4 方向すべてが盤内である必要がある。',
-    'Moves the 4 diagonal tiles (upper left, upper right, lower right, lower left) one step in that order. All 4 diagonals must be on the board.') },
-  ringCW: { fam: 'rot', text: L('自分を囲む 8 マス全部を時計回りに 1 つずつ送る。一度に動く数が最も多い。盤の内側でしか使えない。',
-    'Moves all 8 surrounding tiles one step clockwise. Moves the most tiles at once. Works only away from the edges.') },
-  crossHalf: { fam: 'half', text: L('上と下、右と左を同時に入れ替える。上下左右を時計回りに 2 回送ったのと同じ動き。4 方向すべてが盤内である必要がある。',
-    'Swaps top with bottom and right with left at the same time. Same as rotating the 4 sides clockwise twice. All 4 directions must be on the board.') },
-  diagHalf: { fam: 'half', text: L('左上と右下、右上と左下を同時に入れ替える。斜め 4 マスを時計回りに 2 回送ったのと同じ動き。斜め 4 方向すべてが盤内である必要がある。',
-    'Swaps upper left with lower right and upper right with lower left at the same time. Same as rotating the 4 corners clockwise twice. All 4 diagonals must be on the board.') },
-  sqUD: { fam: 'half', text: L('斜め 4 マス（四角の 4 すみ）を、上下どうしで入れ替える。左上と左下、右上と右下。斜め 4 方向すべてが盤内である必要がある。',
-    'Swaps the 4 diagonal tiles (the corners of the square) top with bottom: upper left with lower left, upper right with lower right. All 4 diagonals must be on the board.') },
-  sqLR: { fam: 'half', text: L('斜め 4 マス（四角の 4 すみ）を、左右どうしで入れ替える。左上と右上、左下と右下。斜め 4 方向すべてが盤内である必要がある。',
-    'Swaps the 4 diagonal tiles (the corners of the square) left with right: upper left with upper right, lower left with lower right. All 4 diagonals must be on the board.') },
-  none: { fam: 'none', text: L('押しても何も起きない。まわりのマスから動かされるだけ。盤のどこにあっても使えない。',
-    "Nothing happens when pressed. It only gets moved by the tiles around it. Can't be used anywhere on the board.") },
-  ringHalf: { fam: 'half', text: L('自分を囲む 8 マスを、向かい合うものどうしで一斉に入れ替える。周囲 8 マスを時計回りに 4 回送ったのと同じ動き。盤の内側でしか使えない。',
-    'Swaps each of the 8 surrounding tiles with the one opposite it, all at once. Same as rotating all 8 neighbors clockwise 4 times. Works only away from the edges.') },
+  // 説明はどう動くかだけ（2026-10-31 オーナー。使える条件や言い換えは書かない）
+  swapLR: { fam: 'swap', text: L('左隣と右隣を入れ替える。', 'Swaps the tiles to its left and right.') },
+  swapUD: { fam: 'swap', text: L('上と下を入れ替える。', 'Swaps the tiles above and below.') },
+  swapD1: { fam: 'swap', text: L('左上と右下を入れ替える。', 'Swaps the upper-left and lower-right tiles.') },
+  swapD2: { fam: 'swap', text: L('右上と左下を入れ替える。', 'Swaps the upper-right and lower-left tiles.') },
+  crossCW: { fam: 'rot', text: L('上・右・下・左の 4 マスを、時計回りに 1 つずつ送る。', 'Moves the tiles above, right, below and left one step clockwise.') },
+  diagCW: { fam: 'rot', text: L('斜め 4 マスを、時計回りに 1 つずつ送る。', 'Moves the 4 diagonal tiles one step clockwise.') },
+  ringCW: { fam: 'rot', text: L('周囲 8 マスを、時計回りに 1 つずつ送る。', 'Moves all 8 surrounding tiles one step clockwise.') },
+  crossHalf: { fam: 'half', text: L('上と下、左と右を同時に入れ替える。', 'Swaps top with bottom and left with right at once.') },
+  diagHalf: { fam: 'half', text: L('左上と右下、右上と左下を同時に入れ替える。', 'Swaps upper-left with lower-right and upper-right with lower-left at once.') },
+  sqUD: { fam: 'half', text: L('左上と左下、右上と右下を同時に入れ替える。', 'Swaps upper-left with lower-left and upper-right with lower-right at once.') },
+  sqLR: { fam: 'half', text: L('左上と右上、左下と右下を同時に入れ替える。', 'Swaps upper-left with upper-right and lower-left with lower-right at once.') },
+  ringHalf: { fam: 'half', text: L('周囲 8 マスを、向かい合うマスどうしで同時に入れ替える。', 'Swaps each of the 8 surrounding tiles with the one opposite it, all at once.') },
+  none: { fam: 'none', text: L('何も動かさない。', 'Moves nothing.') },
 };
 
 // 能力が使えるなら影響するマスのサイクルを、使えないなら null を返す。
@@ -569,6 +557,8 @@ function renderPanel() {
     for (const [ab, k] of ids) {
       const row = document.createElement('div');
       row.className = used.has(k) ? 'blk' : 'blk dim';
+      // 課金していないと使えないブロックは薄暗く（2026-10-31 オーナー）
+      if (!Entitlement.blockOpen(ab.id)) row.classList.add('locked');
 
       const chip = document.createElement('span');
       chip.className = 'chip';
@@ -2585,7 +2575,7 @@ const adPrivacyEl = document.getElementById('adPrivacy');
 const syncAdPrivacy = () => { adPrivacyEl.hidden = !Entitlement.adsActive(); };
 syncAdPrivacy();
 syncFullField();
-Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); });
+Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); renderPanel(); });
 syncLocks();   // ホームの「カスタムで作る」の鍵の札を、起動時の状態に合わせる
 
 // ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）

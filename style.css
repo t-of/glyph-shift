@@ -889,6 +889,8 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .blk-where span { font-size: 10.5px; color: var(--dim); }
 .blk.dim .chip, .blk.dim .blk-main { opacity: .55; }
 .panel.at-home .blk.dim .chip, .panel.at-home .blk.dim .blk-main { opacity: 1; }   /* ホームでは前の盤と関係なく全部明るく */
+/* 課金していないと使えないブロック。ホームでも薄暗いまま（2026-10-31 オーナー） */
+.blk.locked .chip, .blk.locked .blk-main, .panel.at-home .blk.locked .chip, .panel.at-home .blk.locked .blk-main { opacity: .35; filter: saturate(.4); }
 
 /* ---- 設定 ---- */
 .setup-body { display: flex; flex-direction: column; gap: 24px; }
