@@ -27,7 +27,7 @@ const fresh = (seed, s = 5) => {
   fresh(21);
   ok(posts.length === 1 && par && par.cost === planCost(solution) && !par.optimal, `先読みが出ていない ${posts.length} / ${JSON.stringify(par)}`);
   const pm = posts[0];
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   ok(posts.length === 1, `ヒントが別の依頼を出した ${posts.length}`);
   reply(pm);
   ok(par && par.cost > 0 && par.cost <= scrambleN, 'ヒント中に par が失われた');
@@ -42,7 +42,7 @@ const fresh = (seed, s = 5) => {
   const c0 = par.cost;
   reply(pm, true);
   ok(par && par.cost === c0, '途中経過で par が変わった');
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   reply(pm);
   ok(par && par.cost > 0 && par.cost <= c0, '途中経過のあとのヒントで par が失われた');
   console.log('  途中経過後のヒント: par が残る');
@@ -54,7 +54,7 @@ const fresh = (seed, s = 5) => {
   const pm = posts[0];
   reply(pm);
   const c = par.cost;
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   ok(posts.length === 2, `ヒント依頼 ${posts.length}`);
   reply(posts[1]);
   ok(par && par.cost === c, 'ヒントの返事で par が変わった');
@@ -65,7 +65,7 @@ const fresh = (seed, s = 5) => {
 {
   fresh(24, 3);
   const pm = posts[0];
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 1; hintUsed = false; autoSolvedFlag = false;
   showClear();
@@ -108,7 +108,7 @@ const fresh = (seed, s = 5) => {
   fresh(21);
   const pm = posts[0];
   for (let i = 0; i < SIZE; i++) if (cyclesAt(i)) { fire(i, 1); break; }
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   const c0 = par.cost;
   const res = reply(pm);
   const found = planCost(Solver.planToRuns(problem, res.plan, pm.start));
@@ -120,7 +120,7 @@ const fresh = (seed, s = 5) => {
 {
   fresh(21);
   reply(posts[0]);
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   const hm = posts[1], oldWorker = worker;
   newPuzzle(23);
   oldWorker.onmessage({ data: { id: hm.id, res: { plan: [], optimal: true, method: 'solved', ms: 0 }, partial: false } });

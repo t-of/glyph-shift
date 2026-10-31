@@ -16,7 +16,7 @@ function watch() {
   });
 }
 
-const press = () => { log = []; el('hintBtn').fire('click', {}); return [...new Set(log)]; };
+const press = () => { log = []; el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction(); return [...new Set(log)]; };   // 初めてのヒントの確かめは「使う」
 
 console.log('まだ解けていない盤面で押したとき');
 W = H = 5; SIZE = 25; buildDom(); types = 3; newPuzzle(9);

@@ -67,7 +67,7 @@ globalThis.URL = { createObjectURL: () => 'blob:x' };
   workerBroken = false;
   useStageSetup(4, 1); newPuzzle(7);
   flushTimers();                                  // 先読みぶんの見張りを片付ける
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   const lit = slots.filter((s) => s._cls.has('hinted')).length;
   ok(lit === 1, `ヒントで光ったマスが ${lit} 個`);
   el('solveBtn').fire('click', {});

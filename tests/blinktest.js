@@ -9,7 +9,7 @@ newPuzzle(9);
 ok(lit().length === 0, '押す前から点滅している');
 
 // 押すと次の一手が点滅する
-el('hintBtn').fire('click', {});
+el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
 ok(lit().length === 1, `点滅しているマスが ${lit().length} 個（期待 1）`);
 ok(lit()[0] === activeRuns()[0].i, '次に押すマスと点滅位置が違う');
 console.log('  押すと次の一手だけが点滅する: OK');
@@ -20,16 +20,16 @@ ok(lit().length === 0, '時間が経っても消えない');
 console.log('  放っておくと消える: OK');
 
 // もう一度押せばまた出る（オンオフではない）
-el('hintBtn').fire('click', {});
+el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
 ok(lit().length === 1, '2 回目に点滅しない');
-el('hintBtn').fire('click', {});
+el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
 ok(lit().length === 1, '続けて押すと消えてしまう（オンオフになっている）');
 console.log('  何度押しても点滅する（オンオフではない）: OK');
 
 // 手を打つと消える
 {
   const target = activeRuns()[0].i;
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   ok(lit().length === 1, '点滅していない');
   fire(target);
   ok(lit().length === 0, '手を打っても点滅が残っている');
@@ -38,7 +38,7 @@ console.log('  何度押しても点滅する（オンオフではない）: OK'
 
 // 新しい盤面にすると消える
 {
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   ok(lit().length === 1, '点滅していない');
   newPuzzle(10);
   ok(lit().length === 0, '新しい盤面にしても点滅が残っている');
@@ -55,7 +55,7 @@ console.log('  何度押しても点滅する（オンオフではない）: OK'
     fire(r.i, r.n <= r.order - r.n ? 1 : -1);
   }
   ok(isSolved(), '完成させられなかった');
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   ok(lit().length === 0, '完成後に点滅する');
   console.log('  完成後は点滅しない: OK');
 }

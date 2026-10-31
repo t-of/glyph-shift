@@ -49,7 +49,7 @@ take();
 
 // ヒント
 {
-  el('hintBtn').fire('click', {});
+  el('hintBtn').fire('click', {}); if (!confirmEl.hidden && confirmAction) confirmAction();   // 初めてのヒントの確かめは「使う」
   const c = take();
   ok(c.some((x) => x[0] === 'hint'), 'ヒントの音が鳴らない');
   console.log('  ヒントの音: OK');

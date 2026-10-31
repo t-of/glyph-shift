@@ -486,7 +486,7 @@ let hintTimer = null;
 
 function clearHint() {
   if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
-  for (const slot of slots) slot.classList.remove('hinted', 'hold');
+  for (const slot of slots) { slot.classList.remove('hinted', 'hold'); delete slot.dataset.hint; }
 }
 
 function blinkHint() {
@@ -499,6 +499,11 @@ function blinkHint() {
   // 押す場所は盤の光で見せ、文字は出さない（2026-10-30 オーナー）。長押しのほうが近いときは光の色を変える
   const back = r.order - r.n;
   if (r.n > back) slots[r.i].classList.add('hold');
+  // 光の色だけでは長押しか分かりにくいので、マスに札を付ける（2026-10-31 オーナー）。
+  // 長押しは「長押し」、2 回以上は「×2」。1 回押すだけなら札は付けない
+  const hold = r.n > back, times = hold ? back : r.n;
+  const tag = (hold ? L('長押し', 'Hold') : '') + (times >= 2 ? `${hold ? ' ' : ''}×${times}` : '');
+  if (tag) slots[r.i].dataset.hint = tag;
   // 残りの手数は、短い手順のときだけ意味がある。
   // 混ぜた手順の逆は手数を決めて混ぜた盤なら短い（その手数どまり）が、そうでない盤の保険の手順は
   // 1 万手を超えることがあり、それを「残り 18317 手」と出しても詰んだように見えるだけ。
@@ -1974,7 +1979,20 @@ gridEl.addEventListener('contextmenu', (e) => {
   firePress(pressCell, -1);
 });
 
-document.getElementById('hintBtn').addEventListener('click', showHint);
+// ステージ・カスタム・受け取った盤で、その盤で初めてヒントを使うときは確かめる
+// （使うとその盤のタイムが記録に残らない。2026-10-31 オーナー）。今日の 1 問は showHint の中で別に確かめる
+function askHint() {
+  if (autoSolving || locked || isSolved()) return;
+  if (!hintUsed && stageTimed()) {
+    askConfirm(L('ヒントを使う', 'Use a hint'),
+      L('ヒントを使うと、<strong>この盤のタイムは記録に残りません</strong>。<br>★ も 2 つまでになります。',
+        'If you use a hint, <strong>your time on this board won\'t be recorded</strong>.<br>You can get at most 2 stars.'),
+      L('使う', 'Use'), () => { closeConfirm(); showHint(); });
+    return;
+  }
+  showHint();
+}
+document.getElementById('hintBtn').addEventListener('click', askHint);
 
 // ---- パネルのタブ ----
 // ブロックの一覧が長いので、遊び方・ブロック・設定は積まずに切り替える。
