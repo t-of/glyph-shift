@@ -53,7 +53,7 @@ const ABILITIES = [
   { id: 'swapD1', color: '#f9b800', name: L('左上と右下を入れ替え', 'Swap upper-left & lower-right'),
     cells: (x, y) => [[[x - 1, y - 1], [x + 1, y + 1]]] },
 
-  { id: 'swapD2', color: '#bab448', name: L('右上と左下を入れ替え', 'Swap upper-right & lower-left'),
+  { id: 'swapD2', color: '#e5ed33', name: L('右上と左下を入れ替え', 'Swap upper-right & lower-left'),
     cells: (x, y) => [[[x + 1, y - 1], [x - 1, y + 1]]] },
 
   { id: 'crossCW', color: '#a4d857', name: L('上下左右の 4 マスを時計回り', 'Rotate the 4 sides clockwise'),
@@ -68,7 +68,7 @@ const ABILITIES = [
 
   // 以下は回転の半分ぶん。向かい合うマスどうしが同時に入れ替わる。
   // それぞれ crossCW を 2 回、diagCW を 2 回、ringCW を 4 回使ったのと同じ動き。
-  { id: 'crossHalf', color: '#00c5d3', name: L('上下と左右を同時に入れ替え', 'Swap up/down and left/right at once'),
+  { id: 'crossHalf', color: '#0face4', name: L('上下と左右を同時に入れ替え', 'Swap up/down and left/right at once'),
     cells: (x, y) => [[[x, y - 1], [x, y + 1]], [[x + 1, y], [x - 1, y]]] },
 
   { id: 'diagHalf', color: '#a5c1ff', name: L('斜めの対角どうしを同時に入れ替え', 'Swap both diagonal pairs at once'),
