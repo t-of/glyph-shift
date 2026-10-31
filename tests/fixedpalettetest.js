@@ -118,8 +118,8 @@ const lum = (css) => { const [r, g, b] = toRgb(css).map((v) => (v <= 0.03928 ? v
   return .2126 * r + .7152 * g + .0722 * b; };
 // 絵柄と地のコントラスト。インクは全マス共通。半透明なので、地に重ねた色で見る。
 const rgbOf = (css) => {
-  if (!css.startsWith('rgba')) return toRgb(css);
-  const [r, g, b, al] = css.match(/[\d.]+/g).map(Number);
+  if (!css.startsWith('rgb')) return toRgb(css);
+  const [r, g, b, al = 1] = css.match(/[\d.]+/g).map(Number);   // rgb() は不透明
   return [r / 255, g / 255, b / 255, al];
 };
 const relLum = ([r, g, b]) => {
@@ -135,7 +135,7 @@ for (let k = 0; k < ABILITIES.length; k++) {
   const [a1, a2] = [relLum(mixed) + .05, relLum(bg) + .05];
   const c = Math.max(a1, a2) / Math.min(a1, a2);
   minC = Math.min(minC, c);
-  // インクは半透明なので、不透明として概算するより実際のコントラストは低い。
+  // インクは不透明（2026-10-31）。半透明のときは、混ぜた色でコントラストを見ていた（式はそのまま使える）。
   // 絵柄は小さな文字ではなく大きな図形なので、その基準（3:1）には十分な余裕がある。
   ok(c >= 4.0, `${ABILITIES[k].id}: 絵柄とのコントラストが ${c.toFixed(1)}:1`);
 }

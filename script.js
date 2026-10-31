@@ -172,7 +172,7 @@ const iconSvg = (abIndex) => Glyphs.draw(glyphStyle, ABILITIES[abIndex].cells(0,
 // 彩度は 72% までに抑えて、画面が毒々しくならないようにしている。
 // UI のアクセントと紛れる菫色の帯（248〜292°）は使っていない。
 const bgOf = (abIndex) => ABILITIES[abIndex].color;
-const INK = 'rgba(10, 12, 20, .82)';
+const INK = 'rgb(10, 12, 20)';   // マークは透かさない（2026-10-31 オーナー。形で見分けやすく。薄い目印の点は glyphs.js で別に薄くしてある）
 
 // ---- 柄（目標の並び） ----
 // 盤の横 W・縦 H と使うブロック数 K から作れる柄。fn は各マスの色番号（0〜K-1）を返す。

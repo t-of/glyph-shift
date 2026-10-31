@@ -7,6 +7,7 @@
 // 能力を足しても消しても、ここを直す必要はない。
 //
 // どの描き方も viewBox 0 0 24 24。線も塗りも currentColor（＝タイル上のインク）。
+// 主な線・丸は透かさない（2026-10-31）。動かないマスの目印の点・格子だけ薄く（.16〜.2）する。
 // 3×3 の相対座標 -1 / 0 / 1 は、それぞれ 6 / 12 / 18 に対応する。
 function glyphStyles() {
   // 画面の言葉（i18n.js）。読まない場所では日本語のまま
@@ -75,23 +76,23 @@ function glyphStyles() {
      回転の弧は点の外側を通し、点と重ならないようにしている。
      ========================================================= */
   const MOTION = {
-    'link-h': '<path d="M6 12 Q12 5 18 12" stroke-width="1.3" opacity=".7"/>',
-    'link-v': '<path d="M12 6 Q19 12 12 18" stroke-width="1.3" opacity=".7"/>',
-    'link-d1': '<path d="M6 6 Q19 5 18 18" stroke-width="1.3" opacity=".7"/>',
-    'link-d2': '<path d="M18 6 Q5 5 6 18" stroke-width="1.3" opacity=".7"/>',
+    'link-h': '<path d="M6 12 Q12 5 18 12" stroke-width="1.3"/>',
+    'link-v': '<path d="M12 6 Q19 12 12 18" stroke-width="1.3"/>',
+    'link-d1': '<path d="M6 6 Q19 5 18 18" stroke-width="1.3"/>',
+    'link-d2': '<path d="M18 6 Q5 5 6 18" stroke-width="1.3"/>',
     // 回転: 点より外側を回る 3/4 円 + 進行方向の矢じり（時計回りのみ）
-    cw: '<path d="M12 2 A10 10 0 1 1 2 12" stroke-width="1.3" opacity=".8"/>'
+    cw: '<path d="M12 2 A10 10 0 1 1 2 12" stroke-width="1.3"/>'
       + '<polygon points="2,7.8 0.1,12.2 3.9,12.2" fill="currentColor" stroke="none"/>',
     // 半回転: 向かい合う 2 点を中心ごしに結ぶ。中心の輪の手前で切って、
     // 「自分を挟んで反対どうしが入れ替わる」ことを線の向きで示す。
     // 入れ替えの弧（1 本）と見分けがつくよう、こちらは直線で描く。
     'half-cross': '<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4"'
-                + ' stroke-width="1.5" opacity=".8"/>',
+                + ' stroke-width="1.5"/>',
     'half-diag': '<path d="M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4'
-               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5" opacity=".8"/>',
+               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5"/>',
     'half-ring': '<path d="M12 6.6 V8.6 M12 15.4 V17.4 M6.6 12 H8.6 M15.4 12 H17.4'
                + ' M7.6 7.6 L9.9 9.9 M14.1 14.1 L16.4 16.4'
-               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5" opacity=".8"/>',
+               + ' M16.4 7.6 L14.1 9.9 M9.9 14.1 L7.6 16.4" stroke-width="1.5"/>',
   };
 
   const motionOf = (a) => {
@@ -106,7 +107,7 @@ function glyphStyles() {
     // またぐ対は決め打ちの形、またがない対は 2 マスを直に結ぶ
     if (a.fam === 'half' && !a.anti) {
       for (const [p, q] of a.pairs) {
-        parts.push(`<path d="${bowOf(p, q).d}" stroke-width="1.5" opacity=".8"/>`);
+        parts.push(`<path d="${bowOf(p, q).d}" stroke-width="1.5"/>`);
       }
     } else {
       parts.push(MOTION[motionOf(a)]);   // 弧や矢印は点の下に敷く
@@ -130,7 +131,7 @@ function glyphStyles() {
       for (const [dx, dy] of a.cells) {
         parts.push(rot(ang([dx, dy]), '<path d="M14.6 12 H21" stroke-width="2.1" stroke-linecap="round"/>'));
       }
-      parts.push('<path d="M12 2.6 A9.4 9.4 0 1 1 2.6 12" stroke-width="1.7" stroke-linecap="round" opacity=".9"/>');
+      parts.push('<path d="M12 2.6 A9.4 9.4 0 1 1 2.6 12" stroke-width="1.7" stroke-linecap="round"/>');
       parts.push(head(2.6, 11.9, 270, 3.6));   // 時計回りなので、西の端では上を向く
       parts.push('<circle cx="12" cy="12" r="2.8" fill="none" stroke="currentColor" stroke-width="1.7"/>');
     } else if (a.anti) {
@@ -167,7 +168,7 @@ function glyphStyles() {
       if (dx === 0 && dy === 0) continue;
       if (!hit.has(`${dx},${dy}`)) parts.push(sq(dx, dy, GRID_FAINT));
     }
-    for (const [dx, dy] of a.cells) parts.push(sq(dx, dy, 'fill="currentColor" stroke="none" opacity=".95"'));
+    for (const [dx, dy] of a.cells) parts.push(sq(dx, dy, 'fill="currentColor" stroke="none"'));
     parts.push(GRID_SELF);
     a.cells.forEach(([dx, dy], i) => {
       const [ex, ey] = a.dest[i];
@@ -236,7 +237,7 @@ function glyphStyles() {
 
     if (a.fam === 'rot') {
       const d = a.cells.map(([x, y], i) => `${i ? 'L' : 'M'}${P(x)} ${P(y)}`).join(' ') + ' Z';
-      parts.push(`<path d="${d}" stroke-width="1.5" stroke-linejoin="round" opacity=".85"/>`);
+      parts.push(`<path d="${d}" stroke-width="1.5" stroke-linejoin="round"/>`);
       a.cells.forEach(([x, y], i) => {
         const [nx, ny] = a.dest[i];
         const mx = (P(x) + P(nx)) / 2, my = (P(y) + P(ny)) / 2;
@@ -255,7 +256,7 @@ function glyphStyles() {
       for (const sgn of [1, -1]) {
         const [S, E] = sgn > 0 ? [A, B] : [B, A];
         parts.push(`<path d="M${S[0]} ${S[1]} Q${n2(12 + nx * h * sgn)} ${n2(12 + ny * h * sgn)} ${E[0]} ${E[1]}"`
-                 + ' stroke-width="1.4" opacity=".85"/>');
+                 + ' stroke-width="1.4"/>');
         const ax = 12 + nx * (h / 2) * sgn, ay = 12 + ny * (h / 2) * sgn;
         const d = sgn > 0 ? 1.4 : -1.4;
         parts.push(head(ax + Math.cos(rad(t)) * d, ay + Math.sin(rad(t)) * d, sgn > 0 ? t : t + 180, 2.9));
@@ -266,7 +267,7 @@ function glyphStyles() {
       // またがない対。2 マスを弧で結び、両端に矢じりを置く
       for (const [p, q] of a.pairs) {
         const b = bowOf(p, q, 3.8);
-        parts.push(`<path d="${b.d}" stroke-width="1.4" opacity=".85"/>`);
+        parts.push(`<path d="${b.d}" stroke-width="1.4"/>`);
         parts.push(head(b.A[0], b.A[1], b.angA, 2.6));
         parts.push(head(b.B[0], b.B[1], b.angB, 2.6));
       }
@@ -279,14 +280,14 @@ function glyphStyles() {
         for (const s of [0, 180]) {
           const u = rad(ax + s), ux = Math.cos(u), uy = Math.sin(u);
           parts.push(`<path d="M${n2(12 + ux * 3)} ${n2(12 + uy * 3)} L${n2(12 + ux * (L - 2.2))} ${n2(12 + uy * (L - 2.2))}"`
-                   + ' stroke-width="1.4" stroke-linecap="round" opacity=".85"/>');
+                   + ' stroke-width="1.4" stroke-linecap="round"/>');
           parts.push(head(12 + ux * L, 12 + uy * L, ax + s, 2.5));
         }
       });
     }
 
     parts.push(a.fam === 'swap'
-      ? '<circle cx="12" cy="12" r="1.9" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".9"/>'
+      ? '<circle cx="12" cy="12" r="1.9" fill="none" stroke="currentColor" stroke-width="1.4"/>'
       : WIRE_SELF);
     return svg(parts.join(''));
   }
@@ -412,17 +413,17 @@ function glyphStyles() {
   };
   const DOT_BACK = lattice((dx, dy) =>
     `<circle cx="${P(dx)}" cy="${P(dy)}" r="1.1" fill="currentColor" stroke="none" opacity=".2"/>`);
-  const DOT_SELF = '<circle cx="12" cy="12" r="2.9" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".9"/>';
+  const DOT_SELF = '<circle cx="12" cy="12" r="2.9" fill="none" stroke="currentColor" stroke-width="1.5"/>';
   const GRID_S = 5.1;
   const gridSq = (dx, dy, attr) =>
     `<rect x="${n2(P(dx) - GRID_S / 2)}" y="${n2(P(dy) - GRID_S / 2)}" width="${GRID_S}" height="${GRID_S}" rx="1.2" ${attr}/>`;
   const GRID_FAINT = 'fill="none" stroke="currentColor" stroke-width=".85" opacity=".16"';
-  const GRID_SELF = gridSq(0, 0, 'fill="none" stroke="currentColor" stroke-width="1.5" opacity=".9"');
+  const GRID_SELF = gridSq(0, 0, 'fill="none" stroke="currentColor" stroke-width="1.5"');
   const WIRE_BACK = lattice((dx, dy) =>
     `<circle cx="${P(dx)}" cy="${P(dy)}" r=".9" fill="currentColor" stroke="none" opacity=".18"/>`);
-  const WIRE_SELF = '<circle cx="12" cy="12" r="2.3" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".9"/>';
-  const SIGN_SELF = '<circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".85"/>';
-  const SOLID_SELF = '<circle cx="12" cy="12" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".9"/>';
+  const WIRE_SELF = '<circle cx="12" cy="12" r="2.3" fill="none" stroke="currentColor" stroke-width="1.4"/>';
+  const SIGN_SELF = '<circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/>';
+  const SOLID_SELF = '<circle cx="12" cy="12" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>';
 
   // 何も起きないマスの絵柄。
   // どの描き方でも考えは同じ ── その描き方が持つ「器」だけを薄く置き、
