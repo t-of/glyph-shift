@@ -294,14 +294,19 @@ const STAGE_TABLE = {
   5: [{ n: 6, k: 3 }, { n: 14, k: 4 }, { n: 17, k: 5 }, { n: 16, k: 7 }, { n: 20, k: 9 }, { n: 24, k: 11 }],
   6: [{ n: 9, k: 3 }, { n: 15, k: 5 }, { n: 20, k: 6 }, { n: 20, k: 8 }, { n: 24, k: 10 }, { n: 28, k: 12 }],
   7: [{ n: 11, k: 4 }, { n: 17, k: 6 }, { n: 24, k: 7 }, { n: 22, k: 9 }, { n: 26, k: 11 }, { n: 30, k: 13 }],
-  8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }, { n: 28, k: 10 }, { n: 30, k: 12 }, { n: 30, k: 13 }],
+  8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }, { n: 28, k: 10 }, { n: 30, k: 12 }, { n: 30, k: 13, goal: 'rainbow' }],
+};
+// 最後のステージ（8×8 名人）だけ、ゴールを 13 種の斜めの縞に決めておく。ブロックの番号順に並べるので色が虹のように移る
+// （2026-10-31 オーナー。ストアのスクショと同じ盤）。混ぜ方は seed で毎回変わる
+const FIXED_GOALS = {
+  rainbow: (s) => Array.from({ length: s * s }, (_, i) => ((i % s) + Math.floor(i / s)) % ABILITIES.length),
 };
 const STAGE_SIZES = [3, 4, 5, 6, 7, 8];
 // 3×3 は通れる盤面が少なく、混ぜても近道ができて 1 手で揃うことが多い。min は「最短がこの手数以上の盤だけ使う」
 // （小さい盤だけ、盤を作るときに最短を求めて確かめる。generate の minMoves）
 const stageDef = (s, d) => {
   const e = STAGE_TABLE[s] && STAGE_TABLE[s][d];
-  return e ? { s, d, n: e.n, k: e.k, min: e.min || 0, key: `${s}d${d}` } : null;
+  return e ? { s, d, n: e.n, k: e.k, min: e.min || 0, key: `${s}d${d}`, goal: e.goal ? FIXED_GOALS[e.goal](s) : null } : null;
 };
 // カスタムの盤は、長い辺に近い大きさの表から混ぜる手数だけを借りる
 const movesFor = (w, h, d) => stageDef(Math.min(8, Math.max(3, Math.max(w, h))), d).n;
@@ -2523,8 +2528,8 @@ function startFromPending() {
     scrambleN = movesFor(pendW, pendH, pendDiff);
   } else {
     forcedAbilities = null;
-    forcedGoal = null;
     const def = stageDef(pendW, pendDiff);
+    forcedGoal = def.goal;   // ふつうは null（柄から選ぶ）
     types = def.k;
     scrambleN = def.n;
   }
@@ -2595,7 +2600,7 @@ function stageGoalPreview(s, d, seed, allBlocks = false) {
   // generate は対局の状態を書き換えるので、今の対局を退避して戻す
   const saved = { W, H, SIZE, types, scrambleN, scrambleMoves, forcedAbilities, forcedGoal, patternSeed, tileAbility, board, solution, curDiff };
   const def = stageDef(s, d);
-  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null; forcedGoal = null; curDiff = d;
+  W = H = s; SIZE = s * s; types = def.k; scrambleN = def.n; forcedAbilities = null; forcedGoal = def.goal; curDiff = d;
   previewAllBlocks = allBlocks;
   try { generate(seed); } finally { previewAllBlocks = false; }
   const goal = tileAbility;
@@ -2608,6 +2613,8 @@ function goalForStage(s, d, st) {
   // goal は、使えるブロックの範囲（無料／全部）の印 pool と一緒に覚える。印が違えば作り直す
   // （無料の範囲で作ったゴールと全ブロックで作ったゴールが混ざらないように。印の無い古い記録は全部）。
   // 鍵つきのステージは全ブロックの印で作る（買ったあと、見ていた絵のまま遊べる）。
+  const fixed = stageDef(s, d).goal;
+  if (fixed) return fixed;   // ゴールを決めてあるステージ（前の版で覚えた別のゴールは使わない）
   const tag = Entitlement.stageOpen(s, d) ? Entitlement.poolTag() : 'all';
   if (!(Array.isArray(st.goal) && st.goal.length === s * s && (st.pool || 'all') === tag)) {
     st.goal = stageGoalPreview(s, d, st.seed, tag === 'all'); st.pool = tag; saveStages();
