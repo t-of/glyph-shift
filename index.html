@@ -246,6 +246,18 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
     <button id="lockOk" class="pill wide" type="button" data-i18n="close">閉じる</button>
   </dialog>
 
+  <!-- 友達から届いた盤コードを貼って遊ぶ（2026-10-31） -->
+  <dialog class="howto-sheet" id="codeSheet" aria-labelledby="codeTitle">
+    <div class="panel-head">
+      <h2 id="codeTitle" data-i18n="codeTitle">盤コードで遊ぶ</h2>
+      <button id="codeClose" class="panel-close" type="button" data-i18n-aria="close" aria-label="閉じる">&times;</button>
+    </div>
+    <p class="lock-note" data-i18n="codeNote">友達から届いたメッセージを、そのまま貼ってください。</p>
+    <textarea id="codeIn" class="code-in" rows="3" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="A1-…" data-i18n-aria="codeTitle" aria-label="盤コード"></textarea>
+    <p class="lock-status" id="codeErr" role="status" aria-live="polite"></p>
+    <button class="primary wide" id="codePlay" type="button" data-i18n="codePlay">遊ぶ</button>
+  </dialog>
+
   <!-- ホーム -->
   <main class="screen title" id="title" hidden>
     <button id="homeConfigBtn" class="icon home-gear menu-btn" type="button" data-i18n-aria="settings" aria-label="設定" title="設定">
@@ -259,6 +271,7 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
       <div id="stageList" class="stage-list" role="group" data-i18n-aria="stages" aria-label="ステージ"></div>
       <div class="home-links">
         <button id="homeCustomBtn" class="ghost-btn" type="button"><span data-i18n="homeCustom">カスタム</span><span class="lock-tag" id="customLock" hidden data-i18n="fullTag">完全版</span></button>
+        <button id="homeCodeBtn" class="ghost-btn" type="button" data-i18n="homeCode">盤コード</button>
         <button id="homeHowtoBtn" class="ghost-btn" type="button" data-i18n="howto">遊び方</button>
       </div>
     </section>
@@ -319,6 +332,11 @@ if(l){document.documentElement.setAttribute('data-theme','light');var m=document
         <button id="clearHomeBtn" class="action" type="button" data-i18n-aria="home" aria-label="ホームへ戻る">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>
+          </svg>
+        </button>
+        <button id="shareBoardBtn" class="action" type="button" hidden data-i18n-aria="shareBoard" aria-label="この盤を送る" title="この盤を送る">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7"/>
           </svg>
         </button>
         <button id="nextBtn" class="action next-btn" type="button">

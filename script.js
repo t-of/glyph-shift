@@ -344,6 +344,10 @@ const legendSheetListEl = document.getElementById('legendSheetList');
 const seedOutEl = document.getElementById('seedOut');
 const logEl = document.getElementById('log');
 const shareBtnEl = document.getElementById('shareDailyBtn');
+const shareBoardBtnEl = document.getElementById('shareBoardBtn');   // クリアのあとの「この盤を送る」（今日の 1 問以外）
+let sharedFrom = null;   // 受け取った盤を遊んでいるあいだは { ms }（送った人の時間）。それ以外は null
+let startColors = [];    // 今の盤の始めの色（マスごと）。送るときに使う
+let startRuns = [];      // 今の盤の始めの答えの手順。送るときに使う
 
 const abilityAt = (i) => tileAbility[board[i]];
 const cyclesAt = (i) => cyclesOf(abilityAt(i), xOf(i), yOf(i));
@@ -940,7 +944,7 @@ function dailyLoadRecord() {
     else dailyMs = e.ms || 0;
   }
   const pn = document.getElementById('panelNew');
-  if (pn && !tutorial) pn.hidden = !!dailyKey;   // 「新しい盤にする」は今日の 1 問では出さない
+  if (pn && !tutorial) pn.hidden = !!dailyKey || !!sharedFrom;   // 「新しい盤にする」は今日の 1 問・受け取った盤では出さない
   dailyClockSync();
 }
 // ヒントを使った。その場で保存する（閉じても消えない）
@@ -1274,7 +1278,7 @@ function resolvePar(p) {
   clearPending = null;
   if (dailyKey) { setDailyStars(c.moves, c.hintUsed, p); return; }   // 行は先に出してある
   // 行（時間・ベスト）は揃ったときに出してあるので書き換えない
-  if (p && W === H && !forcedAbilities && starRating(c.moves, p.cost, c.hintUsed) === 3) recordPerfect();
+  if (p && W === H && !forcedAbilities && !sharedFrom && starRating(c.moves, p.cost, c.hintUsed) === 3) recordPerfect();
 }
 
 // 今日の 1 問のクリアを記録する。最初の 1 回だけ（その日に記録があれば何もしない）。
@@ -1331,7 +1335,8 @@ function showClear() {
   const ranked = !!dailyKey && !dailyFree();   // やめた日の盤は、時間・共有なしのふつうのクリアの行
   logEl.textContent = (autoSolvedFlag || dayRevealed)
     ? (ranked ? DAILY_REVEALED_LINE : '')   // 解説で揃ったときは文字を出さない（2026-10-30 オーナー）
-    : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : dailyKey ? clearLine(moves, hintUsed) : stageResultLine(stageElapsed(), hintUsed, null);
+    : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : dailyKey ? clearLine(moves, hintUsed)
+    : sharedFrom ? sharedResultLine(stageElapsed(), hintUsed, sharedFrom.ms) : stageResultLine(stageElapsed(), hintUsed, null);
   clearPending = (!autoSolvedFlag && !dayRevealed && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(ranked && !autoSolvedFlag && !dayRevealed);
 
@@ -1343,7 +1348,7 @@ function showClear() {
 
   // 自分で揃えた、正方形・カスタムでない盤だけをステージのクリアに数える。
   // 「解説」で揃えたものは遊んで解いたとは言えないので数えない。
-  if (!autoSolvedFlag && W === H && !forcedAbilities) {
+  if (!autoSolvedFlag && W === H && !forcedAbilities && !sharedFrom) {   // 受け取った盤も数えない
     clears[W] = (clears[W] || 0) + 1;   // 旧仕様の記録。消さずに足しておく
     try { localStorage.setItem(CLEARS_KEY, JSON.stringify(clears)); } catch (e) { /* 保存できなくても遊べる */ }
 
@@ -1379,7 +1384,8 @@ function leaveClear() {
 const nextBtnEl = document.getElementById('nextBtn');
 function setClearBar(on) {
   document.getElementById('play').classList.toggle('is-clear', on);   // playEl はこの下で決まるので直接引く
-  nextBtnEl.hidden = on && !!dailyKey;
+  nextBtnEl.hidden = on && (!!dailyKey || !!sharedFrom);   // 受け取った盤にも次の盤は無い
+  shareBoardBtnEl.hidden = !on || !!dailyKey || !!tutorial || !startRuns.length;   // 今日の 1 問は「結果を共有」の方
 }
 // 次の盤。ステージなら同じステージの次の柄（鍵つきなら完全版の案内）、カスタムなら同じ設定で作り直す。
 function goNext() {
@@ -1480,7 +1486,7 @@ function askAutoSolve() {
 // 使うブロックの組み合わせも目標の柄も引き直す。
 // 揃えたあとに次へ進む手段でもあるので、完成していても押せる。
 function askRegenerate() {
-  if (autoSolving || dailyKey) return;   // 今日の 1 問は作り直せない
+  if (autoSolving || dailyKey || sharedFrom) return;   // 今日の 1 問・受け取った盤は作り直せない
   askConfirm(L('新しい盤面を作る', 'Make a new board'),
     L('サイズと難しさはそのままで、'
       + '<strong>使うブロックも目標の柄も</strong>選び直します。<br>今の盤面は元に戻せません。',
@@ -1815,6 +1821,7 @@ function newPuzzle(useSeed, dailyOn) {
   dailyClockStop();   // 前の盤が今日の 1 問なら、その日の記録へ時間を残してから切り替える
   seed = Number.isFinite(useSeed) ? useSeed : Math.floor(Math.random() * 1e9);
   dailyKey = typeof dailyOn === 'string' ? dailyOn : null;
+  sharedFrom = null;
   previewAllBlocks = !!dailyKey;
   try { generate(seed); } finally { previewAllBlocks = false; }
   beginBoard();
@@ -1823,6 +1830,8 @@ function newPuzzle(useSeed, dailyOn) {
 // generate（または固定の盤）で決めた tileAbility・board・solution から、遊ぶ状態を作り直す。
 function beginBoard() {
   shareBtnEl.hidden = true;
+  startColors = board.map((_, i) => abilityAt(i));   // 送るときのために、始めの盤と答えの手順を控える
+  startRuns = solution.map((r) => ({ ...r }));
 
   stopAutoSolve();
   autoSolvedFlag = false;
@@ -2532,7 +2541,8 @@ function openLockSheet(what = 'setting') {
   const can = what !== 'info' && Rewards.available() && Entitlement.locksActive() && !Entitlement.isFull();
   lockRewardEl.hidden = lockRewardNoteEl.hidden = !can;
   lockPrivacyEl.hidden = !Entitlement.adsActive();
-  document.getElementById('lockRewardWhat').textContent = typeof what === 'object' ? L('このステージ', 'this stage') : L('この設定の盤', 'a board with these settings');
+  document.getElementById('lockRewardWhat').textContent = typeof what !== 'object' ? L('この設定の盤', 'a board with these settings')
+    : what.shared ? L('この盤', 'this board') : L('このステージ', 'this stage');
   syncLockOwned();
   lockSheetEl.showModal?.();
 }
@@ -2575,7 +2585,8 @@ lockRewardEl.addEventListener('click', async () => {
     const r = await Rewards.watch();
     if (r === 'earned' && !Entitlement.isFull()) {
       Entitlement.grantTicket();   // 鍵が開く。onChange でシートも閉じる
-      if (typeof what === 'object') playStage(what.s, what.d);
+      if (typeof what === 'object' && what.shared) playShared(what.shared);
+      else if (typeof what === 'object') playStage(what.s, what.d);
     } else {
       const st = document.getElementById('lockStatus');
       if (st) st.textContent = r === 'failed'
@@ -2929,7 +2940,9 @@ function tutorialBoard(def) {
 }
 
 // 固定の盤を読み込む。generate は通さない。最短の手順は solver で求めて、印とヒントの手順に使う。
-function loadFixedPuzzle({ w, h, tileAbility: ta, board: bd }) {
+// 答えの手順（runs）が分かっている盤（受け取った盤）は solver を通さずそれを使う。
+// shared: 受け取った盤なら { ms }（送った人の時間。無ければ null）
+function loadFixedPuzzle({ w, h, tileAbility: ta, board: bd, runs }, shared = null) {
   if (w !== W || h !== H) { W = w; H = h; SIZE = w * h; buildDom(); }
   forcedAbilities = null;
   types = new Set(ta).size;
@@ -2938,13 +2951,173 @@ function loadFixedPuzzle({ w, h, tileAbility: ta, board: bd }) {
   seed = 0;
   dailyClockStop();
   dailyKey = null;
+  sharedFrom = shared;
   problem = buildProblem();
-  const start = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[board[i]]);
-  const goal = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[i]);
-  const res = Solver.solvePuzzle(problem, start, goal, 1500);
-  solution = res && res.plan ? Solver.planToRuns(problem, res.plan, start) : [];
+  if (runs) solution = runs.map((r) => ({ ...r }));
+  else {
+    const start = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[board[i]]);
+    const goal = Uint8Array.from({ length: SIZE }, (_, i) => tileAbility[i]);
+    const res = Solver.solvePuzzle(problem, start, goal, 1500);
+    solution = res && res.plan ? Solver.planToRuns(problem, res.plan, start) : [];
+  }
   beginBoard();
 }
+
+// ---- 盤の共有（2026-10-31 オーナー）----
+// 解いた盤を「盤コード」にして送る。受け取った人はホームの「盤コード」に貼ると遊べる
+// （無料版で完全版の範囲の盤なら、広告を見て 1 回。送るのは誰でもできる）。
+// コードには seed ではなく、ゴール・混ぜた盤の色と答えの手順そのものを詰める。盤の作り方を直しても
+// 同じコードは同じ盤のまま。読むときは手順を混ぜた盤から打ち直し、ゴールに着くことを確かめる（解けない盤は入らない）。
+// 形: 'A1-' + base64url（パディングなし）。中身のバイトは
+//   版 1, 幅, 高さ, 送った人の時間（1/100 秒、3 バイト。0 は無し）,
+//   マスごとに「ゴールの色 << 4 | 混ぜた盤の色」, 答えの手順を 1 手 2 バイト（マス, 押す回数）, 合計の下 8 ビット
+// 色の番号は SHARE_IDS の並び。ブロックを足すときは後ろに足す（並べ替えると昔のコードが別の盤になる）
+const SHARE_IDS = ['swapLR', 'swapUD', 'swapD1', 'swapD2', 'crossCW', 'diagCW', 'ringCW', 'crossHalf', 'diagHalf', 'sqUD', 'sqLR', 'ringHalf', 'none'];
+const B64URL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const BOARD_CODE_RE = /A1-[A-Za-z0-9_-]{8,}/;   // メッセージごと貼られても、ここだけ拾う
+
+// goal・start: マスごとの能力の番号（ABILITIES の添字）。runs: 混ぜた盤からの答えの手順。ms: 送る人の時間（無ければ null）
+function encodeBoard({ w, h, goal, start, runs, ms }) {
+  const cs = Number.isFinite(ms) && ms > 0 ? Math.min(0xffffff, Math.round(ms / 10)) : 0;
+  const code = (a) => SHARE_IDS.indexOf(ABILITIES[a].id);
+  const bytes = [1, w, h, (cs >> 16) & 255, (cs >> 8) & 255, cs & 255];
+  for (let i = 0; i < w * h; i++) bytes.push((code(goal[i]) << 4) | code(start[i]));
+  for (const r of runs) bytes.push(r.i, r.n);
+  bytes.push(bytes.reduce((s, b) => s + b, 0) & 255);
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const k = Math.min(3, bytes.length - i);
+    const n = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0);
+    for (let j = 0; j <= k; j++) out += B64URL[(n >> (18 - 6 * j)) & 63];
+  }
+  return 'A1-' + out;
+}
+
+// 盤コード（またはそれを含む文）を読む。読めない・形が合わないときは null。手順の確かめはしない（checkSharedRuns）
+function decodeBoard(text) {
+  const m = String(text || '').match(BOARD_CODE_RE);
+  if (!m) return null;
+  const s = m[0].slice(3);
+  if (s.length % 4 === 1) return null;
+  const bytes = [];
+  for (let i = 0; i < s.length; i += 4) {
+    const part = s.slice(i, i + 4);
+    let n = 0;
+    for (let j = 0; j < 4; j++) n = (n << 6) | (j < part.length ? B64URL.indexOf(part[j]) : 0);
+    for (let j = 0; j < part.length - 1; j++) bytes.push((n >> (16 - 8 * j)) & 255);
+  }
+  const sum = bytes.pop();
+  if (bytes.reduce((a, b) => a + b, 0) % 256 !== sum || bytes[0] !== 1) return null;
+  const [, w, h, c0, c1, c2] = bytes;
+  if (!(w >= 3 && w <= 10 && h >= 3 && h <= 10)) return null;
+  const n = w * h;
+  const rest = bytes.length - 6 - n;
+  if (rest < 2 || rest % 2) return null;
+  const idx = (v) => (v < SHARE_IDS.length ? ABILITIES.findIndex((a) => a.id === SHARE_IDS[v]) : -1);
+  const goal = [], start = [];
+  for (let i = 0; i < n; i++) { goal.push(idx(bytes[6 + i] >> 4)); start.push(idx(bytes[6 + i] & 15)); }
+  if (goal.includes(-1) || start.includes(-1)) return null;
+  const runs = [];
+  for (let p = 6 + n; p < bytes.length; p += 2) runs.push({ i: bytes[p], n: bytes[p + 1] });
+  const cs = (c0 << 16) | (c1 << 8) | c2;
+  return { w, h, goal, start, runs, ms: cs ? cs * 10 : null };
+}
+
+// 受け取った盤の答えの手順を、混ぜた盤から打ち直して確かめる。ゴールに着けば遊ぶ形
+// （{ w, h, tileAbility, board, runs }。runs には位数を付ける）を返し、着かなければ null。
+// タイル v は完成時にマス v に来る（tileAbility = ゴール）。混ぜた盤は、同じ色のタイルを若い番号から置く
+// （同じ色のタイルは見分けが付かないので、どう置いても同じ盤）。
+function checkSharedRuns(dec) {
+  const { w, h, goal, start } = dec;
+  const pool = {};
+  goal.forEach((a, v) => { (pool[a] ||= []).push(v); });
+  const bd = [];
+  for (const a of start) { if (!pool[a] || !pool[a].length) return null; bd.push(pool[a].shift()); }
+  // buildMoveTable・cyclesOf は今の W・H・SIZE を見るので、そこだけ借りて戻す
+  const saved = { W, H, SIZE };
+  W = w; H = h; SIZE = w * h;
+  try {
+    const tbl = buildMoveTable();
+    const b = Uint8Array.from(bd);
+    const runs = [];
+    for (const { i, n } of dec.runs) {
+      const cyc = i < SIZE ? tbl.cyc[goal[b[i]]][i] : null;
+      if (!cyc) return null;
+      const order = orderOf(cyc);
+      if (!(n >= 1 && n < order)) return null;
+      for (let k = 0; k < n; k++) applyTo(b, cyc, 1);
+      runs.push({ i, n, order });
+    }
+    if (!Array.from(b).every((v, i) => goal[v] === goal[i])) return null;
+    return { w, h, tileAbility: goal, board: bd, runs };
+  } finally { ({ W, H, SIZE } = saved); }
+}
+
+// 今の盤の盤コード。自分でヒントなしに揃えたときだけ時間を付ける
+function currentBoardCode() {
+  const ms = !autoSolvedFlag && !hintUsed && isSolved() ? stageElapsed() : null;
+  return { code: encodeBoard({ w: W, h: H, goal: tileAbility, start: startColors, runs: startRuns, ms }), ms };
+}
+function boardShareText(code, ms) {
+  const t = Number.isFinite(ms) ? fmtTimeCs(ms) : null;
+  return [
+    t ? L(`ABILITILE の盤を ${t} で解いた。何秒で解ける？`, `I solved this ABILITILE board in ${t}. How fast can you do it?`)
+      : L('ABILITILE の盤を送ります。解けるかな？', 'Here\'s an ABILITILE board. Can you solve it?'),
+    L(`盤コード: ${code}`, `Board code: ${code}`),
+    L('アプリのホームの「盤コード」に貼ると遊べます。', 'Paste it into "Board code" on the app\'s home screen to play.'),
+  ].join('\n');
+}
+// 受け取った盤のクリアの行。送った人の時間があれば比べる
+function sharedResultLine(ms, used, theirs) {
+  const t = fmtTimeCs(ms);
+  if (used || !Number.isFinite(theirs)) return stageResultLine(ms, used, null);
+  return ms < theirs
+    ? L(`クリア ${t} ・ 送った人（${fmtTimeCs(theirs)}）より速い！`, `Solved ${t} · Faster than ${fmtTimeCs(theirs)}!`)
+    : L(`クリア ${t} ・ 送った人は ${fmtTimeCs(theirs)}`, `Solved ${t} · They took ${fmtTimeCs(theirs)}`);
+}
+
+shareBoardBtnEl.addEventListener('click', () => {
+  if (!startRuns.length || dailyKey || tutorial) return;
+  const { code, ms } = currentBoardCode();
+  if (typeof WebAppKit !== 'undefined' && WebAppKit.share) WebAppKit.share({ text: boardShareText(code, ms) });
+});
+
+// 受け取った盤を始める。無料版で完全版の範囲の盤（6 以上の辺か、完全版のブロックを使う）なら、広告の案内を開く
+function playShared(def) {
+  const ids = [...new Set(def.tileAbility)].map((a) => ABILITIES[a].id);
+  closeCodeSheet();
+  if (!Entitlement.sharedOpen(def.w, def.h, ids)) { openLockSheet({ shared: def }); return; }
+  curDiff = 0;
+  lastStartPool = 'all';
+  loadFixedPuzzle(def, { ms: def.ms });
+  Entitlement.useTicket();   // ごほうびの権利は、盤を始めたら使い切り
+  show(playEl);
+}
+
+// ホームの「盤コード」。貼って「遊ぶ」
+const codeSheetEl = document.getElementById('codeSheet');
+const codeInEl = document.getElementById('codeIn');
+const codeErrEl = document.getElementById('codeErr');
+function openCodeSheet() {
+  codeInEl.value = '';
+  codeErrEl.textContent = '';
+  codeSheetEl.showModal?.();
+}
+function closeCodeSheet() { codeSheetEl.close?.(); }
+function playCodeInput() {
+  const dec = decodeBoard(codeInEl.value);
+  const def = dec && checkSharedRuns(dec);
+  if (!def) {
+    codeErrEl.textContent = L('盤コードを読めませんでした。届いたメッセージをそのまま貼ってください。', 'Couldn\'t read that board code. Paste the message you received as it is.');
+    return;
+  }
+  def.ms = dec.ms;
+  playShared(def);
+}
+document.getElementById('homeCodeBtn').addEventListener('click', openCodeSheet);
+document.getElementById('codePlay').addEventListener('click', playCodeInput);
+document.getElementById('codeClose').addEventListener('click', closeCodeSheet);
+codeSheetEl.addEventListener('click', (e) => { if (e.target === codeSheetEl) closeCodeSheet(); });
 
 let tutorial = null;   // 練習中は { idx, timer }。そうでなければ null
 const tutBarEl = document.getElementById('tutBar');

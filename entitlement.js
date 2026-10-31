@@ -100,6 +100,8 @@ const Entitlement = (() => {
   // 下の行（難しさ 3〜5。ブロックを 13 種まで使う）はどの大きさも完全版
   const stageOpen = (s, d) => !restricted() || (d < 3 && (FREE_SIZES.includes(s) || (s === FREE_EASY_SIZE && d === 0)));
   const customOpen = () => !restricted();
+  // 受け取った盤（2026-10-31）。辺が 5 以下で、無料のブロックだけの盤は無料。それ以外は完全版（無料版は広告で 1 回）
+  const sharedOpen = (w, h, ids) => !restricted() || (Math.max(w, h) <= FREE_SIZES[FREE_SIZES.length - 1] && ids.every((id) => FREE_BLOCKS.includes(id)));
   // ゴールを作ったときのブロックの範囲の印（保存したゴールが範囲違いで混ざらないように）
   const poolTag = () => (restricted() ? 'free' : 'all');
 
@@ -107,7 +109,7 @@ const Entitlement = (() => {
     FREE_BLOCKS, locksActive, isFull, adsActive, onChange, setFull,
     hasTicket, grantTicket, useTicket, dropTicket,
     attachStore, hasStore, storePrice, refreshFromStore, purchase, restore,
-    blockOpen, stageOpen, customOpen, poolTag,
+    blockOpen, stageOpen, customOpen, sharedOpen, poolTag,
     _override: (o) => { override = o; ticket = false; },
     _resetStore: () => { store = null; storeFull = null; ticket = false; },
   };
