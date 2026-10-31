@@ -366,7 +366,7 @@ function buildDom() {
   root.setProperty('--ny', H);
   const long = Math.max(W, H);
   const cell = long >= 9 ? 46 : long >= 7 ? 54 : long === 6 ? 64 : 72;
-  root.setProperty('--cell', `${cell}px`);
+  root.setProperty('--cell-base', `${cell}px`);   // 実際の --cell は style.css で画面の高さにも合わせる
   // 目標の柄はサイドバー（250px）に収める
   root.setProperty('--mini-cell', `${Math.min(30, Math.floor((228 - 4 * (W - 1)) / W))}px`);
   gridEl.replaceChildren();

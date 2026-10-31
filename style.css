@@ -138,7 +138,7 @@ body {
 }
 
 .mark { display: flex; align-items: center; gap: 10px; color: var(--accent); }
-button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+button.mark { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; min-height: 44px; }
 .mark svg { width: 20px; height: 20px; display: block; }
 /* ロゴはアプリのアイコンそのもの（2026-10-30 オーナー）。角はアイコンと同じ丸み */
 .mark-icon { width: 26px; height: 26px; display: block; border-radius: 22.5%; box-shadow: 0 0 0 1px var(--line); }   /* 黒地のアイコンが暗い地に溶けないよう細い枠 */
@@ -243,6 +243,7 @@ body.no-rail .rail { display: none; }
   text-align: center;
 }
 .start .title-head .mark-icon { width: 112px; height: 112px; }
+.start .title-head { align-items: center; }   /* PC のホーム用の左寄せを起動画面に効かせない（2026-10-31 UI 点検） */
 .start .title-name { font-size: min(36px, calc((100vw - 56px) / 10.4)); }
 .start-actions { align-self: stretch; display: flex; flex-direction: column; gap: 10px; }
 .start-actions button { padding: 16px; font-size: 14px; }
@@ -306,6 +307,20 @@ body::before, body::after {
 body::before { left: -70px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='1000'%3E%3Crect x='55' y='65' width='170' height='170' rx='34' fill='%23ffa289' transform='rotate(-14 140 150)'/%3E%3Crect x='50' y='420' width='160' height='160' rx='32' fill='%23a5c1ff' transform='rotate(18 130 500)'/%3E%3Crect x='80' y='760' width='140' height='140' rx='28' fill='%23f9b800' transform='rotate(-20 150 830)'/%3E%3C/svg%3E"); animation: float-tiles 80s linear infinite; }
 body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='1000'%3E%3Crect x='65' y='165' width='150' height='150' rx='30' fill='%23fc9000' transform='rotate(12 140 240)'/%3E%3Crect x='45' y='505' width='190' height='190' rx='38' fill='%2365c77a' transform='rotate(-8 140 600)'/%3E%3Crect x='65' y='815' width='130' height='130' rx='26' fill='%230face4' transform='rotate(16 130 880)'/%3E%3C/svg%3E"); animation: float-tiles 110s linear infinite; }
 @keyframes float-tiles { to { transform: translateY(-1000px); } }
+/* 背の低い画面のチュートリアル */
+@media (max-width: 820px) and (max-height: 700px) {
+  .tut-text { font-size: 16px; }
+  .tut-bar { margin-bottom: 8px; }
+}
+
+/* スマホのホーム: カスタム・遊び方を今日の 1 問のすぐ下に（34 枚のカードの下だと見つからない）（2026-10-31 UI 点検） */
+@media (max-width: 899px) {
+  .home-pick .stage-list { display: contents; }
+  .home-pick .daily-sec { order: 0; }
+  .home-pick .home-links { order: 1; margin-top: 0; }
+  .home-pick .stage-size:not(.daily-sec) { order: 2; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body::before, body::after { animation: none; }
 }
@@ -438,10 +453,18 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   .home-links { grid-column: 1; grid-row: 2; flex-direction: column; margin-top: 0; }
   .home-foot { grid-column: 1; grid-row: 3; align-items: flex-start; }
   .stage-list { grid-column: 2; grid-row: 1 / -1; }
-  .stage-row { grid-template-columns: repeat(3, minmax(0, 200px)); }
+  /* PC は 1 サイズの 6 段を 1 行に。今日の 1 問とも幅を揃える（1 行 3 枚はスマホの決まり）（2026-10-31 UI 点検） */
+  .stage-list { max-width: 880px; }
+  .stage-row { grid-template-columns: repeat(6, minmax(0, 140px)); }
 }
 
 /* ---- 盤面 ---- */
+/* マスの大きさ。盤の大きさで決めた値（--cell-base）を、PC では画面の高さにも収まるよう縮める。
+   270px は時計・メッセージ・ボタン・余白の高さの合計（2026-10-31 UI 点検） */
+:root { --cell: var(--cell-base, 72px); }
+@media (min-width: 821px) {
+  :root { --cell: max(32px, min(var(--cell-base, 72px), calc((100dvh - var(--rail-h) - 270px - (var(--ny, 4) - 1) * var(--gap)) / var(--ny, 4)))); }
+}
 .stage {
   display: flex;
   gap: 52px;
@@ -690,12 +713,12 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .actions .action svg { width: 25px; height: 25px; color: var(--text); }
 .actions .action span { display: none; }
 /* クリアのあと: ボタンの列を「ホーム」「次へ」に入れ替える */
-.clear-bar { display: none; gap: 10px; margin-top: 6px; }
+.clear-bar { display: none; gap: 10px; margin-top: 14px; min-height: 53px; }   /* ボタンの列と同じ高さにして、クリアの瞬間に盤が動かないように（2026-10-31 UI 点検） */
 .is-clear .actions { display: none; }
 .is-clear .clear-bar { display: flex; }
 .clear-bar .action svg { width: 21px; height: 21px; }
 .clear-bar #clearHomeBtn { padding: 12px 20px; }
-.next-btn { padding: 12px 30px; font-size: 15px; font-weight: 600; color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.next-btn { min-width: 180px; justify-content: center; padding: 15px 36px; font-size: 15px; font-weight: 600; color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .next-btn svg, .next-btn:hover svg { color: var(--accent-ink); }
 .next-btn:hover { color: var(--accent-ink); filter: brightness(1.08); }
 .is-clear .clear-bar .next-btn { animation: nextIn .35s ease .5s both; }
@@ -814,6 +837,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .panel-close {
   background: none; border: none; color: var(--dim);
   font: 400 24px/1 var(--ui); padding: 2px 6px; cursor: pointer;
+  position: relative; min-width: 44px; min-height: 44px; margin: -8px -10px -8px 0;   /* 見た目は同じまま、押せる範囲を 44px に（2026-10-31 UI 点検） */
 }
 .panel-close:hover { color: var(--text); }
 .panel-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -903,13 +927,15 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .note { margin: 8px 0 0; font-size: 11px; color: var(--dim); line-height: 1.7; }
 
-.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+#sideA, #sideB { display: grid; grid-template-columns: repeat(8, 1fr); }   /* 辺の 3〜10 は幅いっぱいに均等に（2026-10-31 UI 点検） */
 .seg button {
   font: 500 12px/1 var(--ui);
   border: 1px solid var(--line);
   background: var(--ground);
   color: var(--dim);
-  padding: 9px 13px;
+  min-height: 40px;
+  padding: 11px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: color .12s ease, background .12s ease, border-color .12s ease;
@@ -963,14 +989,15 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 
 /* ---- 狭い画面 ---- */
 @media (max-width: 820px) {
-  :root { --gap: 5px; }
+  :root { --gap: clamp(3px, calc(36px / var(--nx, 4)), 5px); }   /* 大きい盤はマスの間を詰めて、マスを大きく（2026-10-31 UI 点検） */
   body { padding: calc(var(--rail-h) + 20px) max(12px, env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom)); }
 
   .stage { flex-direction: column; align-items: center; gap: 30px; }
 
   /* 盤の上の目標（約 130px）・メッセージ・ボタンと合わせて 1 画面に収まる幅にする。練習中は目標が説明の帯にあるので前のまま */
   .play { width: 100%; max-width: 520px; max-width: min(520px, calc(100dvh - var(--rail-h) - 295px - env(safe-area-inset-bottom))); }
-  .play:has(.tut-bar:not([hidden])) { max-width: min(520px, calc(100dvh - 260px)); }
+  .play:has(.tut-bar:not([hidden])) { max-width: min(520px, calc(100dvh - var(--rail-h) - 400px - env(safe-area-inset-bottom))); }   /* 400px は帯（約 210）・メッセージ・ボタン・余白の合計。説明が 2 行になっても収まる分をみてある */
+  .tut-bar { max-width: 100%; }   /* 盤と同じく幅いっぱい。狭いままだと文字が折り返して帯が伸び、ボタンが画面の外に出る（2026-10-31 UI 点検） */
   .play-head { display: flex; align-items: flex-start; justify-content: center; gap: 6px; width: 100%; margin-bottom: 10px; padding-left: 40px; }   /* 左の余白は ⓘ と釣り合わせて目標を中央に */
   .tut-bar:not([hidden]) ~ .play-head { display: none; }
   .play-head .goal-top {
@@ -998,6 +1025,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
   #play:not([hidden]) { min-height: calc(100dvh - var(--rail-h) - 60px - env(safe-area-inset-bottom)); justify-content: center; }
   .play-head .goal-top { --cell: calc((min(150px, 36vw, 17dvh) - 12px - (var(--nx) - 1) * 3px) / var(--nx)); }
 
+  .side { display: none; }   /* 中身はすべて隠れている。空のまま隙間だけ取って縦にはみ出すので消す（2026-10-31 UI 点検） */
   .side {
     width: 100%;
     max-width: 520px;
@@ -1020,7 +1048,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 }
 
 /* ---- カスタム ---- */
-.switch { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; cursor: pointer; }
+.switch { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; min-height: 44px; cursor: pointer; }
 .switch input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
 .switch > span:nth-of-type(1) { font-size: 13px; font-weight: 600; }
 .field[hidden] { display: none; }
