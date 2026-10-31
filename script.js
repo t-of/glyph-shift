@@ -2769,19 +2769,25 @@ function renderStageList() {
       if (st.clears > 0) item.classList.add('cleared');
 
       item.append(mini, meta);
-      // 自分で（ヒントなしで）揃えたいちばん速い時間。キューブのように同じステージを速く解いていく（2026-10-31 オーナー）
-      if (Number.isFinite(st.best) && !locked) {
-        const best = document.createElement('span');
-        best.className = 'stage-best';
-        best.textContent = fmtTimeCs(st.best);
-        item.append(best);
-      }
+      // ★の下の記録の行: ベスト（ヒントなしで揃えたいちばん速い時間）と、2 回目からのクリア回数（×3）。
+      // 回数は前は右上の札だったが、記録はひとところにまとめる（2026-10-31 オーナー）
       const count = clearsMark(st.clears);
-      if (count && !locked) {
-        const badge = document.createElement('span');
-        badge.className = 'stage-count';
-        badge.textContent = count;
-        item.append(badge);
+      if (!locked && (Number.isFinite(st.best) || count)) {
+        const rec = document.createElement('span');
+        rec.className = 'stage-rec';
+        if (Number.isFinite(st.best)) {
+          const best = document.createElement('span');
+          best.className = 'stage-best';
+          best.textContent = fmtTimeCs(st.best);
+          rec.append(best);
+        }
+        if (count) {
+          const badge = document.createElement('span');
+          badge.className = 'stage-count';
+          badge.textContent = `×${count}`;
+          rec.append(badge);
+        }
+        item.append(rec);
       }
       if (locked) {
         const lock = document.createElement('span');
