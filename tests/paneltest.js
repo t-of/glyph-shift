@@ -21,15 +21,8 @@ for (const size of [4, 5, 6]) {
   ok(badges === new Set(tileAbility).size, `${size}×${size}: 使用中バッジ ${badges}（期待 ${new Set(tileAbility).size}）`);
   ok(blks.filter((b) => b._cls.has('dim')).length === ABILITIES.length - badges, `${size}×${size}: 未使用の淡色表示の数が合わない`);
 
-  // 使える位置の数が cyclesOf と一致するか
-  const maps = all.filter((e) => e._cls.has('blk-map'));
-  ok(maps.length === ABILITIES.length, `${size}×${size}: マップ数 ${maps.length}`);
-  ABILITIES.forEach((ab, k) => {
-    let exp = 0;
-    for (let i = 0; i < SIZE; i++) if (cyclesOf(k, xOf(i), yOf(i))) exp++;
-    const got = maps[k].children.filter((c) => c._cls.has('on')).length;
-    ok(got === exp, `${size}×${size} ${ab.id}: 点灯 ${got} / 期待 ${exp}`);
-  });
+  // 使える位置の地図は出さない（2026-10-31 オーナー）
+  ok(!all.some((e) => e._cls.has('blk-map')), `${size}×${size}: 使える位置の地図が残っている`);
 
   console.log(`${size}×${size}: ブロック ${blks.length} 件、系統 ${titles.join(' / ')}、使用中 ${badges} 件`);
 }

@@ -583,25 +583,7 @@ function renderPanel() {
       detail.className = 'blk-detail';
       detail.textContent = INFO[ab.id].text;
 
-      // このサイズの盤で使える位置
-      const where = document.createElement('div');
-      where.className = 'blk-where';
-      const map = document.createElement('div');
-      map.className = 'blk-map';
-      map.style.gridTemplateColumns = `repeat(${W}, 8px)`;
-      let on = 0;
-      for (let i = 0; i < SIZE; i++) {
-        const cell = document.createElement('i');
-        if (cyclesOf(k, xOf(i), yOf(i))) { cell.className = 'on'; on++; }
-        map.append(cell);
-      }
-      const note = document.createElement('span');
-      note.textContent = L(`使える位置 ${on} / ${SIZE}`, `Usable on ${on} / ${SIZE}`);
-      map.setAttribute('role', 'img');
-      map.setAttribute('aria-label', L(`${W}×${H} の盤で使える位置は ${on} マス`, `Usable on ${on} cells of a ${W}×${H} board`));
-      where.append(map, note);
-
-      main.append(name, detail, where);
+      main.append(name, detail);   // 使える位置の地図は出さない（2026-10-31 オーナー）
       row.append(chip, main);
       list.append(row);
     }
