@@ -101,6 +101,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // 難しさはサイズによらない通しの ★1〜5（混ぜる手数で決める）。クリアの回数は 2 回目から数字
 ok(clearsMark(0) === '' && clearsMark(1) === '' && clearsMark(undefined) === '', '1 回までで数字が出る');
 ok(clearsMark(2) === '2' && clearsMark(23) === '23', `回数: ${clearsMark(23)}`);
+ok(clearsMark(9999) === '9999' && clearsMark(10000) === '9999+' && clearsMark(123456) === '9999+', `大きい回数: ${clearsMark(123456)}`);
 ok(starsFor(3, 2) === 1 && starsFor(5, 4) === 1 && starsFor(6, 2) === 2 && starsFor(30, 4) === 5 && starsFor(30, 13) === 7, '★ の線引き');
 for (const s of STAGE_SIZES) for (let d = 1; d < DIFFS.length; d++) {
   if (!stageDef(s, d)) continue;

@@ -2466,7 +2466,8 @@ const inProgress = (s, d) =>
 // 一覧のカードの記録（2026-10-30 オーナー。文字を減らす）。クリアしたかはカードの縁の色で見せる。
 // 2 回目からはカードの隅に回数の数字を出す。
 // 文字の言い方はカードの読み上げ（aria-label）に残す。
-const clearsMark = (n) => n >= 2 ? String(n) : '';
+// 4 桁まではそのまま、1 万回からは 9999+（カードの幅に収める）
+const clearsMark = (n) => n >= 2 ? (n > 9999 ? '9999+' : String(n)) : '';
 const clearsLabel = (st) =>
   st.clears
     ? L(`クリア ${st.clears} 回`, `cleared ${timesEn(st.clears)}`)
@@ -2769,7 +2770,7 @@ function renderStageList() {
       if (st.clears > 0) item.classList.add('cleared');
 
       item.append(mini, meta);
-      // ★の下の記録の行: ベスト（ヒントなしで揃えたいちばん速い時間）と、2 回目からのクリア回数（×3）。
+      // ★の下の記録の行: ベスト（ヒントなしで揃えたいちばん速い時間）と、2 回目からのクリア回数（✓ 3）。
       // 回数は前は右上の札だったが、記録はひとところにまとめる（2026-10-31 オーナー）
       const count = clearsMark(st.clears);
       if (!locked && (Number.isFinite(st.best) || count)) {
@@ -2784,7 +2785,7 @@ function renderStageList() {
         if (count) {
           const badge = document.createElement('span');
           badge.className = 'stage-count';
-          badge.textContent = `×${count}`;
+          badge.textContent = count;   // 前に ✓ の絵（CSS）。「×」だと時間に掛けているように見えるため（2026-10-31 オーナー）
           rec.append(badge);
         }
         item.append(rec);

@@ -372,10 +372,19 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 }
 .stage-meta { font-size: 10.5px; color: var(--dim); }
 /* ★の下の記録の行: ベストの時間（左）とクリア回数（右）。数字の幅をそろえ、カードの幅に収める */
-.stage-rec { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 3px 7px; margin-top: -2px; max-width: 100%;   /* 1 時間を超える記録など、収まらないときだけ 2 行に */
+.stage-rec { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: -2px; max-width: 100%;   /* 時間と回数はいつも別の行（幅や桁数で並びが変わらない） */
   font: 500 11px/1 var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
 .stage-best { color: var(--text); }
-.stage-count { opacity: .85; }
+/* クリア回数: ✓ の絵＋数字。時間の下の行に置き、別の数だと分かるようにする */
+.stage-count { display: inline-flex; align-items: center; gap: 3px; }
+.stage-count::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.2 5.4 4 8.1 8.8 1.9' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.2 5.4 4 8.1 8.8 1.9' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .stage-diff { font-size: 12px; letter-spacing: .08em; color: var(--dim); }   /* 難しさの ★（通しの 1〜5）。無彩色で、盤の色を主役にする（2026-10-30 オーナー） */
 .stage-stars { font-size: 11px; color: var(--warn); letter-spacing: .02em; min-height: 1.4em; }   /* 未クリアで空でも、カードの高さをそろえる */
 .stage-item.resume { border-color: var(--progress); box-shadow: inset 0 0 0 1.5px var(--progress); }   /* 途中。文字の代わりに太めの縁 */
