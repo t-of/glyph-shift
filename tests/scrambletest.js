@@ -112,7 +112,7 @@ console.log('長方形・カスタム（指定のブロック）・今日の 1 �
   // 曜日で大きさと難しさが変わる（2026-10-31）。1 週間ぶん、同じ日は同じ盤・表どおりの手数と種類数
   const week = ['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07'];   // 日〜土
   const sizes = week.map((k) => dailyDef(k).s).join();
-  ok(sizes === '7,4,5,5,6,6,7', `曜日ごとの大きさ: ${sizes}`);
+  ok(sizes === '6,4,5,4,5,6,6', `曜日ごとの大きさ: ${sizes}`);
   for (const k of week) {
     const def = dailyDef(k);
     W = H = def.s; SIZE = W * H; buildDom(); types = def.k; scrambleN = def.n; curDiff = def.d;
