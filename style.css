@@ -563,6 +563,35 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .grid.cleared { animation: clearedGlow .9s ease; }
 /* 揃ったら、タイルが左上から右下へ波のように跳ねて光る（--d は行＋列。マスごとに 32ms ずつ遅らせる） */
 .grid.cleared .tile { animation: clearWave .6s cubic-bezier(.3, 1.4, .5, 1) calc(var(--d, 0) * 32ms) backwards; }
+/* ベスト更新: 波を高く・金色の光で。盤のまわりも金色に光る */
+.grid.cleared.best { animation: bestGlow 1.6s ease; }
+.grid.cleared.best .tile { animation-name: clearWaveBest; animation-duration: .7s; }
+@keyframes bestGlow {
+  0% { filter: none; }
+  35% { filter: drop-shadow(0 0 18px var(--warn)) brightness(1.15); }
+  100% { filter: none; }
+}
+@keyframes clearWaveBest {
+  0% { translate: 0 0; filter: brightness(1); }
+  35% { translate: 0 -24%; filter: brightness(1.45) drop-shadow(0 0 6px var(--warn)); }
+  70% { translate: 0 3%; filter: brightness(1.1); }
+  100% { translate: 0 0; filter: brightness(1); }
+}
+/* ベスト更新の行: 大きい時間・NEW BEST の札（遅れてぽんと出る）・縮んだ秒数 */
+.message.best-line { flex-wrap: wrap; gap: 4px 10px; }
+.best-label { font-size: 12.5px; color: var(--dim); font-weight: 500; }
+.best-time { font: 600 26px/1 var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+.best-badge {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--warn);
+  color: var(--ground);
+  font: 700 11px/1 var(--ui);
+  letter-spacing: .1em;
+  animation: bestPop .5s cubic-bezier(.3, 1.6, .5, 1) .45s backwards;
+}
+.best-delta { font: 600 13px/1 var(--mono); color: var(--warn); font-variant-numeric: tabular-nums; animation: bestPop .4s ease .6s backwards; }
+@keyframes bestPop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes clearWave {
   0% { translate: 0 0; filter: brightness(1); }
   35% { translate: 0 -16%; filter: brightness(1.35); }

@@ -1243,6 +1243,20 @@ const DAILY_ABANDONED_LINE = '';   // 途中でやめた日は文字を出さな
 function clearLine(n, used) {
   return L('クリア', 'Clear');
 }
+// ベスト更新の演出（2026-10-31 オーナー）。大きい時間・金色の NEW BEST の札・縮んだ秒数、
+// 盤の波を金色に（.grid.best）、効果音をもう 1 段。初めてのクリアは更新とみなさない
+function showNewBest(ms, prev) {
+  const sec = ((prev - ms) / 1000).toFixed(1);
+  const part = (cls, text) => { const e = document.createElement('span'); e.className = cls; e.textContent = text; return e; };
+  logEl.replaceChildren(
+    part('best-label', L('クリア', 'Solved')), ' ',
+    part('best-time', fmtTime(ms)), ' ',
+    part('best-badge', 'NEW BEST'), ' ',
+    part('best-delta', L(`−${sec} 秒`, `−${sec}s`)));
+  logEl.classList.add('best-line');
+  gridEl.classList.add('best');
+  Sfx.best();
+}
 // ステージ・カスタムのクリアの行。時間と、前のベスト（prev。無ければ null）と比べた結果
 function stageResultLine(ms, used, prev) {
   const t = fmtTime(ms);
@@ -1303,7 +1317,8 @@ function showClear() {
   stopAutoSolve();   // 解説で揃ったときも、そのままクリアの画面へ（見直しのバーは出さない）
   clearHint();
 
-  gridEl.classList.remove('cleared');
+  gridEl.classList.remove('cleared', 'best');
+  logEl.classList.remove('best-line');
   void gridEl.offsetWidth; // アニメーション再生のための reflow
   gridEl.classList.add('cleared');
 
@@ -1340,7 +1355,8 @@ function showClear() {
       const prev = Number.isFinite(st.best) ? st.best : null;
       if (prev === null || ms < prev) st.best = ms;
       st.recent = [...(Array.isArray(st.recent) ? st.recent : []), ms].slice(-5);
-      logEl.textContent = stageResultLine(ms, false, prev);
+      if (prev !== null && ms < prev) showNewBest(ms, prev);
+      else logEl.textContent = stageResultLine(ms, false, prev);
     }
     if (par && starRating(moves, par.cost, hintUsed) === 3) st.perfect = (st.perfect || 0) + 1;
     st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
@@ -1810,8 +1826,8 @@ function beginBoard() {
   stopAutoSolve();
   autoSolvedFlag = false;
   closeConfirm();
-  gridEl.classList.remove('cleared');
-  logEl.classList.remove('done');
+  gridEl.classList.remove('cleared', 'best');
+  logEl.classList.remove('done', 'best-line');
   setClearBar(false);
   moves = 0;
   run = { i: -1, d: 0, order: 1 };

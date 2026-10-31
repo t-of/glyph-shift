@@ -40,7 +40,7 @@ function mk(tag) {
     get offsetWidth(){ return 1; },
   };
   e.classList = {
-    add: (c) => e._cls.add(c), remove: (c) => e._cls.delete(c),
+    add: (...c) => { for (const x of c) e._cls.add(x); }, remove: (...c) => { for (const x of c) e._cls.delete(x); },   // 本物と同じく複数を受ける
     contains: (c) => e._cls.has(c),
     toggle: (c, on) => { const v = on === undefined ? !e._cls.has(c) : on; v ? e._cls.add(c) : e._cls.delete(c); return v; },
   };
