@@ -83,7 +83,7 @@ const I18n = (() => {
     lockTitle: 'Available in the full version',
     lockPrice: '¥500 · one-time purchase',
     lockList: `<li>All 13 blocks</li>
-      <li>6×6 Normal &amp; Hard, 7×7 and 8×8 boards</li>
+      <li>6×6 Normal &amp; Hard, 7×7 and 8×8 boards, Expert to Grandmaster on every size</li>
       <li>Custom boards (up to 10×10)</li>
       <li>No ads</li>`,
     lockNote: 'Everything above unlocks as soon as you buy. Payment is made on Apple\'s purchase screen, and refunds follow Apple\'s rules.',

@@ -101,9 +101,10 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // 難しさはサイズによらない通しの ★1〜5（混ぜる手数で決める）。クリアの回数は 2 回目から数字
 ok(clearsMark(0) === '' && clearsMark(1) === '' && clearsMark(undefined) === '', '1 回までで数字が出る');
 ok(clearsMark(2) === '2' && clearsMark(23) === '23', `回数: ${clearsMark(23)}`);
-ok(starsForMoves(3) === 1 && starsForMoves(5) === 1 && starsForMoves(6) === 2 && starsForMoves(30) === 5, '★ の線引き');
-for (const s of STAGE_SIZES) for (let d = 1; d < 3; d++) {
-  ok(starsForMoves(stageDef(s, d).n) >= starsForMoves(stageDef(s, d - 1).n), `${s}×${s} で難しいほうの ★ が少ない`);
+ok(starsFor(3, 2) === 1 && starsFor(5, 4) === 1 && starsFor(6, 2) === 2 && starsFor(30, 4) === 5 && starsFor(30, 13) === 7, '★ の線引き');
+for (const s of STAGE_SIZES) for (let d = 1; d < DIFFS.length; d++) {
+  if (!stageDef(s, d)) continue;
+  ok(starsFor(stageDef(s, d).n, stageDef(s, d).k) >= starsFor(stageDef(s, d - 1).n, stageDef(s, d - 1).k), `${s}×${s} で難しいほうの ★ が少ない`);
 }
 
 console.log(fail === 0 ? '\nステージ一覧: 全チェック通過' : `\n失敗 ${fail} 件`);

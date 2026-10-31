@@ -26,7 +26,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   moves = 4; hintUsed = false; autoSolvedFlag = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   showClear();
-  ok(logEl.textContent === 'クリア', `手数・★は出さない: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent) && !/★|手/.test(logEl.textContent), `手数・★は出さない（時間だけ）: ${logEl.textContent}`);
   ok(stageFor(s, k).perfect === before + 1, 'perfect が増えていない');
 
   newPuzzle(stageFor(s, k).seed);
@@ -34,23 +34,23 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   hintUsed = true; autoSolvedFlag = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 3; showClear();
-  ok(logEl.textContent === 'クリア', `手数・★は出さない: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent) && !/★|手/.test(logEl.textContent), `手数・★は出さない（時間だけ）: ${logEl.textContent}`);
   ok(stageFor(s, k).perfect === before + 1, 'ヒント使用で perfect が増えた');
 
   newPuzzle(stageFor(s, k).seed);
   par = null; autoSolvedFlag = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 7; showClear();
-  ok(logEl.textContent === 'クリア', `手数・★は出さない: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent) && !/★|手/.test(logEl.textContent), `手数・★は出さない（時間だけ）: ${logEl.textContent}`);
 
   // 評価中 → 届いたら書き換え + 記録
   newPuzzle(stageFor(s, k).seed);
   par = undefined; autoSolvedFlag = false; hintUsed = false;
   board = Array.from({ length: SIZE }, (_, i) => i);
   moves = 2; showClear();
-  ok(logEl.textContent === 'クリア', `手数・★は出さない: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent) && !/★|手/.test(logEl.textContent), `手数・★は出さない（時間だけ）: ${logEl.textContent}`);
   resolvePar({ cost: 5, optimal: true });
-  ok(logEl.textContent === 'クリア' && stageFor(s, k).perfect === before + 2, `届いた後: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent) && stageFor(s, k).perfect === before + 2, `届いた後: ${logEl.textContent}`);
 
   // 解説で揃えたら★なし
   newPuzzle(stageFor(s, k).seed);

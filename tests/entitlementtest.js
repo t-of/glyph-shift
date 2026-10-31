@@ -17,16 +17,17 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 {
   Entitlement._override({ locks: true, full: false });
   ok(Entitlement.locksActive() && !Entitlement.isFull(), '無料版にならない');
-  // 無料: 3×3（練習）、4×4・5×5 のすべて、6×6 のやさしい。完全版: 6×6 のふつう・むずかしい、7×7、8×8
+  // 無料: 3×3（練習）、4×4・5×5 の上の行、6×6 のやさしい。完全版: 6×6 のふつう・むずかしい、7×7、8×8、下の行（上級〜名人）
   for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
-    const want = s <= 5 || (s === 6 && d === 0);
+    if (!stageDef(s, d)) continue;
+    const want = d < 3 && (s <= 5 || (s === 6 && d === 0));
     ok(Entitlement.stageOpen(s, d) === want, `${s}×${s} / ${DIFFS[d]} の判定が違う`);
   }
   ok(Entitlement.stageOpen(6, 0) && !Entitlement.stageOpen(6, 1) && !Entitlement.stageOpen(6, 2), '6×6 の境目が違う');
   ok(Entitlement.stageOpen(5, 2) && Entitlement.stageOpen(3, 0) && !Entitlement.stageOpen(7, 0) && !Entitlement.stageOpen(8, 0), '大きさの境目が違う');
   // どの無料ステージも、無料のブロックだけで盤が作れる（表の種類数が無料ブロックの数 7 以下）
   for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
-    if (Entitlement.stageOpen(s, d)) ok(stageDef(s, d).k <= Entitlement.FREE_BLOCKS.length, `${s}×${s} / ${DIFFS[d]} が無料のブロック数を超える`);
+    if (stageDef(s, d) && Entitlement.stageOpen(s, d)) ok(stageDef(s, d).k <= Entitlement.FREE_BLOCKS.length, `${s}×${s} / ${DIFFS[d]} が無料のブロック数を超える`);
   }
   ok(!Entitlement.customOpen(), 'カスタムが開いている');
   const free = ABILITIES.filter((ab) => Entitlement.blockOpen(ab.id)).map((ab) => ab.id).sort().join();

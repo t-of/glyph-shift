@@ -204,7 +204,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(document.getElementById('panelNew').hidden === false, '通常の盤で「新しい盤にする」が出ない');
   par = { cost: 4, optimal: true }; autoSolvedFlag = false; solvedBoard(); moves = 4; showClear();
   ok(Object.keys(daily).length === 1 && daily[key].moves === 4, '通常の盤が daily に記録された');
-  ok(logEl.textContent === 'クリア', `通常の盤の行に時間: ${logEl.textContent}`);
+  ok(/^クリア \d+:\d\d/.test(logEl.textContent), `通常の盤の行に時間が無い: ${logEl.textContent}`);
   delete window.dispatchEvent; delete window.CustomEvent; delete globalThis.CustomEvent;
   console.log('  クリアの流れ・1 日 1 回  OK');
 }
@@ -365,7 +365,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
   ok(!clockEl.hidden && clockText.textContent === '0:42', `クリアの時間: ${clockText.textContent}`);
   goHome(); ok(confirmEl.hidden, 'クリアのあとに確認が出た');
   // 通常の盤では出さない
-  newPuzzle(); show(playEl); ok(clockEl.hidden, '通常の盤でプレイ時間が出た');
+  newPuzzle(); show(playEl); ok(!clockEl.hidden, '通常の盤でプレイ時間が出ない（ステージも時間を測る。2026-10-31）');
   daily = {}; localStorage.removeItem('glyphshift.daily');
   clockNow = () => performance.now();
   console.log('  始める確認・プレイ時間・途中でやめる  OK');

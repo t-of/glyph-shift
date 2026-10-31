@@ -281,19 +281,22 @@ const TYPE_COUNTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 const movesEn = (n) => `${n} move${n === 1 ? '' : 's'}`;
 const timesEn = (n) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
 const monthDayEn = (m, d) => `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${d}`;
-const DIFFS = L(['やさしい', 'ふつう', 'むずかしい'], ['Easy', 'Normal', 'Hard']);
-// 一覧では難しさを、サイズによらない通しの ★1〜5 で出す（2026-10-30 オーナー。文字を減らし、
-// どのサイズでも同じ ★ なら同じくらいの難しさにする）。混ぜる手数で決める。名前は読み上げ用に残す
-const STAR_STEPS = [5, 10, 16, 22];   // この手数まで ★1、★2、★3、★4。それより多いと ★5
-const starsForMoves = (n) => 1 + STAR_STEPS.filter((t) => n > t).length;
-const diffMark = (n) => '★'.repeat(starsForMoves(n));
+// 4×4〜8×8 は 6 段（2 行 × 3）。下の行（3〜5）はブロックを 13 種まで使い、手数より種類で難しくする
+// （2026-10-31 オーナー。手数は人が考えて楽しめる 30 手まで）。名前は読み上げ用
+const DIFFS = L(['やさしい', 'ふつう', 'むずかしい', '上級', '達人', '名人'], ['Easy', 'Normal', 'Hard', 'Expert', 'Master', 'Grandmaster']);
+// 一覧では難しさを、サイズによらない通しの ★ で出す（2026-10-30 オーナー）。混ぜる手数と種類数で決める
+// （種類が 4 を超えるぶん、1 種につき 1.5 手ぶん難しいとみなす）。★1〜7
+const STAR_STEPS = [5, 10, 16, 22, 30, 38];
+const diffScore = (n, k) => n + 1.5 * Math.max(0, k - 4);
+const starsFor = (n, k) => 1 + STAR_STEPS.filter((t) => diffScore(n, k) > t).length;
+const diffMark = (n, k) => '★'.repeat(starsFor(n, k));
 const STAGE_TABLE = {
   3: [{ n: 3, k: 2, min: 2 }, { n: 5, k: 3, min: 3 }, { n: 7, k: 4, min: 4 }],
-  4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }],
-  5: [{ n: 6, k: 3 }, { n: 14, k: 4 }, { n: 17, k: 5 }],
-  6: [{ n: 9, k: 3 }, { n: 15, k: 5 }, { n: 20, k: 6 }],
-  7: [{ n: 11, k: 4 }, { n: 17, k: 6 }, { n: 24, k: 7 }],
-  8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }],
+  4: [{ n: 4, k: 2 }, { n: 8, k: 3 }, { n: 12, k: 4 }, { n: 12, k: 6 }, { n: 16, k: 8 }, { n: 20, k: 10 }],
+  5: [{ n: 6, k: 3 }, { n: 14, k: 4 }, { n: 17, k: 5 }, { n: 16, k: 7 }, { n: 20, k: 9 }, { n: 24, k: 11 }],
+  6: [{ n: 9, k: 3 }, { n: 15, k: 5 }, { n: 20, k: 6 }, { n: 20, k: 8 }, { n: 24, k: 10 }, { n: 28, k: 12 }],
+  7: [{ n: 11, k: 4 }, { n: 17, k: 6 }, { n: 24, k: 7 }, { n: 22, k: 9 }, { n: 26, k: 11 }, { n: 30, k: 13 }],
+  8: [{ n: 13, k: 4 }, { n: 22, k: 6 }, { n: 30, k: 8 }, { n: 28, k: 10 }, { n: 30, k: 12 }, { n: 30, k: 13 }],
 };
 const STAGE_SIZES = [3, 4, 5, 6, 7, 8];
 // 3×3 は通れる盤面が少なく、混ぜても近道ができて 1 手で揃うことが多い。min は「最短がこの手数以上の盤だけ使う」
@@ -315,7 +318,7 @@ const scrambleSteps = () => 200 * SIZE;
 
 let types = 2;          // 使うブロック数
 let scrambleN = 4;      // 完成形から動かす手数（盤を作るとき）
-let curDiff = 0;        // いま遊んでいる盤の難しさ（0〜2）。ステージの記録に使う
+let curDiff = 0;        // いま遊んでいる盤の難しさ（0〜5。3×3 とカスタムは 0〜2）。ステージの記録に使う
 let scrambleMoves = []; // 直近に作った盤を混ぜた手の並び [[マス, 向き], ...]
 let seed = 0;
 let tileAbility = [];  // tileAbility[v] = タイル v の能力インデックス
@@ -918,6 +921,7 @@ function dailyClockSync() {
   if (run && dailyT0 === null) { dailyT0 = clockNow() - dailyMs; dailyMs = 0; dailyPersist(); }
   if (run && dailySince === null) { dailySince = true; dailyScheduleTick(); }
   else if (!run && dailySince !== null) dailyClockStop();
+  stageClockSync();
   dailyClockViewSync();
 }
 // 保存の刻みを止めて、いまの時間を保存する（時間は時計どおりに進み続ける）
@@ -956,6 +960,23 @@ function markDailyRevealed() {
   daily = addDaily(daily, dailyKey, { state: 'revealed', ms: dailyElapsed(), hint: true });
   saveDaily();
 }
+// ---- ステージ・カスタムの時間（2026-10-31 オーナー: 何回も解いて速くなるキューブ型）----
+// 盤が出ていて、画面が前にあるあいだだけ数える（裏に回す・ホームへ戻ると止まり、戻ると続きから）。
+// 揃った瞬間で止める。今日の 1 問は上の dailyElapsed（時計どおり、止まらない）を使う
+let stageMs = 0;          // 止まっているあいだに貯めた時間
+let stageT0 = null;       // 数え始めた時刻（数えていなければ null）
+let stageFrozen = false;  // 揃って止めた
+const stageTimed = () => !dailyKey && !tutorial;
+const stageElapsed = () => Math.floor(stageMs + (stageT0 !== null ? Math.max(0, clockNow() - stageT0) : 0));
+function stageClockSync() {
+  const run = stageTimed() && !stageFrozen && !locked && !autoSolving && !playEl.hidden
+    && !(typeof document !== 'undefined' && document.hidden);
+  if (run && stageT0 === null) stageT0 = clockNow();
+  else if (!run && stageT0 !== null) { stageMs = stageElapsed(); stageT0 = null; }
+}
+function stageClockReset() { stageMs = 0; stageT0 = null; stageFrozen = false; }
+function stageClockFreeze() { stageMs = stageElapsed(); stageT0 = null; stageFrozen = true; }
+
 // 途中でホームへ戻った。その日は記録なしで閉じる（時間を競うので、盤を見てから出直すのを防ぐ）
 function markDailyAbandoned() {
   if (!dailyKey || dailyIsClosed(daily[dailyKey])) return;
@@ -974,16 +995,18 @@ const dailyLive = () => !!dailyKey && !dailyReview && !tutorial && !isSolved() &
 function renderDailyClock() {
   if (!dailyClockEl) return;
   const rec = dailyKey ? daily[dailyKey] : null;
-  const on = !!dailyKey && !tutorial && !(rec && rec.state === 'revealed') && !(rec && rec.state === 'abandoned');
+  const dayOn = !!dailyKey && !tutorial && !(rec && rec.state === 'revealed') && !(rec && rec.state === 'abandoned');
+  const stageOn = stageTimed() && !autoSolvedFlag;   // 解説で揃えた盤は時間を出さない
+  const on = dayOn || stageOn;
   dailyClockEl.hidden = !on;
   if (!on) return;
-  const ms = dailyIsClosed(rec) ? rec.ms : dailyElapsed();
+  const ms = dayOn ? (dailyIsClosed(rec) ? rec.ms : dailyElapsed()) : stageElapsed();
   dailyClockTextEl.textContent = fmtTime(ms);
   dailyClockEl.setAttribute('aria-label', L(`プレイ時間 ${fmtTime(ms)}`, `Time ${fmtTime(ms)}`));
 }
 function dailyClockViewSync() {
   renderDailyClock();
-  const run = dailyShouldRun() && !isSolved();
+  const run = (dailyShouldRun() && !isSolved()) || stageT0 !== null;
   if (run && !dailyClockView) dailyClockView = setTimeout(() => { dailyClockView = null; dailyClockViewSync(); }, 1000);
   else if (!run && dailyClockView) { clearTimeout(dailyClockView); dailyClockView = null; }
 }
@@ -1220,6 +1243,13 @@ const DAILY_ABANDONED_LINE = '';   // 途中でやめた日は文字を出さな
 function clearLine(n, used) {
   return L('クリア', 'Clear');
 }
+// ステージ・カスタムのクリアの行。時間と、前のベスト（prev。無ければ null）と比べた結果
+function stageResultLine(ms, used, prev) {
+  const t = fmtTime(ms);
+  if (used) return L(`クリア ${t}（ヒントあり）`, `Solved ${t} (hint used)`);
+  if (prev === null) return L(`クリア ${t}`, `Solved ${t}`);
+  return ms < prev ? L(`クリア ${t} ・ ベスト更新`, `Solved ${t} · New best`) : L(`クリア ${t} ・ ベスト ${fmtTime(prev)}`, `Solved ${t} · Best ${fmtTime(prev)}`);
+}
 
 // par が決まった。クリアを済ませて待っていたなら、行を書き換えて ★★★ を記録する。
 function resolvePar(p) {
@@ -1228,7 +1258,7 @@ function resolvePar(p) {
   const c = clearPending;
   clearPending = null;
   if (dailyKey) { setDailyStars(c.moves, c.hintUsed, p); return; }   // 行は先に出してある
-  logEl.textContent = clearLine(c.moves, c.hintUsed);
+  // 行（時間・ベスト）は揃ったときに出してあるので書き換えない
   if (p && W === H && !forcedAbilities && starRating(c.moves, p.cost, c.hintUsed) === 3) recordPerfect();
 }
 
@@ -1266,6 +1296,7 @@ function showClear() {
   commitRun();
   Sfx.solved();
   if (dailyKey) { dailyMs = dailyElapsed(); dailyT0 = null; dailyClockStop(); }   // 揃った瞬間の時間で止める（locked にする前に）
+  else stageClockFreeze();
   locked = true;
   // 解説を見ているあいだは、揃ったあとも操作バーを残す。戻って見直せるようにするため。
   // 閉じるのは「やめる」を押したときだけ。
@@ -1284,7 +1315,7 @@ function showClear() {
   const ranked = !!dailyKey && !dailyFree();   // やめた日の盤は、時間・共有なしのふつうのクリアの行
   logEl.textContent = (autoSolvedFlag || dayRevealed)
     ? (ranked ? DAILY_REVEALED_LINE : '')   // 解説で揃ったときは文字を出さない（2026-10-30 オーナー）
-    : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : clearLine(moves, hintUsed);
+    : ranked ? dailyResultLine(dailyElapsed(), hintUsed) : dailyKey ? clearLine(moves, hintUsed) : stageResultLine(stageElapsed(), hintUsed, null);
   clearPending = (!autoSolvedFlag && !dayRevealed && par === undefined) ? { moves, hintUsed } : null;
   shareBtnEl.hidden = !(ranked && !autoSolvedFlag && !dayRevealed);
 
@@ -1303,6 +1334,14 @@ function showClear() {
     if (!stageDef(W, curDiff)) return;
     const st = stageFor(W, curDiff);
     st.clears = (st.clears || 0) + 1;
+    // 時間。ヒントを使わずに揃えたときだけベストと直近の記録に入れる（直近 5 回は、のちの平均の表示のため）
+    const ms = stageElapsed();
+    if (!hintUsed) {
+      const prev = Number.isFinite(st.best) ? st.best : null;
+      if (prev === null || ms < prev) st.best = ms;
+      st.recent = [...(Array.isArray(st.recent) ? st.recent : []), ms].slice(-5);
+      logEl.textContent = stageResultLine(ms, false, prev);
+    }
     if (par && starRating(moves, par.cost, hintUsed) === 3) st.perfect = (st.perfect || 0) + 1;
     st.seed = Math.floor(Math.random() * 1e9);   // 次はゴールの柄が変わる
     delete st.goal;                              // 上の seed が変わった時点で古いゴールになる
@@ -1783,6 +1822,7 @@ function beginBoard() {
   par = solution.length ? { cost: planCost(solution), optimal: false } : null;
   parWanted = false; parId = 0; hintUsed = false; clearPending = null;
   locked = false;
+  stageClockReset();   // 新しい盤は 0 から数える（dailyLoadRecord の中の同期で数え始める）
   dailyLoadRecord();   // 今日の 1 問なら、記録の時間・ヒントを引き継ぐ
 
   // 解法の準備。計算中の Worker は捨てて作り直す（古い盤面の計算を待たないため）
@@ -2673,6 +2713,7 @@ function renderStageList() {
     row.className = 'stage-row';
     for (let d = 0; d < DIFFS.length; d++) {
       const def = stageDef(s, d);
+      if (!def) continue;   // 3×3 は 3 段だけ
       const st = stageFor(s, d);
 
       const item = document.createElement('button');
@@ -2687,7 +2728,7 @@ function renderStageList() {
       const name = L(`${s}×${s}、${DIFFS[d]}（${def.n} 手・${def.k} 種）`, `${s}×${s}, ${DIFFS[d]} (${def.n} moves, ${def.k} kinds)`);
       item.setAttribute('aria-label', locked
         ? name + L('、完全版で遊べます', ', in the full version')
-        : name + L('、', ', ') + clearsLabel(st) + (resume ? L('、続きから', ', continue') : ''));
+        : name + L('、', ', ') + clearsLabel(st) + (Number.isFinite(st.best) ? L(`、ベスト ${fmtTime(st.best)}`, `, best ${fmtTime(st.best)}`) : '') + (resume ? L('、続きから', ', continue') : ''));
 
       const mini = document.createElement('div');
       mini.className = 'stage-mini';
@@ -2702,11 +2743,18 @@ function renderStageList() {
 
       const meta = document.createElement('span');
       meta.className = 'stage-meta';
-      meta.textContent = diffMark(def.n);
+      meta.textContent = diffMark(def.n, def.k);
       meta.classList.add('stage-diff');
       if (st.clears > 0) item.classList.add('cleared');
 
       item.append(mini, meta);
+      // 自分で（ヒントなしで）揃えたいちばん速い時間。キューブのように同じステージを速く解いていく（2026-10-31 オーナー）
+      if (Number.isFinite(st.best) && !locked) {
+        const best = document.createElement('span');
+        best.className = 'stage-best';
+        best.textContent = fmtTime(st.best);
+        item.append(best);
+      }
       const count = clearsMark(st.clears);
       if (count && !locked) {
         const badge = document.createElement('span');

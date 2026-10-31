@@ -3,6 +3,7 @@
 let fail = 0;
 useStageSetup(4, 0); newPuzzle(1);
 for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
+  if (!stageDef(s, d)) continue;
   const st = stageFor(s, d);
   const preview = stageGoalPreview(s, d, st.seed).join(',');
   pendA = pendB = pendW = pendH = s; pendDiff = d; pendCustom = false;

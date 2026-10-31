@@ -11,8 +11,8 @@ const Entitlement = (() => {
 
   // 無料で遊べる範囲
   const FREE_BLOCKS = ['swapLR', 'swapUD', 'swapD1', 'swapD2', 'crossCW', 'diagCW', 'none'];
-  // 無料のステージ: 3×3 の練習、4×4・5×5 のすべて、6×6 の「やさしい」。
-  // 6×6 の「ふつう」「むずかしい」、7×7、8×8 は完全版。
+  // 無料のステージ: 3×3 の練習、4×4・5×5 の上の行（3 段）、6×6 の「やさしい」。
+  // 6×6 の「ふつう」「むずかしい」、7×7、8×8、各サイズの下の行（上級・達人・名人）は完全版。
   const FREE_SIZES = [3, 4, 5];       // この大きさはどの難しさも無料
   const FREE_EASY_SIZE = 6;           // この大きさは難しさ 0（やさしい）だけ無料
 
@@ -97,7 +97,8 @@ const Entitlement = (() => {
   const restricted = () => locksActive() && !isFull() && !ticket;
   const blockOpen = (id) => !restricted() || FREE_BLOCKS.includes(id);
   // s: 盤の一辺、d: 難しさ（0 やさしい / 1 ふつう / 2 むずかしい）
-  const stageOpen = (s, d) => !restricted() || FREE_SIZES.includes(s) || (s === FREE_EASY_SIZE && d === 0);
+  // 下の行（難しさ 3〜5。ブロックを 13 種まで使う）はどの大きさも完全版
+  const stageOpen = (s, d) => !restricted() || (d < 3 && (FREE_SIZES.includes(s) || (s === FREE_EASY_SIZE && d === 0)));
   const customOpen = () => !restricted();
   // ゴールを作ったときのブロックの範囲の印（保存したゴールが範囲違いで混ざらないように）
   const poolTag = () => (restricted() ? 'free' : 'all');

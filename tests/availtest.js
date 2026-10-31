@@ -3,17 +3,19 @@
 let fail = 0;
 const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 
-// 表の形: 3×3（練習）と 4×4〜8×8、各 3 段、手数と種類数は上の段ほど大きく、種類数は 8 以下
+// 表の形: 3×3（練習、3 段）と 4×4〜8×8（6 段）。難しさ（手数＋種類）は段を追うごとに上がる。上の行は 8 種まで、下の行は 13 種まで、手数は 30 まで
 {
   ok(STAGE_SIZES.join() === '3,4,5,6,7,8', `大きさが ${STAGE_SIZES}`);
   for (const s of STAGE_SIZES) {
-    let pn = 0, pk = 0;
+    let ps = 0;
+    const tiers = s === 3 ? 3 : 6;
     for (let d = 0; d < DIFFS.length; d++) {
       const def = stageDef(s, d);
-      ok(def && def.n > pn && def.k >= pk, `${s}×${s} の ${DIFFS[d]} が上がっていない`);
-      ok(def.k >= 2 && def.k <= 8, `${s}×${s} の ${DIFFS[d]} の種類数が ${def.k}`);
+      if (d >= tiers) { ok(!def, `${s}×${s} に ${DIFFS[d]} がある`); continue; }
+      ok(def && diffScore(def.n, def.k) > ps, `${s}×${s} の ${DIFFS[d]} が上がっていない`);
+      ok(def.k >= 2 && def.k <= (d < 3 ? 8 : 13) && def.n <= 30, `${s}×${s} の ${DIFFS[d]} が ${def.n} 手・${def.k} 種`);
       ok(typeAvailable(s, s, def.k), `${s}×${s} で ${def.k} 種の柄が作れない`);
-      pn = def.n; pk = def.k;
+      ps = diffScore(def.n, def.k);
     }
   }
   ok(!stageDef(9, 0) && !stageDef(10, 2), '9×9・10×10 がステージに残っている');
@@ -23,6 +25,7 @@ const ok = (c, m) => { if (!c) { console.log('  FAIL:', m); fail++; } };
 // どのステージも、決めた手数で盤が作れる（答えの手数 = 混ぜた手数、完成済みでない）
 {
   for (const s of STAGE_SIZES) for (let d = 0; d < DIFFS.length; d++) {
+    if (!stageDef(s, d)) continue;
     const def = useStageSetup(s, d);
     for (let t = 0; t < 4; t++) {
       generate(500 + t * 31);
