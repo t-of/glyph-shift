@@ -996,7 +996,8 @@ function renderDailyClock() {
   const stageOn = stageTimed() && !autoSolvedFlag;   // 解説で揃えた盤は時間を出さない
   const on = dayOn || stageOn;
   // 解説で揃えた・答えを見た盤は時間を出さないが、場所は空けたまま残す（消すと盤が上下に動く。2026-10-31）
-  const keepSpace = !on && (stageTimed() || (!!dailyKey && !tutorial));
+  // やめた日を遊ぶ盤は最初から時計が無いので、場所も取らない
+  const keepSpace = !on && (stageTimed() || (!!dailyKey && !tutorial && !(rec && rec.state === 'abandoned')));
   dailyClockEl.hidden = !on && !keepSpace;
   dailyClockEl.classList.toggle('blank', keepSpace);
   if (!on) return;
