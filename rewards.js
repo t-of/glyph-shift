@@ -21,12 +21,13 @@ const Rewards = (() => {
   };
   const writeCount = (n) => { try { localStorage.setItem(COUNT_KEY, String(n)); } catch (e) { /* 数えられなくても遊べる */ } };
 
-  // 自分で揃えたクリアを 1 回数えて、'abilitile:clear' を送る。detail = { count, due, daily }
+  // 自分で揃えたクリアを 1 回数えて、'abilitile:clear' を送る。detail = { count, due, daily, hint }
   // 送るだけ。広告を出すかどうか（完全版か・iOS か）は受け手（native.js）が決める。
-  function recordClear(daily) {
+  // hint（ヒントを使ったか）は、iOS 版がレビューのお願いを出す回を選ぶのに使う（ヒントなしで揃えた気持ちのいいときだけ）
+  function recordClear(daily, hint) {
     const count = readCount() + 1;
     writeCount(count);
-    const detail = { count, due: interstitialDue(count), daily: !!daily };
+    const detail = { count, due: interstitialDue(count), daily: !!daily, hint: !!hint };
     try {
       if (typeof window !== 'undefined' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('abilitile:clear', { detail }));
     } catch (e) { /* 通知できなくても遊べる */ }

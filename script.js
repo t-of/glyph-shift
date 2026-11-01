@@ -1355,7 +1355,7 @@ function showClear() {
   shareBtnEl.hidden = !(ranked && !autoSolvedFlag && !dayRevealed);
 
   // 自分で揃えた回数を数える（全画面の広告の間隔に使う。iOS 版だけが受け取る）。「解説」で揃えたものは数えない
-  if (!autoSolvedFlag && !dayRevealed) adDue = Rewards.recordClear(!!dailyKey).due;
+  if (!autoSolvedFlag && !dayRevealed) adDue = Rewards.recordClear(!!dailyKey, hintUsed).due;
 
   // 今日の 1 問は、自分で揃えたときだけ日ごとの記録に残す（ステージの記録には数えない）
   if (dailyKey) { if (!autoSolvedFlag && !dayRevealed) recordDaily(moves, hintUsed, par || null, dailyElapsed()); dailyClockViewSync(); return; }
