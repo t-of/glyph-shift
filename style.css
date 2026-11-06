@@ -255,7 +255,9 @@ body.no-rail .rail { display: none; }
 
 /* ---- 遊び方 ---- */
 .howto-sheet {
-  width: min(460px, calc(100% - 32px));
+  /* 画面の端の safe-area（iPhone Duo は右に 84px。カメラと時計の列）を避けて、その内側の真ん中に置く。× が隠れないように */
+  inset-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  width: min(460px, calc(100% - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1021,7 +1023,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 .ghost-btn:hover { border-color: var(--dim); }
 
 /* ---- 確認 ---- */
-.modal { position: fixed; inset: 0; z-index: 70; background: var(--scrim); display: grid; place-items: center; padding: 20px; }
+.modal { position: fixed; inset: 0; z-index: 70; background: var(--scrim); display: grid; place-items: center; padding: 20px max(20px, env(safe-area-inset-right)) 20px max(20px, env(safe-area-inset-left)); }
 .modal[hidden] { display: none; }
 .modal-card {
   background: var(--panel);
@@ -1040,7 +1042,7 @@ body::after { right: -70px; background-image: url("data:image/svg+xml,%3Csvg xml
 /* ---- 狭い画面 ---- */
 @media (max-width: 820px) {
   :root { --gap: clamp(3px, calc(36px / var(--nx, 4)), 5px); }   /* 大きい盤はマスの間を詰めて、マスを大きく（2026-10-31 UI 点検） */
-  body { padding: calc(var(--rail-h) + 20px) max(12px, env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom)); }
+  body { padding: calc(var(--rail-h) + 20px) max(12px, env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }   /* 左右は別々（iPhone Duo は右だけ 84px） */
 
   .stage { flex-direction: column; align-items: center; gap: 30px; }
 
