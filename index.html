@@ -12,6 +12,18 @@ history.replaceState(null,'',location.pathname+location.search+(m[2]?'#'+m[2]:''
 (function(){var t='dark';try{t=localStorage.getItem('glyphshift.theme')||'dark';}catch(e){}
 var l=t==='light'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches);
 if(l){document.documentElement.setAttribute('data-theme','light');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#f4f3f6';}})();</script>
+<script>/* Web 版の終了（2026-11-06）。App Store 版が出たので、アプリの外（ブラウザ）から開いたときは遊ばせず案内だけを出す。
+   iOS アプリの中（Capacitor）と、開発の確かめ（localhost・file・テストの about:）は今までどおり。 */
+(function(){var c=window.Capacitor,p=location.protocol,h=location.hostname;
+if((c&&c.isNativePlatform&&c.isNativePlatform())||p==='capacitor:'||p==='file:'||p==='about:'||h==='localhost'||h==='127.0.0.1'||h==='[::1]'||h==='::1')return;
+var ja=!/^en/i.test(navigator.language||'ja'),U='https://apps.apple.com/app/id6829464767';
+var s=document.createElement('style');s.textContent='html[data-web-ended] body>*:not(#web-ended){display:none!important}#web-ended{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:#131217;color:#ece9f4;font:16px/1.7 system-ui,-apple-system,"Hiragino Sans",sans-serif}#web-ended img{width:96px;height:96px;border-radius:22px}#web-ended h1{margin:0;font-size:22px}#web-ended p{margin:0;max-width:30em;color:#b9b4c8}#web-ended a.b{display:inline-block;padding:12px 28px;border-radius:999px;background:#b3a2ff;color:#131217;font-weight:700;text-decoration:none}';
+document.head.appendChild(s);document.documentElement.setAttribute('data-web-ended','1');
+document.addEventListener('DOMContentLoaded',function(){var d=document.createElement('div');d.id='web-ended';
+d.innerHTML='<img src="./icons/icon-192.png" alt=""><h1>ABILITILE</h1>'+(ja
+?'<p>Web 版の配信は終了しました。<br>ABILITILE は App Store の iPhone アプリで遊べます（無料）。</p><a class="b" href="'+U+'">App Store で見る</a><p style="font-size:13px">Web 版の記録は、アプリには引き継げません。</p>'
+:'<p>The web version has ended.<br>ABILITILE is now available as a free iPhone app on the App Store.</p><a class="b" href="'+U+'">View on the App Store</a><p style="font-size:13px">Progress on the web version cannot be carried over to the app.</p>');
+document.body.appendChild(d);document.title='ABILITILE';});})();</script>
 <meta name="description" content="絵柄が能力を表すパズル。押すとその絵柄の効果が発動し、能力はブロックに付いて一緒に動く。">
 <title>ABILITILE — 能力を持ったブロックのパズル</title>
 
