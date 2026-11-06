@@ -1993,8 +1993,8 @@ function askHint() {
   if (autoSolving || locked || isSolved()) return;
   if (!hintUsed && stageTimed()) {
     askConfirm(L('ヒントを使う', 'Use a hint'),
-      L('ヒントを使うと、<strong>この盤のタイムは記録に残りません</strong>。<br>★ も 2 つまでになります。',
-        'If you use a hint, <strong>your time on this board won\'t be recorded</strong>.<br>You can get at most 2 stars.'),
+      L('<strong>この盤のタイムは記録に残りません。</strong>',
+        '<strong>Your time on this board won\'t be recorded.</strong>'),
       L('使う', 'Use'), () => { closeConfirm(); showHint(); });
     return;
   }
