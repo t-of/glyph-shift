@@ -2705,8 +2705,16 @@ function openLockSheet(what = 'setting') {
     : what.shared ? L('この盤', 'this board') : L('このステージ', 'this stage');
   syncLockOwned();
   lockSheetEl.showModal?.();
+  dropFocusRing();
 }
 function closeLockSheet() { lockSheetEl.close?.(); }
+// 画面を押して開け閉めしたときは、フォーカスの枠（:focus-visible）を残さない（開いた直後の × と、閉じたあとの「完全版について」に枠が出ていた）。
+// キーボードで操作したときだけ残す。閉じるときはブラウザが元のボタンにフォーカスを戻すので、close のあとにも外す
+let lastWasPointer = false;
+document.addEventListener?.('pointerdown', () => { lastWasPointer = true; }, true);
+document.addEventListener?.('keydown', () => { lastWasPointer = false; }, true);
+function dropFocusRing() { if (lastWasPointer) document.activeElement?.blur?.(); }
+lockSheetEl.addEventListener('close', () => { dropFocusRing(); setTimeout(dropFocusRing, 0); });
 // 購入済みなら、案内シートの購入ボタンは隠して「購入済み」を出す（復元は残す）
 function syncLockOwned() {
   const full = Entitlement.isFull();
