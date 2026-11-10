@@ -108,6 +108,7 @@ const I18n = (() => {
     shareResult: 'Share result',
     hintAria: 'Show the next block to press',
     hint: 'Hint',
+    adTag: 'Ad',
     solveAria: 'Show the solution (solve automatically)',
     solve: 'Solution',
     newBoardPanel: 'New board',

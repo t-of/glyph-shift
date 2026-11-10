@@ -9,6 +9,7 @@ const Rewards = (() => {
   const COUNT_KEY = 'glyphshift.adClears';   // 自分で揃えた回数（通算）
   const FREE_CLEARS = 5;                     // 最初の 5 回は出さない
   const EVERY = 3;                           // それ以降は 3 回に 1 回
+  const FREE_HINTS = 1;                      // 無料版のヒントは 1 盤 1 回まで。2 回目からは広告を 1 回見ると、その盤は使い放題
 
   // n 回目（1 から数える）のクリアのあとに全画面を出すか。n=6, 9, 12, …
   const interstitialDue = (n) => Number.isInteger(n) && n > FREE_CLEARS && (n - FREE_CLEARS - 1) % EVERY === 0;
@@ -42,6 +43,21 @@ const Rewards = (() => {
     } catch (e) { /* 通知できなくても遊べる */ }
   }
 
+  // ヒントの門（画面を持たない）。'free' ならそのまま使える、'ad' なら広告の確認を出す。
+  // ctx = { locks, full, available, tutorial, clears, used, open, ticketBoard }
+  //   locks: 鍵が効くか（iOS 版）  full: 完全版  available: 広告の口があるか  tutorial: 練習中
+  //   clears: 自分で揃えた回数（通算）  used: この盤で新しく光らせた回数  open: この盤で広告を見て開いたか
+  //   ticketBoard: 広告の券で始めた盤
+  // 順は「制限しない場合 → 開いている → 無料の回数が残っている → 広告」。コインを入れるときは、最後の 2 つの間に足す。
+  function hintGate(ctx) {
+    const c = ctx || {};
+    if (!c.locks || c.full || !c.available || c.tutorial || c.ticketBoard) return 'free';
+    if (!(c.clears >= FREE_CLEARS)) return 'free';   // 最初の 5 回までは今までどおり
+    if (c.open) return 'free';
+    if ((c.used || 0) < FREE_HINTS) return 'free';
+    return 'ad';
+  }
+
   // ---- ごほうび広告の口 ----
   // provider = { show(): Promise<'earned'|'dismissed'|'failed'> }  見終わって報酬が出たときだけ 'earned'
   let provider = null;
@@ -51,11 +67,11 @@ const Rewards = (() => {
   const available = () => !!provider;
   async function watch() {
     if (!provider) return 'failed';
-    try { return outcome(await provider.show()); } catch (e) { return 'failed'; }
+    try { const r = await provider.show(); return r === 'failed' ? 'failed' : outcome(r); } catch (e) { return 'failed'; }   // 読み込めないときは 'failed' のまま返す
   }
   // 提供元の答えのうち、報酬が出た 'earned' だけを通す
   const outcome = (r) => (r === 'earned' ? 'earned' : 'dismissed');
 
-  return { FREE_CLEARS, EVERY, interstitialDue, recordClear, requestInterstitial, attach, onAttach, available, watch, outcome, _count: readCount };
+  return { FREE_CLEARS, EVERY, FREE_HINTS, hintGate, interstitialDue, recordClear, requestInterstitial, attach, onAttach, available, watch, outcome, _count: readCount };
 })();
 if (typeof window !== 'undefined') window.Rewards = Rewards;

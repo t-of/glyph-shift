@@ -539,6 +539,8 @@ function showHint() {
     return;
   }
   hintUsed = true;
+  if (hintAtMoves !== moves) { hintsSpent++; hintAtMoves = moves; }   // 動かすまでの押し直しは数えない
+  syncHintAd();
   Sfx.hint();
   if (hintPlan || (activeRuns().length && planCost(activeRuns()) <= HINT_SHOW_MAX)) {
     // もう使える手順がある（混ぜた手順の逆、または探して見つけたもの）。それをそのまま見せる。
@@ -698,6 +700,7 @@ function commitRun() {
     moves += Math.min(r, run.order - r);
   }
   run = { i: -1, d: 0, order: 1 };
+  syncHintAd();   // 1 手進むと、ヒントの札「広告」が出ることがある
 }
 
 // ---- 解答例 ----
@@ -757,6 +760,9 @@ let par = null;
 let parWanted = false;      // 次に出す依頼が、par 用の先読みか
 let parId = 0;              // par 用の依頼の番号
 let hintUsed = false;       // この盤でヒントを使ったか
+let hintsSpent = 0;         // この盤で新しい手を光らせた回数（押し直し・光り直しは数えない）
+let hintAtMoves = -1;       // 最後に新しい手を光らせたときの手数（動かすまでの押し直しを見分ける）
+let hintOpen = false;       // この盤は広告を見てヒントが開いている（盤が変わると戻る）
 let clearPending = null;    // par を待ったままクリアしたときの { moves, hintUsed }
 
 // 盤の下の案内。タッチの端末では「タップ」と言う。
@@ -1861,9 +1867,11 @@ function beginBoard() {
   // par は、混ぜた手順の逆（答えの手順）の長さから始める。探索でもっと短いものが見つかれば変わる
   par = solution.length ? { cost: planCost(solution), optimal: false } : null;
   parWanted = false; parId = 0; hintUsed = false; clearPending = null;
+  hintsSpent = 0; hintAtMoves = -1; hintOpen = false;
   locked = false;
   stageClockReset();   // 新しい盤は 0 から数える（dailyLoadRecord の中の同期で数え始める）
   dailyLoadRecord();   // 今日の 1 問なら、記録の時間・ヒントを引き継ぐ
+  syncHintAd();
 
   // 解法の準備。計算中の Worker は捨てて作り直す（古い盤面の計算を待たないため）
   problem = buildProblem();
@@ -1989,7 +1997,48 @@ gridEl.addEventListener('contextmenu', (e) => {
 
 // ステージ・カスタム・受け取った盤で、その盤で初めてヒントを使うときは確かめる
 // （使うとその盤のタイムが記録に残らない。2026-10-31 オーナー）。今日の 1 問は showHint の中で別に確かめる
+function hintGateNow() {
+  return Rewards.hintGate({
+    locks: Entitlement.locksActive(), full: Entitlement.isFull(), available: Rewards.available(), tutorial: !!tutorial,
+    clears: Rewards._count(), used: hintAtMoves === moves ? 0 : hintsSpent, open: hintOpen, ticketBoard: false,
+  });
+}
+// ヒントの札「広告」: 押すと広告になるときだけ
+function syncHintAd() {
+  const tag = document.getElementById('hintAd');
+  const b = document.getElementById('hintBtn');
+  if (!tag || !b) return;
+  const ad = hintGateNow() === 'ad';
+  tag.hidden = !ad;
+  b.setAttribute('aria-label', ad ? L('広告を見てヒントを開く', 'Watch an ad to unlock hints') : L('次に押すブロックを教える', 'Show the next block to press'));
+}
+let hintAdBusy = false;
+function askHintAd() {
+  askConfirm(L('ヒント', 'Hint'),
+    L('広告を見ると、<strong>この盤ではヒントを何回でも使えます</strong>。',
+      'Watch an ad to use hints freely <strong>on this board</strong>.'),
+    L('見る', 'Watch'), async () => {
+      closeConfirm();
+      if (hintAdBusy) return;
+      hintAdBusy = true;
+      let r;
+      try { r = await Rewards.watch(); } finally { hintAdBusy = false; }
+      hintAdAnswered(r);
+    });
+}
+// 広告の答えを受ける。読み込めないときも渡す（通信が悪いだけの人を困らせない）。途中で閉じたときは何もしない
+function hintAdAnswered(r) {
+  if (r !== 'earned' && r !== 'failed') return;
+  hintOpen = true;
+  syncHintAd();
+  askHintFree();
+}
 function askHint() {
+  if (autoSolving || locked || isSolved()) return;
+  if (hintGateNow() === 'ad') { askHintAd(); return; }
+  askHintFree();
+}
+function askHintFree() {
   if (autoSolving || locked || isSolved()) return;
   if (!hintUsed && stageTimed()) {
     askConfirm(L('ヒントを使う', 'Use a hint'),
@@ -2537,6 +2586,7 @@ function startFromPending() {
   const v = parseInt(seedInEl.value, 10);
   lastStartPool = Entitlement.poolTag();
   newPuzzle(Number.isFinite(v) ? v : undefined);
+  if (Entitlement.hasTicket()) { hintOpen = true; syncHintAd(); }   // 券で始めた盤は、ヒントも開いておく
   Entitlement.useTicket();   // ごほうびの権利は、盤を始めたら使い切り
 }
 
@@ -2739,7 +2789,8 @@ const adPrivacyEl = document.getElementById('adPrivacy');
 const syncAdPrivacy = () => { adPrivacyEl.hidden = !Entitlement.adsActive(); };
 syncAdPrivacy();
 syncFullField();
-Entitlement.onChange(() => { closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); renderPanel(); });
+Entitlement.onChange(() => { syncHintAd(); closeLockSheet(); renderStageList(); syncLocks(); syncAdPrivacy(); syncFullField(); renderPanel(); });
+Rewards.onAttach(syncHintAd);   // 広告の口がつながったら札を合わせる
 syncLocks();   // ホームの「カスタムで作る」の鍵の札を、起動時の状態に合わせる
 
 // ごほうび広告: 見終わったら、そのステージを 1 回だけ遊べる（その場で始める。権利は貯めない）
@@ -3261,6 +3312,7 @@ function playShared(def) {
   curDiff = 0;
   lastStartPool = 'all';
   loadFixedPuzzle(def, { ms: def.ms });
+  if (Entitlement.hasTicket()) { hintOpen = true; syncHintAd(); }   // 券で始めた盤は、ヒントも開いておく
   Entitlement.useTicket();   // ごほうびの権利は、盤を始めたら使い切り
   show(playEl);
 }
